@@ -32,9 +32,48 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <assert.h>
+#include <stdlib.h>
 
 #include "sds.h"
+
+#ifdef SDS_ASSERT
+    #undef  assert
+    #define assert  SDS_ASSERT
+#else
+    #include <assert.h>
+#endif
+
+#ifdef SDS_MALLOC
+    #undef  malloc
+    #define malloc(size)        SDS_MALLOC(size)
+    #undef  calloc
+    #define calloc(nmemb, size) SdsCalloc(nmemb, size)
+    #undef  realloc
+    #define realloc(ptr, size)  SdsRealloc(ptr, size)
+
+    static void* SdsCalloc(size_t nmemb, size_t size) {
+        if ((nmemb == 0) || (size == 0))
+            return NULL;
+
+        void *ptr = malloc(size * nmemb);
+        if (ptr)
+            memset(ptr, 0, size * nmemb);
+        return ptr;
+    }
+
+    static void* SdsRealloc(void *old, size_t size) {
+        void *new = malloc(size);
+        if (! new)
+            return new;
+        memcpy(new, old, size);
+        return new;
+    }
+#endif
+
+#ifdef SDS_FREE
+    #undef  free
+    #define free(ptr) SDS_FREE(ptr)
+#endif
 
 /* Create a new sds string with the content specified by the 'init' pointer
  * and 'initlen'.
@@ -123,7 +162,7 @@ void sdsclear(sds s) {
 /* Enlarge the free space at the end of the sds string so that the caller
  * is sure that after calling this function can overwrite up to addlen
  * bytes after the end of the string, plus one more byte for nul term.
- * 
+ *
  * Note: this does not change the *length* of the sds string as returned
  * by sdslen(), but only the free buffer space we have. */
 sds sdsMakeRoomFor(sds s, size_t addlen) {
