@@ -1,32 +1,68 @@
+#######################################################################
+## C/C++
+#######################################################################
 # Object files
 *.o
-*.ko
 *.obj
+*.ko
+## depend file
+*.d
+## *nix static library
+*.a
+## *nix dynamic library
+*.so
+*.so.*
+## windows  static library
+*.lib
+## windows dynamic library
+*.dll
+## disassemble
+*.dis
+## map file
+*.map
+## a.out format
+*.out
+## ELF format
 *.elf
-
+## Intel hex format
+*.hex
+## Motorola S record format
+*.srec
 # Precompiled Headers
 *.gch
 *.pch
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+#######################################################################
+## Dot files
+#######################################################################
+.*
+*.local.vimrc
+*.pyclewn.project
+*.clang_complete
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+#######################################################################
+## Git files
+#######################################################################
+!**/.gitignore
+!**/.gitmodules
+!**/.gitkeep
 
-# Executables
-*.exe
+#######################################################################
+## Build directories
+#######################################################################
+**/[Dd]ebug
+**/[Rr]elease
+
+########################################################################
+## Others
+########################################################################
+## tag file
+tags
+## cscope
 *.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
+*.bin
+*.bak*
+*.log
+*.swp
+*.gdb
+*.cpio
