@@ -24,6 +24,7 @@ add_executable(alltests
     xlist_test.c
     xmessage_buffer_test.c
     ${PICOX_DIR}/filesystem/xfile.c
+    ${PICOX_DIR}/allocator/xfixed_memory_allocator.c
     ${PICOX_DIR}/string/xstr.c
     ${PICOX_DIR}/misc/xdebug.c
     ${PICOX_DIR}/misc/xtokenizer.c
