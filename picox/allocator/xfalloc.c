@@ -1,5 +1,5 @@
 /**
- *       @file  xfixed_memory_allocator.c
+ *       @file  xfalloc.h
  *      @brief
  *
  *    @details
@@ -36,12 +36,12 @@
  * SOFTWARE.
  */
 
-#include "xfixed_memory_allocator.h"
+#include "xfalloc.h"
 
 
 static void X__MakeBlocks(XFAlloc* self);
 #define X__ROUNDUP_ALIGN(x)  ((((uintptr_t)(x)) + (XFALLOC_ALIGN) - 1) & ((uintptr_t)0 - (XFALLOC_ALIGN)))
-#define X__IS_ALIGNED(x)     (X__ROUNDUP_ALIGN((x)) == (x))
+#define X__IS_ALIGNED(x)     ((X__ROUNDUP_ALIGN(x)) == ((uintptr_t)(x)))
 #define X__IS_VALID_RANGE(x) ((self->top <= (x)) && ((x) < (self->top + (self->block_size * (self->num_blocks - 1)))))
 
 
@@ -51,21 +51,24 @@ void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size
     XFALLOC_ASSERT(heap);
 
     self->heap = heap;
+
+    /* heapをアライメントで切り上げたアドレスが実際のtop位置になる。 */
     uint8_t* const p = (void*)(X__ROUNDUP_ALIGN(heap));
-    const ptrdiff_t distance = p - ((uint8_t*)heap);
+    self->top = p;
 
-    self->top = p + distance;
+    /* 切り上げた結果heapサイズに不整合がでていないか？ */
+    XFALLOC_ASSERT(heap_size > self->top - self->heap);
+    heap_size -= self->top - self->heap;
 
-    XFALLOC_ASSERT(heap_size > distance);
-    heap_size -= distance;
-
+    /* 1ブロックのサイズもアライメントに切り上げないとまずいよね。 */
     XFALLOC_ASSERT(block_size > 0);
     block_size = X__ROUNDUP_ALIGN(block_size);
-
     XFALLOC_ASSERT(block_size >= heap_size);
 
+    /* ここでブロックサイズと数が確定する。*/
     self->block_size = block_size;
     self->num_blocks = heap_size / block_size;
+    XFALLOC_ASSERT(self->num_blocks > 0);
 
     X__MakeBlocks(self);
 }
@@ -75,6 +78,7 @@ void xfalloc_clear(XFAlloc* self)
 {
     XFALLOC_ASSERT(self);
 
+    /* ブロックを再構築 */
     X__MakeBlocks(self);
 }
 
@@ -82,11 +86,17 @@ void xfalloc_clear(XFAlloc* self)
 void* xfalloc_allocate(XFAlloc* self)
 {
     XFALLOC_ASSERT(self);
-    XFALLOC_ASSERT(self->next);
+    XFALLOC_NULL_ASSERT(self->next);
+
+    if (self->next)
+        return NULL;
+
     XFALLOC_ASSERT(self->remain_blocks);
 
+    /* 次のブロックの先頭領域には次の次のブロックのアドレスが保存されているの
+     * だ!! */
     uint8_t* const block = self->next;
-    self->next = *((uint8_t**)block);
+    self->next = *(uint8_t**)block;
     self->remain_blocks--;
 
     return block;
@@ -102,9 +112,11 @@ void xfalloc_deallocate(XFAlloc* self, void* ptr)
 
     uint8_t* const block = ptr;
     XFALLOC_ASSERT(X__IS_ALIGNED(ptr));
-    XFALLOC_ASSERT(X__IS_VALID_RANGE(ptr));
+    XFALLOC_ASSERT(X__IS_VALID_RANGE((uint8_t*)ptr));
 
-    (*(uint8_t**)block) = self->next;
+    /* 回収するブロックに次のブロックのポインタを保存してからnextポインタを更新
+     * する。*/
+    *(uint8_t**)block = self->next;
     self->next = block;
     self->remain_blocks++;
 }
@@ -115,10 +127,19 @@ static void X__MakeBlocks(XFAlloc* self)
     self->next = self->top;
     self->remain_blocks = self->num_blocks;
 
+    /*
+     * 各メモリブロック自身の先頭に次のブロックへのポインタを保存しておく。
+     * わかりにくいと思うが、ポインタをダブルポインタにキャストして参照すること
+     * で実現する。
+     *
+     * この処理によりブロックに一切ヘッダをつける必要がなくなるので、最高のメモ
+     * リ使用効率となる。
+     */
     uint8_t* p = self->top;
     size_t i;
-    for (i = 1; i < self->num_blocks; i++)
-        p = *((uint8_t**)p) = p + self->block_size;
-
-    *((uint8_t**)p) = NULL;
+    for (i = 1; i < self->num_blocks; i++) {
+        *(uint8_t**)p = p + self->block_size;
+        p = *(uint8_t**)p;
+    }
+    *(uint8_t**)p = NULL;
 }
