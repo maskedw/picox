@@ -718,6 +718,16 @@ static inline uint32_t x_roundup_multiple(uint32_t x, uint32_t m)
 }
 
 
+static inline void* x_roundup_multiple_ptr(const void* x, uint32_t m)
+{
+    return (void*)(((uintptr_t)x + m - 1) & ((uintptr_t)0 - m));
+}
+
+static inline uintptr_t x_roundup_multiple_uintptr(uintptr_t x, uint32_t m)
+{
+    return (uintptr_t)(x_roundup_multiple_ptr((void*)x, m));
+}
+
 /** x‚ğ2‚Ì”{”‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
  */
 static inline uint32_t x_roundup_multiple_of_two(uint32_t x)
