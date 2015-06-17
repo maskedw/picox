@@ -33,11 +33,17 @@ picoxと同等以上に、単機能でシンプルに使用できる外部ライ
 
 
 [Unity][Unity]
+
 [minIni][minIni]
+
 [sds][sds]
+
 [uthash][uthash]
+
+[libfixmath][libfixmath]
 
 [Unity]:https://github.com/ThrowTheSwitch/Unity.git
 [minIni]:https://github.com/compuphase/minIni.git
 [sds]:https://github.com/maskedw/sds.git
 [uthash]:https://github.com/troydhanson/uthash.git
+[libfixmath]:https://github.com/mhfan/libfixmath.git
