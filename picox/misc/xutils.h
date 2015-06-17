@@ -389,7 +389,7 @@ typedef union XMaxAlign
 
 /** バイナリセーフに16bitビッグエンディアンデータを返します。
  */
-#define X_LD_U16_BIG(ptr) (uint16_t)(((uint16_t)*((uint8_t*)(ptr))<<8)|(uint16_t)*(uint8_t*)(ptr) + 1)
+#define X_LD_U16_BIG(ptr) (uint16_t)(((uint16_t)(*((uint8_t*)(ptr)))<<8)|(uint16_t)*((uint8_t*)(ptr) + 1))
 
 
 /** バイナリセーフに32bitビッグエンディアンデータを返します。
