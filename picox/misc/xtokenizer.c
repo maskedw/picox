@@ -42,13 +42,13 @@
 #include <ctype.h>
 
 
-#define EQUAL_STR(s1, s2)           (strcmp(s1, s2) == 0)
-#define BREAK_IF(cond)              if (cond) break
+#define X__EQUAL_STR(s1, s2)    (strcmp(s1, s2) == 0)
+#define X__BREAK_IF(cond)       if (cond) break
 
 
 static char* X__Strip(char* str);
-static uint32_t X__GetInt(XTokenizer* tok, bool* ok, int col, uint32_t def);
-static double X__GetDouble(XTokenizer* tok, bool* ok, int col, double def);
+static uint32_t X__ToInt(XTokenizer* tok, bool* ok, int col, uint32_t def);
+static double X__ToDouble(XTokenizer* tok, bool* ok, int col, double def);
 
 
 int xtok_parse_row(XTokenizer* tok, char* row, char separater)
@@ -95,8 +95,8 @@ const char* xtok_get_token(XTokenizer* tok, int col)
 
     do
     {
-        BREAK_IF((col < 0) || (tok->ntokens <= col));
-        BREAK_IF(tok->tokens[col] == '\0');
+        X__BREAK_IF((col < 0) || (tok->ntokens <= col));
+        X__BREAK_IF(tok->tokens[col] == '\0');
         ok = true;
     } while (0);
 
@@ -104,85 +104,85 @@ const char* xtok_get_token(XTokenizer* tok, int col)
 }
 
 
-bool xtok_get_int(XTokenizer* tok, int col, int def, int* dst)
+bool xtok_to_int(XTokenizer* tok, int col, int def, int* dst)
 {
     bool ok;
 
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
 
-    *dst = X__GetInt(tok, &ok, col, def);
+    *dst = X__ToInt(tok, &ok, col, def);
 
     return ok;
 }
 
 
-bool xtok_get_uint(XTokenizer* tok, int col, unsigned def, unsigned* dst)
+bool xtok_to_uint(XTokenizer* tok, int col, unsigned def, unsigned* dst)
 {
     bool ok;
 
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
 
-    *dst = X__GetInt(tok, &ok, col, def);
+    *dst = X__ToInt(tok, &ok, col, def);
 
     return ok;
 }
 
 
-bool xtok_get_int32(XTokenizer* tok, int col, int32_t def, int32_t* dst)
+bool xtok_to_int32(XTokenizer* tok, int col, int32_t def, int32_t* dst)
 {
     bool ok;
 
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
 
-    *dst = X__GetInt(tok, &ok, col, def);
+    *dst = X__ToInt(tok, &ok, col, def);
 
     return ok;
 }
 
 
-bool xtok_get_uint32(XTokenizer* tok, int col, uint32_t def, uint32_t* dst)
+bool xtok_to_uint32(XTokenizer* tok, int col, uint32_t def, uint32_t* dst)
 {
     bool ok;
 
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
 
-    *dst = X__GetInt(tok, &ok, col, def);
+    *dst = X__ToInt(tok, &ok, col, def);
 
     return ok;
 }
 
 
-bool xtok_get_double(XTokenizer* tok, int col, double def, double* dst)
+bool xtok_to_double(XTokenizer* tok, int col, double def, double* dst)
 {
     bool ok;
 
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
 
-    *dst = X__GetDouble(tok, &ok, col, def);
+    *dst = X__ToDouble(tok, &ok, col, def);
 
     return ok;
 }
 
 
-bool xtok_get_float(XTokenizer* tok, int col, float def, float* dst)
+bool xtok_to_float(XTokenizer* tok, int col, float def, float* dst)
 {
     bool ok;
 
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
 
-    *dst = X__GetDouble(tok, &ok, col, def);
+    *dst = X__ToDouble(tok, &ok, col, def);
 
     return ok;
 }
 
 
-bool xtok_get_string(XTokenizer* tok, int col, const char* def, char* dst, size_t size, bool strip)
+bool xtok_to_string(XTokenizer* tok, int col, const char* def, char* dst, size_t size, bool strip)
 {
     XTOK_ASSERT(tok);
     XTOK_ASSERT(dst);
@@ -193,13 +193,13 @@ bool xtok_get_string(XTokenizer* tok, int col, const char* def, char* dst, size_
 
     do
     {
-        BREAK_IF((col < 0) || (tok->ntokens <= col));
+        X__BREAK_IF((col < 0) || (tok->ntokens <= col));
 
         strncpy(buf, tok->tokens[col], sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
         token = strip ? X__Strip(buf) : buf;
 
-        BREAK_IF(token[0] == '\0');
+        X__BREAK_IF(token[0] == '\0');
 
         strncpy(dst, token, size - 1);
         dst[size - 1] = '\0';
@@ -222,7 +222,7 @@ bool xtok_get_string(XTokenizer* tok, int col, const char* def, char* dst, size_
 }
 
 
-bool xtok_get_bool(XTokenizer* tok, int col, bool def, bool* dst)
+bool xtok_to_bool(XTokenizer* tok, int col, bool def, bool* dst)
 {
     char buf[XTOK_MAX_COL_SIZE];
     char* token;
@@ -233,13 +233,13 @@ bool xtok_get_bool(XTokenizer* tok, int col, bool def, bool* dst)
 
     do
     {
-        BREAK_IF((col < 0) || (tok->ntokens <= col));
+        X__BREAK_IF((col < 0) || (tok->ntokens <= col));
 
         strncpy(buf, tok->tokens[col], sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
         token = X__Strip(buf);
 
-        BREAK_IF(token[0] == '\0');
+        X__BREAK_IF(token[0] == '\0');
 
         len = strlen(token);
         for (i = 0; i < len; i++)
@@ -247,18 +247,18 @@ bool xtok_get_bool(XTokenizer* tok, int col, bool def, bool* dst)
             token[i] = tolower((int)token[i]);
         }
 
-        if (EQUAL_STR(token, "y")       ||
-            EQUAL_STR(token, "yes")     ||
-            EQUAL_STR(token, "true")    ||
-            EQUAL_STR(token, "1"))
+        if (X__EQUAL_STR(token, "y")       ||
+            X__EQUAL_STR(token, "yes")     ||
+            X__EQUAL_STR(token, "true")    ||
+            X__EQUAL_STR(token, "1"))
         {
             value = true;
         }
 
-        else if (EQUAL_STR(token, "n")      ||
-                 EQUAL_STR(token, "no")     ||
-                 EQUAL_STR(token, "false")  ||
-                 EQUAL_STR(token, "0"))
+        else if (X__EQUAL_STR(token, "n")      ||
+                 X__EQUAL_STR(token, "no")     ||
+                 X__EQUAL_STR(token, "false")  ||
+                 X__EQUAL_STR(token, "0"))
         {
             value = false;
         }
@@ -301,7 +301,7 @@ static char* X__Strip(char* str)
 }
 
 
-static uint32_t X__GetInt(XTokenizer* tok, bool* ok, int col, uint32_t def)
+static uint32_t X__ToInt(XTokenizer* tok, bool* ok, int col, uint32_t def)
 {
     char buf[XTOK_MAX_COL_SIZE];
     char* token;
@@ -311,16 +311,16 @@ static uint32_t X__GetInt(XTokenizer* tok, bool* ok, int col, uint32_t def)
     *ok = false;
     do
     {
-        BREAK_IF((col < 0) || (tok->ntokens <= col));
+        X__BREAK_IF((col < 0) || (tok->ntokens <= col));
 
         strncpy(buf, tok->tokens[col], sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
 
         token = X__Strip(buf);
-        BREAK_IF(token[0] == '\0');
+        X__BREAK_IF(token[0] == '\0');
 
         value = strtoul(token, &endptr, 0);
-        BREAK_IF(*endptr != '\0');
+        X__BREAK_IF(*endptr != '\0');
 
         *ok = true;
 
@@ -333,7 +333,7 @@ static uint32_t X__GetInt(XTokenizer* tok, bool* ok, int col, uint32_t def)
 }
 
 
-static double X__GetDouble(XTokenizer* tok, bool* ok, int col, double def)
+static double X__ToDouble(XTokenizer* tok, bool* ok, int col, double def)
 {
     char buf[XTOK_MAX_COL_SIZE];
     char* token;
@@ -343,16 +343,16 @@ static double X__GetDouble(XTokenizer* tok, bool* ok, int col, double def)
     *ok = false;
     do
     {
-        BREAK_IF((col < 0) || (tok->ntokens <= col));
+        X__BREAK_IF((col < 0) || (tok->ntokens <= col));
 
         strncpy(buf, tok->tokens[col], sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
 
         token = X__Strip(buf);
-        BREAK_IF(token[0] == '\0');
+        X__BREAK_IF(token[0] == '\0');
 
         value = strtod(token, &endptr);
-        BREAK_IF(*endptr != '\0');
+        X__BREAK_IF(*endptr != '\0');
 
         *ok = true;
 
@@ -386,25 +386,25 @@ int main(int argc, char const* argv[])
 
     assert(xtok_num_tokens(&tok) == 7);
 
-    ok = xtok_get_int(&tok, 0, 100, &intv);
+    ok = xtok_to_int(&tok, 0, 100, &intv);
     assert(ok && intv == 10);
 
-    ok = xtok_get_string(&tok, 1, "UNKO", strv, sizeof(strv), true);
-    assert(ok && EQUAL_STR(strv, "path.bmp"));
+    ok = xtok_to_string(&tok, 1, "UNKO", strv, sizeof(strv), true);
+    assert(ok && X__EQUAL_STR(strv, "path.bmp"));
 
-    ok = xtok_get_double(&tok, 2, 2.225, &doublev);
+    ok = xtok_to_double(&tok, 2, 2.225, &doublev);
     printf("%f\n", doublev);
 
-    ok = xtok_get_bool(&tok, 3, false, &boolv);
+    ok = xtok_to_bool(&tok, 3, false, &boolv);
     assert(ok && (boolv == true));
 
-    ok = xtok_get_bool(&tok, 4, true, &boolv);
+    ok = xtok_to_bool(&tok, 4, true, &boolv);
     assert(ok && (boolv == false));
 
-    ok = xtok_get_bool(&tok, 5, false, &boolv);
+    ok = xtok_to_bool(&tok, 5, false, &boolv);
     assert(ok && (boolv == true));
 
-    ok = xtok_get_int(&tok, 6, 9999, &intv);
+    ok = xtok_to_int(&tok, 6, 9999, &intv);
     printf("%d\n", intv);
     assert((!ok) && (intv == 9999));
 

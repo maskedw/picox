@@ -46,8 +46,8 @@
 static inline bool X__IsSkip(char c, const char* skip_chars);
 static char* X__LStrip(char* str, int len, const char* strip_chars);
 static char* X__RStrip(char* str, int len, const char* strip_chars);
-static uint32_t X__GetInt(const char* str, bool* ok, uint32_t def);
-static double X__GetDouble(const char* str, bool* ok, double def);
+static uint32_t X__ToInt(const char* str, bool* ok, uint32_t def);
+static double X__ToDouble(const char* str, bool* ok, double def);
 
 
 bool xstr_equal(const char* s1, const char* s2)
@@ -141,73 +141,73 @@ char* xstr_rstrip(char* str, const char* space)
 }
 
 
-bool xstr_get_int(const char* str, int def, int* dst)
+bool xstr_to_int(const char* str, int def, int* dst)
 {
     bool ok;
 
     XSTR_ASSERT(dst);
-    *dst = X__GetInt(str, &ok, def);
+    *dst = X__ToInt(str, &ok, def);
 
     return ok;
 }
 
 
-bool xstr_get_uint(const char* str, unsigned def, unsigned* dst)
+bool xstr_to_uint(const char* str, unsigned def, unsigned* dst)
 {
     bool ok;
 
     XSTR_ASSERT(dst);
-    *dst = X__GetInt(str, &ok, def);
+    *dst = X__ToInt(str, &ok, def);
 
     return ok;
 }
 
 
-bool xstr_get_int32(const char* str, int32_t def, int32_t* dst)
+bool xstr_to_int32(const char* str, int32_t def, int32_t* dst)
 {
     bool ok;
 
     XSTR_ASSERT(dst);
-    *dst = X__GetInt(str, &ok, def);
+    *dst = X__ToInt(str, &ok, def);
 
     return ok;
 }
 
 
-bool xstr_get_uint32(const char* str, uint32_t def, uint32_t* dst)
+bool xstr_to_uint32(const char* str, uint32_t def, uint32_t* dst)
 {
     bool ok;
 
     XSTR_ASSERT(dst);
-    *dst = X__GetInt(str, &ok, def);
+    *dst = X__ToInt(str, &ok, def);
 
     return ok;
 }
 
 
-bool xstr_get_double(const char* str, double def, double* dst)
+bool xstr_to_double(const char* str, double def, double* dst)
 {
     bool ok;
 
     XSTR_ASSERT(dst);
-    *dst = X__GetDouble(str, &ok, def);
+    *dst = X__ToDouble(str, &ok, def);
 
     return ok;
 }
 
 
-bool xstr_get_float(const char* str, float def, float* dst)
+bool xstr_to_float(const char* str, float def, float* dst)
 {
     bool ok;
 
     XSTR_ASSERT(dst);
-    *dst = X__GetDouble(str, &ok, def);
+    *dst = X__ToDouble(str, &ok, def);
 
     return ok;
 }
 
 
-bool xstr_get_bool(const char* str, bool def, bool* dst)
+bool xstr_to_bool(const char* str, bool def, bool* dst)
 {
     bool value;
     bool ok = true;
@@ -315,7 +315,7 @@ static char* X__RStrip(char* str, int len, const char* strip_chars)
 }
 
 
-static uint32_t X__GetInt(const char* str, bool* ok, uint32_t def)
+static uint32_t X__ToInt(const char* str, bool* ok, uint32_t def)
 {
     char* endptr;
     uint32_t value;
@@ -331,7 +331,7 @@ static uint32_t X__GetInt(const char* str, bool* ok, uint32_t def)
 }
 
 
-static double X__GetDouble(const char* str, bool* ok, double def)
+static double X__ToDouble(const char* str, bool* ok, double def)
 {
     char* endptr;
     double value;

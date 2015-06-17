@@ -107,32 +107,32 @@ char* xstr_rstrip(char* str, const char* space);
 
 /** 文字列をintに変換して返します。
  */
-bool xstr_get_int(const char* str, int def, int* dst);
+bool xstr_to_int(const char* str, int def, int* dst);
 
 
 /** 文字列をunsigned intに変換して返します。
  */
-bool xstr_get_uint(const char* str, unsigned def, unsigned* dst);
+bool xstr_to_uint(const char* str, unsigned def, unsigned* dst);
 
 
 /** 文字列をint32_tに変換して返します。
  */
-bool xstr_get_int32(const char* str, int32_t def, int32_t* dst);
+bool xstr_to_int32(const char* str, int32_t def, int32_t* dst);
 
 
 /** 文字列をuint32_tに変換して返します。
  */
-bool xstr_get_uint32(const char* str, uint32_t def, uint32_t* dst);
+bool xstr_to_uint32(const char* str, uint32_t def, uint32_t* dst);
 
 
 /** 文字列をdoubleに変換して返します。
  */
-bool xstr_get_double(const char* str, double def, double* dst);
+bool xstr_to_double(const char* str, double def, double* dst);
 
 
 /** 文字列をfloatに変換して返します。
  */
-bool xstr_get_float(const char* str, float def, float* dst);
+bool xstr_to_float(const char* str, float def, float* dst);
 
 
 /** 文字列をboolに変換して返します。
@@ -140,7 +140,7 @@ bool xstr_get_float(const char* str, float def, float* dst);
  *  + y, yes, true, 1 => true
  *  + n, no, false, 0 => false
  */
-bool xstr_get_bool(const char* str, bool def, bool* dst);
+bool xstr_to_bool(const char* str, bool def, bool* dst);
 
 
 #ifdef __cplusplus

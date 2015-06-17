@@ -100,39 +100,39 @@ const char* xtok_get_token(XTokenizer* tok, int col);
 
 /** 指定列をintに変換して返します。
  */
-bool xtok_get_int(XTokenizer* tok, int col, int def, int* dst);
+bool xtok_to_int(XTokenizer* tok, int col, int def, int* dst);
 
 
 /** 指定列をunsigned intに変換して返します。
  */
-bool xtok_get_uint(XTokenizer* tok, int col, unsigned def, unsigned* dst);
+bool xtok_to_uint(XTokenizer* tok, int col, unsigned def, unsigned* dst);
 
 
 /** 指定列をint32_tに変換して返します。
  */
-bool xtok_get_int32(XTokenizer* tok, int col, int32_t def, int32_t* dst);
+bool xtok_to_int32(XTokenizer* tok, int col, int32_t def, int32_t* dst);
 
 
 /** 指定列をuint32_tに変換して返します。
  */
-bool xtok_get_uint32(XTokenizer* tok, int col, uint32_t def, uint32_t* dst);
+bool xtok_to_uint32(XTokenizer* tok, int col, uint32_t def, uint32_t* dst);
 
 
 /** 指定列をdoubleに変換して返します。
  */
-bool xtok_get_double(XTokenizer* tok, int col, double def, double* dst);
+bool xtok_to_double(XTokenizer* tok, int col, double def, double* dst);
 
 
 /** 指定列をfloatに変換して返します。
  */
-bool xtok_get_float(XTokenizer* tok, int col, float def, float* dst);
+bool xtok_to_float(XTokenizer* tok, int col, float def, float* dst);
 
 
 /** 指定列の文字列を返します。
  *
  *  strip == true時は前後のstd::isspace()でトリムします。
  */
-bool xtok_get_string(XTokenizer* tok, int col, const char* def, char* dst, size_t size, bool strip);
+bool xtok_to_string(XTokenizer* tok, int col, const char* def, char* dst, size_t size, bool strip);
 
 
 /** 指定列をboolに変換して返します。
@@ -140,7 +140,7 @@ bool xtok_get_string(XTokenizer* tok, int col, const char* def, char* dst, size_
  *  + y, yes, true, 1 => true
  *  + n, no, false, 0 => false
  */
-bool xtok_get_bool(XTokenizer* tok, int col, bool def, bool* dst);
+bool xtok_to_bool(XTokenizer* tok, int col, bool def, bool* dst);
 
 
 #ifdef __cplusplus
