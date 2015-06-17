@@ -26,6 +26,7 @@ add_executable(alltests
     ${PICOX_DIR}/filesystem/xfile.c
     ${PICOX_DIR}/allocator/xsalloc.c
     ${PICOX_DIR}/allocator/xfalloc.c
+    ${PICOX_DIR}/allocator/xpalloc.c
     ${PICOX_DIR}/string/xstr.c
     ${PICOX_DIR}/misc/xdebug.c
     ${PICOX_DIR}/misc/xtokenizer.c
