@@ -1,5 +1,5 @@
 /**
- *       @file  xmessage_buffer.h
+ *       @file  xmsgbuf.h
  *      @brief  可変長メッセージを格納するコンテナです
  *
  *    @details
@@ -37,8 +37,8 @@
  */
 
 
-#ifndef xmessage_buffer_h_
-#define xmessage_buffer_h_
+#ifndef xmsgbuf_h_
+#define xmsgbuf_h_
 
 
 #include <stddef.h>
@@ -61,15 +61,15 @@ extern "C" {
 
 /** メッセージヘッダ
  *
- *  XMBufへnバイトのデータを格納する時、XMBufの空き容量はsizeof(XMBufHeader) + n
+ *  XMsgBufへnバイトのデータを格納する時、XMsgBufの空き容量はsizeof(XMsgBufHeader) + n
  *  バイト以上必要です。
- *  ユーザーはsizeof(XMBufHeader)以外でこの型を使用する必要はありません。
+ *  ユーザーはsizeof(XMsgBufHeader)以外でこの型を使用する必要はありません。
  */
-typedef union XMBufHeader
+typedef union XMsgBufHeader
 {
     size_t  size;
     uint8_t bytes[sizeof(size_t)];
-} XMBufHeader;
+} XMsgBufHeader;
 
 
 /** Message Buffer
@@ -77,7 +77,7 @@ typedef union XMBufHeader
  *  @note
  *  メッセージはリングバッファ形式で格納されます。
  */
-typedef struct XMBuf
+typedef struct XMsgBuf
 {
 /// @privatesection
     uint8_t*    data;       /** メッセージ格納先 */
@@ -85,23 +85,23 @@ typedef struct XMBuf
     size_t      last;       /** 書き込みインデックス */
     size_t      size;       /** dataに格納されているバイト数 */
     size_t      capacity;   /** dataのバイト数 */
-} XMBuf;
+} XMsgBuf;
 
 
 /** バッファを初期化します。
  *
  *  @pre
- *  + (buf != NULL) && (size > sizeof(XMBufHeader))
+ *  + (buf != NULL) && (size > sizeof(XMsgBufHeader))
  *
  *  @attention
- *  XMBufの使用中はbufが指す領域を破棄しないこと。
+ *  XMsgBufの使用中はbufが指す領域を破棄しないこと。
  */
 static inline void
-xmbuf_init(XMBuf* self, void* buf, size_t size)
+xmsgbuf_init(XMsgBuf* self, void* buf, size_t size)
 {
     XMBUF_ASSERT(self);
     XMBUF_ASSERT(buf);
-    XMBUF_ASSERT(size > sizeof(XMBufHeader));
+    XMBUF_ASSERT(size > sizeof(XMsgBufHeader));
 
     self->data = buf;
     self->first = self->last = self->size = 0;
@@ -112,7 +112,7 @@ xmbuf_init(XMBuf* self, void* buf, size_t size)
 /** 要素を格納するバッファを返します。
  */
 static inline uint8_t*
-xmbuf_data(const XMBuf* self)
+xmsgbuf_data(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
     return self->data;
@@ -122,7 +122,7 @@ xmbuf_data(const XMBuf* self)
 /** バッファを空にします。
  */
 static inline void
-xmbuf_clear(XMBuf* self)
+xmsgbuf_clear(XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
     self->first = self->last = self->size = 0;
@@ -132,7 +132,7 @@ xmbuf_clear(XMBuf* self)
 /** バッファに格納されているバイト数を返します。
  */
 static inline size_t
-xmbuf_size(const XMBuf* self)
+xmsgbuf_size(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
     return self->size;
@@ -142,7 +142,7 @@ xmbuf_size(const XMBuf* self)
 /** バッファが空かどうかを返します。
  */
 static inline bool
-xmbuf_empty(const XMBuf* self)
+xmsgbuf_empty(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
     return self->size == 0;
@@ -152,7 +152,7 @@ xmbuf_empty(const XMBuf* self)
 /** バッファに格納できる最大バイト数を返します。
  */
 static inline size_t
-xmbuf_capacity(const XMBuf* self)
+xmsgbuf_capacity(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
     return self->capacity;
@@ -162,7 +162,7 @@ xmbuf_capacity(const XMBuf* self)
 /** バッファの空きバイト数を返します。
  */
 static inline size_t
-xmbuf_reserve(const XMBuf* self)
+xmsgbuf_reserve(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
     return self->capacity - self->size;
@@ -171,30 +171,30 @@ xmbuf_reserve(const XMBuf* self)
 
 /** バッファが満タンかどうかを返します。
  *
- *  xmbuf_reserve() <= sizeof(XMBufHeader)の時も、これ以上メッセージを格納できな
+ *  xmsgbuf_reserve() <= sizeof(XMsgBufHeader)の時も、これ以上メッセージを格納できな
  *  い為、満タンと判定します。
  */
 static inline bool
-xmbuf_full(const XMBuf* self)
+xmsgbuf_full(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
-    return xmbuf_reserve(self) <= sizeof(XMBufHeader);
+    return xmsgbuf_reserve(self) <= sizeof(XMsgBufHeader);
 }
 
 
 /** 先頭メッセージのバイト数を返します。
  */
 static inline size_t
-xmbuf_msg_size(const XMBuf* self)
+xmsgbuf_msg_size(const XMsgBuf* self)
 {
     XMBUF_ASSERT(self);
-    if (xmbuf_empty(self))
+    if (xmsgbuf_empty(self))
         return 0;
 
-    XMBufHeader header;
+    XMsgBufHeader header;
     size_t rpos = self->first;
     int i;
-    for (i = 0; i < sizeof(XMBufHeader); i++) {
+    for (i = 0; i < sizeof(XMsgBufHeader); i++) {
         header.bytes[i] = self->data[rpos++];
         if (rpos == self->capacity)
             rpos = 0;
@@ -208,24 +208,24 @@ xmbuf_msg_size(const XMBuf* self)
  *
  *  @pre
  *  + (src != NULL) && (size > 0)
- *  + xmbuf_reserve() >= size + sizeof(XMBufHeader)
+ *  + xmsgbuf_reserve() >= size + sizeof(XMsgBufHeader)
  */
 static inline void
-xmbuf_push(XMBuf* self, const void* src, size_t size)
+xmsgbuf_push(XMsgBuf* self, const void* src, size_t size)
 {
     XMBUF_ASSERT(self);
     XMBUF_ASSERT(src);
     XMBUF_ASSERT(size > 0);
-    XMBUF_ASSERT(xmbuf_reserve(self) >= size + sizeof(XMBufHeader));
+    XMBUF_ASSERT(xmsgbuf_reserve(self) >= size + sizeof(XMsgBufHeader));
 
 
-    XMBufHeader header;
+    XMsgBufHeader header;
     header.size = size;
-    self->size += sizeof(XMBufHeader) + size;
+    self->size += sizeof(XMsgBufHeader) + size;
 
     size_t pos = self->last;
     int i;
-    for (i = 0; i < sizeof(XMBufHeader); i++)
+    for (i = 0; i < sizeof(XMsgBufHeader); i++)
     {
         self->data[pos++] = header.bytes[i];
         if (pos >= self->capacity)
@@ -259,22 +259,22 @@ xmbuf_push(XMBuf* self, const void* src, size_t size)
  *
  *  @pre
  *  + (dst != NULL)
- *  + dstが指す領域のバイト数 >= xmbuf_msg_size()
+ *  + dstが指す領域のバイト数 >= xmsgbuf_msg_size()
  */
 static inline size_t
-xmbuf_pull(XMBuf* self, void* dst)
+xmsgbuf_pull(XMsgBuf* self, void* dst)
 {
     XMBUF_ASSERT(self);
     XMBUF_ASSERT(dst);
 
 
-    if (xmbuf_empty(self))
+    if (xmsgbuf_empty(self))
         return 0;
 
-    XMBufHeader header;
+    XMsgBufHeader header;
     size_t pos = self->first;
     int i;
-    for (i = 0; i < sizeof(XMBufHeader); i++) {
+    for (i = 0; i < sizeof(XMsgBufHeader); i++) {
         header.bytes[i] = self->data[pos++];
         if (pos == self->capacity)
             pos = 0;
@@ -300,7 +300,7 @@ xmbuf_pull(XMBuf* self, void* dst)
     if (pos == self->capacity)
         pos = 0;
     self->first = pos;
-    self->size -= header.size + sizeof(XMBufHeader);
+    self->size -= header.size + sizeof(XMsgBufHeader);
 
     return header.size;
 }
@@ -311,4 +311,4 @@ xmbuf_pull(XMBuf* self, void* dst)
 #endif // __cplusplus
 
 
-#endif // xmessage_buffer_h_
+#endif // xmsgbuf_h_

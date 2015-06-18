@@ -55,11 +55,7 @@
 #define picox_xpalloc_h_
 
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <picox/misc/xutils.h>
-#include <picox/misc/xdebug.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus

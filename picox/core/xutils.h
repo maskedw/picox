@@ -40,10 +40,13 @@
 #define picox_xutils_h_
 
 
+/* std */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <string.h>
+#include <limits.h>
 
 
 #ifdef __cplusplus

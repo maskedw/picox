@@ -1,9 +1,9 @@
 /**
  *       @file  xfile.h
- *      @brief  XFile interface wrapper
+ *      @brief  File interface wrapper
  *
  *    @details
- *    XFileSystemによる違いや、扱いにくいインターフェースをラップするモジュールで
+ *    FileSystemによる違いや、扱いにくいインターフェースをラップするモジュールで
  *    す。
  *
  *     @author  MaskedW

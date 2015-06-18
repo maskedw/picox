@@ -52,20 +52,20 @@ void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size
 
     self->heap = heap;
 
-    /* heap‚ðƒAƒ‰ƒCƒƒ“ƒg‚ÅØ‚èã‚°‚½ƒAƒhƒŒƒX‚ªŽÀÛ‚ÌtopˆÊ’u‚É‚È‚éB */
+    /* heapã‚’ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆã§åˆ‡ã‚Šä¸Šã’ãŸã‚¢ãƒ‰ãƒ¬ã‚¹ãŒå®Ÿéš›ã®topä½ç½®ã«ãªã‚‹ã€‚ */
     uint8_t* const p = (void*)(X__ROUNDUP_ALIGN(heap));
     self->top = p;
 
-    /* Ø‚èã‚°‚½Œ‹‰ÊheapƒTƒCƒY‚É•s®‡‚ª‚Å‚Ä‚¢‚È‚¢‚©H */
+    /* åˆ‡ã‚Šä¸Šã’ãŸçµæžœheapã‚µã‚¤ã‚ºã«ä¸æ•´åˆãŒã§ã¦ã„ãªã„ã‹ï¼Ÿ */
     XFALLOC_ASSERT(heap_size > self->top - self->heap);
     heap_size -= self->top - self->heap;
 
-    /* 1ƒuƒƒbƒN‚ÌƒTƒCƒY‚àƒAƒ‰ƒCƒƒ“ƒg‚ÉØ‚èã‚°‚È‚¢‚Æ‚Ü‚¸‚¢‚æ‚ËB */
+    /* 1ãƒ–ãƒ­ãƒƒã‚¯ã®ã‚µã‚¤ã‚ºã‚‚ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆã«åˆ‡ã‚Šä¸Šã’ãªã„ã¨ã¾ãšã„ã‚ˆã­ã€‚ */
     XFALLOC_ASSERT(block_size > 0);
     block_size = X__ROUNDUP_ALIGN(block_size);
     XFALLOC_ASSERT(block_size >= heap_size);
 
-    /* ‚±‚±‚ÅƒuƒƒbƒNƒTƒCƒY‚Æ”‚ªŠm’è‚·‚éB*/
+    /* ã“ã“ã§ãƒ–ãƒ­ãƒƒã‚¯ã‚µã‚¤ã‚ºã¨æ•°ãŒç¢ºå®šã™ã‚‹ã€‚*/
     self->block_size = block_size;
     self->num_blocks = heap_size / block_size;
     XFALLOC_ASSERT(self->num_blocks > 0);
@@ -78,7 +78,7 @@ void xfalloc_clear(XFAlloc* self)
 {
     XFALLOC_ASSERT(self);
 
-    /* ƒuƒƒbƒN‚ðÄ\’z */
+    /* ãƒ–ãƒ­ãƒƒã‚¯ã‚’å†æ§‹ç¯‰ */
     X__MakeBlocks(self);
 }
 
@@ -93,8 +93,8 @@ void* xfalloc_allocate(XFAlloc* self)
 
     XFALLOC_ASSERT(self->remain_blocks);
 
-    /* ŽŸ‚ÌƒuƒƒbƒN‚Ìæ“ª—Ìˆæ‚É‚ÍŽŸ‚ÌŽŸ‚ÌƒuƒƒbƒN‚ÌƒAƒhƒŒƒX‚ª•Û‘¶‚³‚ê‚Ä‚¢‚é‚Ì
-     * ‚¾!! */
+    /* æ¬¡ã®ãƒ–ãƒ­ãƒƒã‚¯ã®å…ˆé ­é ˜åŸŸã«ã¯æ¬¡ã®æ¬¡ã®ãƒ–ãƒ­ãƒƒã‚¯ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ãŒä¿å­˜ã•ã‚Œã¦ã„ã‚‹ã®
+     * ã !! */
     uint8_t* const block = self->next;
     self->next = *(uint8_t**)block;
     self->remain_blocks--;
@@ -114,8 +114,8 @@ void xfalloc_deallocate(XFAlloc* self, void* ptr)
     XFALLOC_ASSERT(X__IS_ALIGNED(ptr));
     XFALLOC_ASSERT(X__IS_VALID_RANGE((uint8_t*)ptr));
 
-    /* ‰ñŽû‚·‚éƒuƒƒbƒN‚ÉŽŸ‚ÌƒuƒƒbƒN‚Ìƒ|ƒCƒ“ƒ^‚ð•Û‘¶‚µ‚Ä‚©‚çnextƒ|ƒCƒ“ƒ^‚ðXV
-     * ‚·‚éB*/
+    /* å›žåŽã™ã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã«æ¬¡ã®ãƒ–ãƒ­ãƒƒã‚¯ã®ãƒã‚¤ãƒ³ã‚¿ã‚’ä¿å­˜ã—ã¦ã‹ã‚‰nextãƒã‚¤ãƒ³ã‚¿ã‚’æ›´æ–°
+     * ã™ã‚‹ã€‚*/
     *(uint8_t**)block = self->next;
     self->next = block;
     self->remain_blocks++;
@@ -128,12 +128,12 @@ static void X__MakeBlocks(XFAlloc* self)
     self->remain_blocks = self->num_blocks;
 
     /*
-     * Šeƒƒ‚ƒŠƒuƒƒbƒNŽ©g‚Ìæ“ª‚ÉŽŸ‚ÌƒuƒƒbƒN‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ð•Û‘¶‚µ‚Ä‚¨‚­B
-     * ‚í‚©‚è‚É‚­‚¢‚ÆŽv‚¤‚ªAƒ|ƒCƒ“ƒ^‚ðƒ_ƒuƒ‹ƒ|ƒCƒ“ƒ^‚ÉƒLƒƒƒXƒg‚µ‚ÄŽQÆ‚·‚é‚±‚Æ
-     * ‚ÅŽÀŒ»‚·‚éB
+     * å„ãƒ¡ãƒ¢ãƒªãƒ–ãƒ­ãƒƒã‚¯è‡ªèº«ã®å…ˆé ­ã«æ¬¡ã®ãƒ–ãƒ­ãƒƒã‚¯ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã‚’ä¿å­˜ã—ã¦ãŠãã€‚
+     * ã‚ã‹ã‚Šã«ãã„ã¨æ€ã†ãŒã€ãƒã‚¤ãƒ³ã‚¿ã‚’ãƒ€ãƒ–ãƒ«ãƒã‚¤ãƒ³ã‚¿ã«ã‚­ãƒ£ã‚¹ãƒˆã—ã¦å‚ç…§ã™ã‚‹ã“ã¨
+     * ã§å®Ÿç¾ã™ã‚‹ã€‚
      *
-     * ‚±‚Ìˆ—‚É‚æ‚èƒuƒƒbƒN‚ÉˆêØƒwƒbƒ_‚ð‚Â‚¯‚é•K—v‚ª‚È‚­‚È‚é‚Ì‚ÅAÅ‚‚Ìƒƒ‚
-     * ƒŠŽg—pŒø—¦‚Æ‚È‚éB
+     * ã“ã®å‡¦ç†ã«ã‚ˆã‚Šãƒ–ãƒ­ãƒƒã‚¯ã«ä¸€åˆ‡ãƒ˜ãƒƒãƒ€ã‚’ã¤ã‘ã‚‹å¿…è¦ãŒãªããªã‚‹ã®ã§ã€æœ€é«˜ã®ãƒ¡ãƒ¢
+     * ãƒªä½¿ç”¨åŠ¹çŽ‡ã¨ãªã‚‹ã€‚
      */
     uint8_t* p = self->top;
     size_t i;

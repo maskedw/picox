@@ -50,7 +50,7 @@ typedef struct X__Debug
     int level;
 } X__Debug;
 
-X__Debug    g_picox_debug = {XDB_LOG_LEVEL};
+X__Debug    g_picox_debug = {X_LOG_LEVEL};
 static X__Debug* const priv = &g_picox_debug;
 
 
@@ -59,7 +59,7 @@ static void X__Putc(int c);
 static const char* X__GetHeader(int level);
 
 
-int xdb_set_level(int level)
+int x_set_log_level(int level)
 {
     const int prev = priv->level;
     priv->level = level;
@@ -68,54 +68,27 @@ int xdb_set_level(int level)
 }
 
 
-void xdb_printf(const char* fmt, ...)
+void x_printf(const char* fmt, ...)
 {
     va_list args;
 
     va_start(args, fmt);
-    XDB_VPRINTF(fmt, args);
+    x_vprintf(fmt, args);
     va_end(args);
 }
 
 
-void xdb_unbufferd_printf(const char* fmt, ...)
+void x_print_log(int level, const char* fmt, ...)
 {
     va_list args;
 
     va_start(args, fmt);
-    XDB_UNBUFFERED_VPRINTF(fmt, args);
-    va_end(args);
-}
-
-
-#ifdef __GNUC__
-
-void xdb_print_log(int level, const char* fmt, ...)
-{
-    va_list args;
-
-    va_start(args, fmt);
-
-    X__VPrintLog(level, fmt, args);
-    va_end(args);
-}
-
-#else
-
-void xdb_print_log(int level, ...)
-{
-    va_list args;
-
-    va_start(args, level);
-    const char* fmt = va_arg(args, const char*);
     X__VPrintLog(level, fmt, args);
     va_end(args);
 }
 
 
-#endif // ifdef __GNUC__
-
-void xdb_hexdump(const void* src, unsigned len, unsigned cols)
+void x_hexdump(const void* src, unsigned len, unsigned cols)
 {
     unsigned int i, j;
     const unsigned char* p = src;
@@ -125,17 +98,17 @@ void xdb_hexdump(const void* src, unsigned len, unsigned cols)
         /* print offset */
         if(i % cols == 0)
         {
-            xdb_printf("0x%06x: ", i);
+            x_printf("0x%06x: ", i);
         }
 
         /* print hex data */
         if(i < len)
         {
-            xdb_printf("%02x ", p[i]);
+            x_printf("%02x ", p[i]);
         }
         else /* end of block, just aligning for ASCII dump */
         {
-            xdb_printf("   ");
+            x_printf("   ");
         }
 
         /* print ASCII dump */
@@ -156,7 +129,7 @@ void xdb_hexdump(const void* src, unsigned len, unsigned cols)
 }
 
 
-void xdb_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line)
+void x_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
     /*
      * fileがフルパスで出力されると環境によってコンパイル環境によって出力が変
@@ -169,28 +142,25 @@ void xdb_assertion_failed(const char* expr, const char* msg, const char* func, c
     file = p ? p + 1 : file;
     const char* none = "none";
 
-    xdb_unbufferd_printf(
-        "Assertion failed\n"
-        "[MSG ] %s\n"
-        "[EXPR] %s\n"
-        "[FUNC] %s\n"
-        "[FILE] %s\n"
-        "[LINE] %d\n"
-        "************************\n",
-        msg  ? msg  : none,
-        expr ? expr : none,
-        func ? func : none,
-        file ? file : none, line);
+    X_PRE_ASSERTION_FAILED();
 
-    XDB_POST_ASSERTION_FAILED();
+    x_printf("Assertion failed\n");
+    x_printf("[MSG ] %s\n", msg ? msg : none);
+    x_printf("[EXPR] %s\n", expr ? expr : none);
+    x_printf("[FUNC] %s\n", func ? func : none);
+    x_printf("[FILE] %s\n", file ? file : none);
+    x_printf("[LINE] %d\n", line);
+    x_printf("************************\n");
+
+    X_POST_ASSERTION_FAILED();
 }
 
 
 static void X__VPrintLog(int level, const char* fmt, va_list args)
 {
     if (level <= priv->level) {
-        xdb_printf("%s", X__GetHeader(level));
-        xdb_vprintf(fmt, args);
+        x_printf("%s", X__GetHeader(level));
+        x_vprintf(fmt, args);
         X__Putc('\n');
     }
 }
@@ -198,7 +168,7 @@ static void X__VPrintLog(int level, const char* fmt, va_list args)
 
 static void X__Putc(int c)
 {
-    xdb_printf("%c", c);
+    x_printf("%c", c);
 }
 
 
@@ -208,12 +178,12 @@ static const char* X__GetHeader(int level)
 
     switch (level)
     {
-        case XDB_LOG_LEVEL_VERB:  str = XDB_VERB_HEADER;  break;
-        case XDB_LOG_LEVEL_INFO:  str = XDB_INFO_HEADER;  break;
-        case XDB_LOG_LEVEL_NOTI:  str = XDB_NOTI_HEADER;  break;
-        case XDB_LOG_LEVEL_WARN:  str = XDB_WARN_HEADER;  break;
-        case XDB_LOG_LEVEL_ERR:   str = XDB_ERR_HEADER;   break;
-        default:                                          break;
+        case X_LOG_LEVEL_VERB:  str = X_VERB_HEADER;  break;
+        case X_LOG_LEVEL_INFO:  str = X_INFO_HEADER;  break;
+        case X_LOG_LEVEL_NOTI:  str = X_NOTI_HEADER;  break;
+        case X_LOG_LEVEL_WARN:  str = X_WARN_HEADER;  break;
+        case X_LOG_LEVEL_ERR:   str = X_ERR_HEADER;   break;
+        default:                                      break;
     }
 
     return str;

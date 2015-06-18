@@ -23,12 +23,12 @@ add_executable(alltests
     xfifo_test.c
     xlist_test.c
     xmessage_buffer_test.c
+    ${PICOX_DIR}/core/xdebug.c
     ${PICOX_DIR}/filesystem/xfile.c
     ${PICOX_DIR}/allocator/xsalloc.c
     ${PICOX_DIR}/allocator/xfalloc.c
     ${PICOX_DIR}/allocator/xpalloc.c
     ${PICOX_DIR}/string/xstr.c
-    ${PICOX_DIR}/misc/xdebug.c
     ${PICOX_DIR}/misc/xtokenizer.c
     ${EX_DIR}/sds/sds.c
     ${UNITY_DIR}/unity.c
