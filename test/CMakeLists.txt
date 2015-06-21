@@ -22,7 +22,9 @@ add_executable(alltests
     sds_test.c
     xfifo_test.c
     xlist_test.c
-    xmessage_buffer_test.c
+    xmsgbuf_test.c
+    xpalloc_test.c
+    xutils_test.c
     ${PICOX_DIR}/core/xdebug.c
     ${PICOX_DIR}/filesystem/xfile.c
     ${PICOX_DIR}/allocator/xsalloc.c

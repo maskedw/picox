@@ -54,8 +54,8 @@ typedef struct X__Chunk
 } X__Chunk;
 
 
-static void* X__Allocate(X__Chunk* top, size_t size);
-static void X__Deallocate(X__Chunk* top, void* ptr, size_t size);
+static void* X__Allocate(XPAlloc* self, size_t size);
+static void X__Deallocate(XPAlloc* self, void* ptr, size_t size);
 
 
 static const size_t X__ALIGN = ((sizeof(X__Chunk) <= XPALLOC_ALIGN) ?
@@ -68,7 +68,7 @@ void xpalloc_init(XPAlloc* self, void* heap, size_t size)
     XPALLOC_ASSERT(heap);
 
     self->heap = heap;
-    self->top = x_roundup_multiple_ptr(heap, X__ALIGN);
+    self->top = (uint8_t*)x_roundup_multiple((uintptr_t)heap, X__ALIGN);
 
     XPALLOC_ASSERT(size > (self->top - self->heap));
     self->capacity = size - (self->top - self->heap);
@@ -85,6 +85,8 @@ void xpalloc_clear(XPAlloc* self)
     XPALLOC_ASSERT(self);
 
     self->reserve = self->capacity;
+    self->top = (uint8_t*)x_roundup_multiple((uintptr_t)self->heap, X__ALIGN);
+
     X__Chunk* chunk = (X__Chunk*)self->top;
     chunk->next = NULL;
     chunk->size = self->capacity;
@@ -96,10 +98,11 @@ void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user)
     XPALLOC_ASSERT(self);
     XPALLOC_ASSERT(walker);
 
-    X__Chunk* chunk = (X__Chunk*)self->top;
+    const X__Chunk* chunk = (const X__Chunk*)self->top;
     while (chunk)
     {
-        walker(chunk, chunk->size, user);
+        walker((const uint8_t*)chunk, chunk->size, user);
+        chunk = chunk->next;
     }
 }
 
@@ -113,7 +116,7 @@ void* xpalloc_allocate(XPAlloc* self, size_t size)
 
     /* サイズ情報確保用の領域を余分に確保する。 */
     size = x_roundup_multiple(size + X__ALIGN, X__ALIGN);
-    ptr = X__Allocate((X__Chunk*)self->top, size);
+    ptr = X__Allocate(self, size);
 
     XPALLOC_NULL_ASSERT(ptr);
 
@@ -142,23 +145,23 @@ void xpalloc_deallocate(XPAlloc* self, void* ptr)
     char* const p = ((char*)ptr) - X__ALIGN;
     const size_t size = *(size_t*)p;
 
-    X__Deallocate((X__Chunk*)self->top, p, size);
+    X__Deallocate(self, p, size);
     self->reserve += size;
 }
 
 
-static void* X__Allocate(X__Chunk* top, size_t size)
+static void* X__Allocate(XPAlloc* self, size_t size)
 {
     /* ここはかなりトリッキーなので解説しておく。
      * nextがX__Chunkの先頭メンバになっているのがミソだ。
-     * ダブルポインタをポインタにキャストして、構造体先頭メンバの自己参照ポイン
-     * タを参照したら、(X__Chunk** p)の(*p)と同じ動きになる。つまりここでは
-     * p1->next == top となる。
-     * この時、そのさらに後ろのメンバ(size)を参照したら勿論まずいのだが、そうは
-     * 絶対ならないので問題ない。これに何の意味があるの？と言われると説明が難し
-     * いが、続く処理が色々簡略化できるのだ。
+     * 結果、
+     * p1->next == self->top となり、
+     * p1 = x とすると、self->topを置き換えることもできる。
+     * この時さらに後ろのメンバ(p1->size)を参照したら勿論まずいのだが、p1->size
+     * は参照しないので問題ない。
+     * わかりにくいのだが、これにより相当処理が簡略化できる。
      */
-    X__Chunk* p1 = (X__Chunk*)&top;
+    X__Chunk* p1 = (X__Chunk*)&self->top;
     X__Chunk* p = p1->next;
 
     for (;;)
@@ -195,81 +198,69 @@ static void* X__Allocate(X__Chunk* top, size_t size)
 }
 
 
-static void X__Deallocate(X__Chunk* top, void* ptr, size_t size)
+static void X__Deallocate(XPAlloc* self, void* ptr, size_t size)
 {
-    /* lchunk_sizeをわざわざ別変数にしている理由は、X__Allocate()の解説を参照せよ。
-     * lchunk->next == topの時、lchunk->sizeは参照できない。
-     */
-    X__Chunk* lchunk = (X__Chunk*)&top;
     X__Chunk* blk = ptr;
-    size_t lchunk_size = 0;
+    X__Chunk* chunk = (X__Chunk*)self->top;
+    X__Chunk* next_chunk;
 
-    /* アドレス上位側のチャンクをlchunk(left chunk)、下位側にある次のチャンクを
-     * rchunk (right chunk)と定義する。
-     * 次のチャンクがない時は、rchunkはNULLを指す。
-     * 解放対象のブロックを左右間で探し、なければチャンクを右にスライドさせてい
-     * く。
-     * 左側から順に探していくので、左側の断片化が進むと、どんどん性能が劣化して
-     * しまうが、簡単な実装なのでそれはやむなし。
-     */
+    XPALLOC_ASSERT(x_is_within_addr(ptr, self->heap, self->heap + self->capacity));
+    XPALLOC_ASSERT((uint8_t*)ptr + size <= self->heap + self->capacity);
+
     for(;;)
     {
-        X__Chunk* rchunk = lchunk->next;
+        next_chunk = chunk->next;
 
-        if ((rchunk == NULL) || (blk < rchunk))
+
+        if ((next_chunk == NULL) || (blk < next_chunk))
         {
-            /* rchunkが終端ではないのに、blkのブロックがrchunkの領域にオーバーラップしてたら、
-             * sizeか、アドレスが不正と判定できる。
-             */
-            XPALLOC_ASSERT(! ((rchunk != NULL) && (rchunk < (X__Chunk*)((uint8_t*)blk + size))));
+            /* 不正な解放ブロックとサイズ指定のチェック */
+            XPALLOC_ASSERT((next_chunk == NULL) || (next_chunk >= (X__Chunk*)((uint8_t*)blk + size)));
 
-            if (blk == (X__Chunk*)((uint8_t*)lchunk + lchunk_size))
+            /* マージできる？ */
+            if (blk == (X__Chunk*)((uint8_t*)chunk + chunk->size))
+                chunk->size += size;
+            else if  (blk < chunk)
             {
-                /* 左チャンクと解放ブロックの位置がピッタリ合わさっていたら左
-                 * チャンクとブロックはマージできる。*/
-                lchunk_size += size;
+                /* マージできる？ */
+                if (chunk == (X__Chunk*)((uint8_t*)blk + size))
+                {
+                    blk->next = next_chunk;
+                    blk->size = size + chunk->size;
+                }
+                else
+                {
+                    blk->next = chunk;
+                    blk->size = size;
+                }
+
+                chunk = blk;
+
+                /* topは常に最上位のチャンクを指す */
+                if (blk < (X__Chunk*)self->top)
+                    self->top = (uint8_t*)blk;
+
             }
             else
             {
-                /* blkが新たな左チャンクとなる。 */
-                lchunk->next = blk;
-                lchunk = blk;
-                lchunk_size = size;
+                blk->next = next_chunk;
+                chunk->next = blk;
+                chunk = blk;
+                chunk->size = size;
             }
 
-
-            if (rchunk == NULL)
+            /* 次のチャンクとマージできる？ */
+            if (next_chunk == (X__Chunk*)((uint8_t*)chunk + chunk->size))
             {
-                /* 右チャンクがないということは、左チャンクが最終チャンクという
-                 * ことだ。
-                 */
-                lchunk->next = NULL;
-                lchunk->size = lchunk_size;
-            }
-            else if (rchunk == (X__Chunk*)((uint8_t*)lchunk + lchunk_size))
-            {
-                /* 左チャンクと右チャンクの領域がピッタリ合わさっていれば左右
-                 * チャンクをマージできる。
-                 */
-                lchunk->next = rchunk->next;
-                lchunk->size = lchunk_size + rchunk->size;
-            }
-            else
-            {
-                /* 左右チャンク間に使用済みブロックあり */
-                lchunk->next = rchunk;
-                lchunk->size = lchunk_size;
+                chunk->next  = next_chunk->next;
+                chunk->size += next_chunk->size;
             }
 
             /* メモリ解放完了!! */
             break;
         }
-
         /* 次のループへ */
-        lchunk = rchunk;
-        lchunk_size = lchunk->size;
-
-        /* 左右チャンク間に解放ブロックがあるはずなので、整合性チェック */
-        XPALLOC_ASSERT(blk > ((X__Chunk*)((uint8_t*)lchunk + lchunk_size)));
+        chunk = next_chunk;
+        XPALLOC_ASSERT((blk >= ((X__Chunk*)((uint8_t*)chunk + chunk->size))));
     }
 }

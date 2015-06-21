@@ -75,7 +75,7 @@ extern "C" {
 /** 不正状態を検出します
  */
 #ifndef XPALLOC_ASSERT
-    #define XPALLOC_ASSERT(expr)   do { if (! (expr)) for(;;); } while (0)
+    #define XPALLOC_ASSERT(expr)   X_ASSERT(expr)
 #endif
 
 
@@ -141,7 +141,8 @@ xpalloc_heap(const XPAlloc* self)
 
 /** 空きメモリバイト数を返します
  */
-size_t xpalloc_reserve(const XPAlloc* self)
+static inline size_t
+xpalloc_reserve(const XPAlloc* self)
 {
     XPALLOC_ASSERT(self);
     return self->reserve;
@@ -158,13 +159,18 @@ xpalloc_capacity(const XPAlloc* self)
 }
 
 
+/** nバイトのメモリ確保を行った場合に必要な余分なメモリサイズ
+ */
+size_t xpalloc_overhead(const XPAlloc* self, size_t n);
+
+
 /** ヒープの空きブロック走査用コールバック関数です
  *
  *  @param chunk    空きブロックのポインタ
  *  @param size     空きブロックのサイズ
  *  @param user     ユーザーデータポインタ
  */
-typedef void (*XPAllocWalker)(const void* chunk, size_t size, void* user);
+typedef void (*XPAllocWalker)(const uint8_t* chunk, size_t size, void* user);
 
 
 /** ヒープ内の空きブロックを走査し、ブロックごとにwalkerを呼び出します

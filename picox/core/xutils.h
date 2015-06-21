@@ -47,6 +47,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>
+#include <picox/core/xcompiler.h>
 
 
 #ifdef __cplusplus
@@ -91,6 +92,45 @@ typedef union XMaxAlign
 /** 型typeのアライメントを返します。
  */
 #define X_ALIGN_OF(type)   X_OFFSET_OF(struct { char c; type member; }, member)
+
+
+/** @def    X_CONTAINER_OF
+ *  @brief  複合型のメンバを指すポインタから、複合型の先頭アドレスを取得します
+ *
+ *  @param  ptr    複合型typeのmemberを指すポインタ
+ *  @param  type   memberをメンバに持つ複合型
+ *  @param  member ptrが指す複合型のメンバ名
+ *
+ *  @code
+ *  typedef struct Foo
+ *   {
+ *       int          a;
+ *       int          b;
+ *  } Foo;
+
+ *  struct Foo foo;
+ *  int* mem_ptr = &foo.b;
+ *  Foo* foo_ptr = X_CONTAINER_OF(mem_ptr, struct Foo, b);
+ *  assert(&foo == foo_ptr);
+ *  @endcode
+ *
+ *  @note
+ *  コンパイラ拡張が使用できる場合、ptrがmemberを指すポインタであることを保証す
+ *  ることができます。
+ *
+ *  通常は型チェックをすることができないので、ptrに間違えたポインタを指定してし
+ *  まった場合、発見の難しい申告なバグの原因となりえるので注意してください。
+ */
+#if defined(X_HAS_TYPEOF) && defined(X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS)
+    #define X_CONTAINER_OF(ptr, type, member)                     \
+            ({                                                    \
+                const X_TYPEOF(((type*)0)->member)* mptr = (ptr); \
+                (type*)((char*)mptr - X_OFFSET_OF(type,member) ); \
+            })
+#else
+    #define X_CONTAINER_OF(ptr, type, member)                     \
+            ((type*) ((char*)(ptr) - X_OFFSET_OF(type, member)))
+#endif
 
 
 /** コンパイル時アサートを行います。
@@ -199,7 +239,15 @@ typedef union XMaxAlign
 
 /** xをmの倍数に切り上げた値を返します。
  */
-#define X_ROUNDUP_MULTIPLE(x, m) ((((uint32_t)x) + (m) - 1) & ((uint32_t)0 - (m)))
+#define X_ROUNDUP_MULTIPLE(x, m)    (((m) == 0) ? (x) : (((uint32_t)(x) + (m) - 1) / (m)) * (m))
+
+
+/** xをmの倍数に切り上げた値を返します。(mが2のべき乗の時に限る)
+ *
+ *  @note
+ *  mが2のべき乗であることがわかっている時は、こちらのバージョンの方が高速です。
+ */
+#define X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(x, m) ((((uint32_t)(x)) + (m) - 1) & ((uint32_t)0 - (m)))
 
 
 /** xを2の倍数に切り上げた値を返します。
@@ -218,17 +266,25 @@ typedef union XMaxAlign
 
 /** xを最も近い2のべき乗に切り上げた値を返します。
  */
-#define X_ROUNDUP_POWER_OF_TWO(x)   X_ROUNDUP_POWER_OF_TWO_1((x) - 1)
-
-
-/** xをmの倍数に切り下げた値を返します。
- */
-#define X_ROUNDDOWN_MULTIPLE(x, m)   ((x) - ((x) % (m)))
+#define X_ROUNDUP_POWER_OF_TWO(x)   X_ROUNDUP_POWER_OF_TWO_1((uint32_t)(x) - 1)
 
 
 /** xを2の倍数に切り下げた値を返します。
  */
 #define X_ROUNDDOWN_MULTIPLE_OF_TWO(x)  (X_ROUNDDOWN_MULTIPLE((x), 2))
+
+
+/** xをmの倍数に切り下げた値を返します。
+ */
+#define X_ROUNDDOWN_MULTIPLE(x, m)   (((m) == 0) ? (x) : ((uint32_t)(x) - ((x) % (m))))
+
+
+/** xをmの倍数に切り下げた値を返します。(mが2のべき乗の時に限る)
+ *
+ *  @note
+ *  mが2のべき乗であることがわかっている時は、こちらのバージョンの方が高速です。
+ */
+#define X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(x, m) (X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO((x) - (m), m))
 
 
 /// @cond IGNORE
@@ -242,17 +298,12 @@ typedef union XMaxAlign
 
 /** xを最も近い2のべき乗に切り下げた値を返します。
  */
-#define X_ROUNDDOWN_POWER_OF_TWO(x)   X_ROUNDDOWN_POWER_OF_TWO_1((x) | ((x) >> 1))
+#define X_ROUNDDOWN_POWER_OF_TWO(x)   X_ROUNDDOWN_POWER_OF_TWO_1(((uint32_t)(x)) | (((uint32_t)(x)) >> 1))
 
 
 /** xがmの倍数かどうかをBool値で返します。
  */
 #define X_IS_MULTIPLE(x, m)  (X_ROUNDUP_MULTIPLE(x, m) == (x))
-
-
-/** xが2の倍数かどうかをBool値で返します。
- */
-#define X_IS_MULTIPLE_OF_TWO(x)  (X_ROUNDUP_MULTIPLE_OF_TWO(x) == (x))
 
 
 /** xが2のべき乗かどうかをBool値で返します。
@@ -272,7 +323,7 @@ typedef union XMaxAlign
 
 /** xの上位8bitの値を返します。
  */
-#define X_HIGH_BYTE(x) (((uint8_t)(x)) >> 8)
+#define X_HIGH_BYTE(x) ((uint8_t)((x) >> 8))
 
 
 /** xの下位8bitの値を返します。
@@ -721,21 +772,14 @@ static inline uint32_t x_roundup_multiple(uint32_t x, uint32_t m)
 }
 
 
-static inline void* x_roundup_multiple_ptr(const void* x, uint32_t m)
-{
-    return (void*)(((uintptr_t)x + m - 1) & ((uintptr_t)0 - m));
-}
-
-static inline uintptr_t x_roundup_multiple_uintptr(uintptr_t x, uint32_t m)
-{
-    return (uintptr_t)(x_roundup_multiple_ptr((void*)x, m));
-}
-
-/** xを2の倍数に切り上げた値を返します。
+/** xをmの倍数に切り上げた値を返します。(mが2のべき乗の時に限る)
+ *
+ *  @note
+ *  mが2のべき乗であることがわかっている時は、こちらのバージョンの方が高速です。
  */
-static inline uint32_t x_roundup_multiple_of_two(uint32_t x)
+static inline uint32_t x_roundup_multiple_when_power_of_two(uint32_t x, uint32_t m)
 {
-    return X_ROUNDUP_MULTIPLE_OF_TWO(x);
+    return X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(x, m);
 }
 
 
@@ -755,11 +799,14 @@ static inline uint32_t x_rounddown_multiple(uint32_t x, uint32_t m)
 }
 
 
-/** xを2の倍数に切り下げた値を返します。
+/** xをmの倍数に切り下げた値を返します。(mが2のべき乗の時に限る)
+ *
+ *  @note
+ *  mが2のべき乗であることがわかっている時は、こちらのバージョンの方が高速です。
  */
-static inline uint32_t x_rounddown_multiple_of_two(uint32_t x)
+static inline uint32_t x_rounddown_multiple_when_power_of_two(uint32_t x, uint32_t m)
 {
-    return X_ROUNDDOWN_MULTIPLE_OF_TWO(x);
+    return X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(x, m);
 }
 
 
@@ -776,14 +823,6 @@ static inline uint32_t x_rounddown_power_of_two(uint32_t x)
 static inline bool x_is_multiple(uint32_t x, uint32_t m)
 {
     return X_IS_MULTIPLE(x, m);
-}
-
-
-/** xが2の倍数かどうかをBool値で返します。
- */
-static inline bool x_is_multiple_of_two(uint32_t x)
-{
-    return X_IS_MULTIPLE_OF_TWO(x) == x;
 }
 
 
