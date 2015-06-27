@@ -1,6 +1,6 @@
 /**
  *       @file  xutils.h
- *      @brief  ’áƒŒƒxƒ‹‚È‚ ‚ê‚±‚êG‘½‚Èƒ†[ƒeƒBƒŠƒeƒBW
+ *      @brief  ä½ãƒ¬ãƒ™ãƒ«ãªã‚ã‚Œã“ã‚Œé›‘å¤šãªãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£é›†
  *
  *    @details
  *
@@ -40,7 +40,6 @@
 #define picox_xutils_h_
 
 
-/* std */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -62,10 +61,14 @@ extern "C" {
 
 #ifndef X_BYTE_ORDER
     #define X_BYTE_ORDER       X_BYTE_ORDER_UNKNOWN
+#else
+    #if (X_BYTE_ORDER != X_BYTE_ORDER_LITTLE) && (X_BYTE_ORDER != X_BYTE_ORDER_BIG)
+        #error Invalid byte order
+    #endif
 #endif
 
 
-/** ‘g‚İŒ^‚ÌÅ‘åƒAƒ‰ƒCƒƒ“ƒgŒ^‚Å‚·B
+/** çµ„è¾¼ã¿å‹ã®æœ€å¤§ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆå‹ã§ã™ã€‚
  */
 typedef union XMaxAlign
 {
@@ -74,32 +77,32 @@ typedef union XMaxAlign
 } XMaxAlign;
 
 
-/** Å‘åƒTƒCƒY‚ÌƒAƒ‰ƒCƒƒ“ƒg‚ÅsizeƒoƒCƒgˆÈã‚Ì—Ìˆæ‚ğ‚Â•Ï”name‚ğ’è‹`‚µ‚Ü‚·B
+/** æœ€å¤§ã‚µã‚¤ã‚ºã®ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆã§sizeãƒã‚¤ãƒˆä»¥ä¸Šã®é ˜åŸŸã‚’æŒã¤å¤‰æ•°nameã‚’å®šç¾©ã—ã¾ã™ã€‚
  */
 #define X_DEF_MAX_ALIGNED(name, size) XMaxAlign name[((size) + sizeof(XMaxAlign) - 1) / sizeof(XMaxAlign)]
 
 
-/** \‘¢‘Ì‚â‹¤—p‘Ìƒƒ“ƒo‚Ìsizeof‚ğ•Ô‚µ‚Ü‚·B
+/** æ§‹é€ ä½“ã‚„å…±ç”¨ä½“ãƒ¡ãƒ³ãƒã®sizeofã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_SIZEOF_MEM(s, m) (sizeof(((s*)0)->m))
 
 
-/** \‘¢‘Ì‚â‹¤—p‘Ìƒƒ“ƒo‚Ìæ“ª‚©‚ç‚ÌƒIƒtƒZƒbƒg‚ğ•Ô‚µ‚Ü‚·B
+/** æ§‹é€ ä½“ã‚„å…±ç”¨ä½“ãƒ¡ãƒ³ãƒã®å…ˆé ­ã‹ã‚‰ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_OFFSET_OF(s, m)   ((uintptr_t)&(((s *)0)->m))
 
 
-/** Œ^type‚ÌƒAƒ‰ƒCƒƒ“ƒg‚ğ•Ô‚µ‚Ü‚·B
+/** å‹typeã®ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_ALIGN_OF(type)   X_OFFSET_OF(struct { char c; type member; }, member)
 
 
 /** @def    X_CONTAINER_OF
- *  @brief  •¡‡Œ^‚Ìƒƒ“ƒo‚ğw‚·ƒ|ƒCƒ“ƒ^‚©‚çA•¡‡Œ^‚Ìæ“ªƒAƒhƒŒƒX‚ğæ“¾‚µ‚Ü‚·
+ *  @brief  è¤‡åˆå‹ã®ãƒ¡ãƒ³ãƒã‚’æŒ‡ã™ãƒã‚¤ãƒ³ã‚¿ã‹ã‚‰ã€è¤‡åˆå‹ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—ã—ã¾ã™
  *
- *  @param  ptr    •¡‡Œ^type‚Ìmember‚ğw‚·ƒ|ƒCƒ“ƒ^
- *  @param  type   member‚ğƒƒ“ƒo‚É‚Â•¡‡Œ^
- *  @param  member ptr‚ªw‚·•¡‡Œ^‚Ìƒƒ“ƒo–¼
+ *  @param  ptr    è¤‡åˆå‹typeã®memberã‚’æŒ‡ã™ãƒã‚¤ãƒ³ã‚¿
+ *  @param  type   memberã‚’ãƒ¡ãƒ³ãƒã«æŒã¤è¤‡åˆå‹
+ *  @param  member ptrãŒæŒ‡ã™è¤‡åˆå‹ã®ãƒ¡ãƒ³ãƒå
  *
  *  @code
  *  typedef struct Foo
@@ -115,11 +118,11 @@ typedef union XMaxAlign
  *  @endcode
  *
  *  @note
- *  ƒRƒ“ƒpƒCƒ‰Šg’£‚ªg—p‚Å‚«‚éê‡Aptr‚ªmember‚ğw‚·ƒ|ƒCƒ“ƒ^‚Å‚ ‚é‚±‚Æ‚ğ•ÛØ‚·
- *  ‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B
+ *  ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©æ‹¡å¼µãŒä½¿ç”¨ã§ãã‚‹å ´åˆã€ptrãŒmemberã¨åŒã˜å‹ã®ãƒã‚¤ãƒ³ã‚¿ã§ã‚ã‚‹ã“ã¨ã‚’
+ *  ãƒã‚§ãƒƒã‚¯ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
  *
- *  ’Êí‚ÍŒ^ƒ`ƒFƒbƒN‚ğ‚·‚é‚±‚Æ‚ª‚Å‚«‚È‚¢‚Ì‚ÅAptr‚ÉŠÔˆá‚¦‚½ƒ|ƒCƒ“ƒ^‚ğw’è‚µ‚Ä‚µ
- *  ‚Ü‚Á‚½ê‡A”­Œ©‚Ì“ï‚µ‚¢\‚ÈƒoƒO‚ÌŒ´ˆö‚Æ‚È‚è‚¦‚é‚Ì‚Å’ˆÓ‚µ‚Ä‚­‚¾‚³‚¢B
+ *  é€šå¸¸ã¯å‹ãƒã‚§ãƒƒã‚¯ã‚’ã™ã‚‹ã“ã¨ãŒã§ããªã„ã®ã§ã€ptrã«é–“é•ãˆãŸãƒã‚¤ãƒ³ã‚¿ã‚’æŒ‡å®šã—ã¦ã—
+ *  ã¾ã£ãŸå ´åˆã€ç™ºè¦‹ã®é›£ã—ã„ç”³å‘Šãªãƒã‚°ã®åŸå› ã¨ãªã‚Šãˆã‚‹ã®ã§æ³¨æ„ã—ã¦ãã ã•ã„ã€‚
  */
 #if defined(X_HAS_TYPEOF) && defined(X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS)
     #define X_CONTAINER_OF(ptr, type, member)                     \
@@ -133,126 +136,126 @@ typedef union XMaxAlign
 #endif
 
 
-/** ƒRƒ“ƒpƒCƒ‹ƒAƒT[ƒg‚ğs‚¢‚Ü‚·B
+/// @cond IGNORE
+#define X_STATIC_ASSERT_CAT_(a, b)          a ## b
+/// @endcond IGNORE
+
+
+/** ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã‚¢ã‚µãƒ¼ãƒˆã‚’è¡Œã„ã¾ã™ã€‚
  */
 #define X_STATIC_ASSERT(cond)  \
-    enum { X_CAT(X_STATIC_ASSERTION_FAILED, __LINE__) = \
+    enum { X_STATIC_ASSERT_CAT_(X_STATIC_ASSERTION_FAILED, __LINE__) = \
           sizeof( struct { int assertion_failed[(cond) ? 1: -1];})}
 
 
-/** ƒg[ƒNƒ“a, b‚ğ˜AŒ‹‚µ‚Ü‚·B
- */
-#define X_CAT(a, b)            X_CAT__(a, b)
-
-
-/** ƒg[ƒNƒ“a, b, c‚ğ˜AŒ‹‚µ‚Ü‚·B
- */
-#define X_CAT3(a,b,c)          X_CAT(X_CAT(a,b),c)
-
-
-/** ƒg[ƒNƒ“a, b, c, d‚ğ˜AŒ‹‚µ‚Ü‚·B
- */
-#define X_CAT4(a,b,c,d)        X_CAT(X_CAT3(a,b,c),d)
-
-
-/** ƒg[ƒNƒ“a, b, c, d, e‚ğ˜AŒ‹‚µ‚Ü‚·B
- */
-#define X_CAT5(a,b,c,d,e)      X_CAT(X_CAT4(a,b,c,d),e)
-
-/// @cond IGNORE
-#define X_CAT__(a, b)          a ## b
-/// @endcond IGNORE
-
-
-/** ƒg[ƒNƒ“text‚ğ•¶š—ñ‰»‚µ‚Ü‚·B
- *
- *  @note
- *  X_STRINGIZE__()‚ğ’Ê‚µ‚Ä2’iŠK‚Ìƒ}ƒNƒ‚ğg—p‚µ‚Ä‚¢‚é‚Ì‚ÍAtext‚Édefine‚³‚ê‚½
- *  ƒg[ƒNƒ“‚ğ“n‚³‚ê‚½‚ÉAdefine‚ğ“WŠJ‚µ‚½Œã‚Ì’l‚Å•¶š—ñ‰»‚·‚é‚½‚ß‚Å‚·B
- */
-#define X_STRINGIZE(text)      X_STRINGIZE__(text)
-
-/// @cond IGNORE
-#define X_STRINGIZE__(text)    #text
-/// @endcond IGNORE
-
-
-/** bit x‚ğ•Ô‚µ‚Ü‚·B
+/** bit xã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_BIT(x)       (1UL << (x))
 
 
-/** a,b‚ğ”äŠr‚µA¬‚³‚¢•û‚ğ•Ô‚µ‚Ü‚·B
+/** å‹Tã®å¤‰æ•°ã¨ã—ã¦ã€x, yã‚’äº¤æ›ã—ã¾ã™ã€‚
+ */
+#define X_SWAP(x, y, T) do { T tmp = x; x = y; y = tmp; } while (0)
+
+
+/** a,bã‚’æ¯”è¼ƒã—ã€å°ã•ã„æ–¹ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_MIN(a,b)     (((a)<(b))?(a):(b))
 
 
-/** a,b‚ğ”äŠr‚µA‘å‚«‚¢•û‚ğ•Ô‚µ‚Ü‚·B
+/** a,bã‚’æ¯”è¼ƒã—ã€å¤§ãã„æ–¹ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_MAX(a,b)     (((a)>(b))?(a):(b))
 
 
-/** cond == true‚ÌAbreak•¶‚ğÀs‚µ‚Ü‚·B
+/** xã‚’a, bã®ç¯„å›²å†…ã«åã‚ã¾ã™ã€‚
+ *
+ *  @param a ä¸‹é™
+ *  @param b ä¸Šé™
+ *  @return
+ *  xãŒaä»¥ä¸Šã€bä»¥ä¸‹ã®æ™‚ã¯ã€xãŒãã®ã¾ã¾è¿”ã‚Šã¾ã™ã€‚aæœªæº€ã®ã¨ãã¯a, bã‚ˆã‚Šå¤§ãã„ã¨ã
+ *  ã¯bãŒè¿”ã‚Šã¾ã™ã€‚
+ */
+#define X_CONSTRAIN(x, a, b)    (((x) < (a)) ? (a) : ((b) < (x)) ? (b) : (x))
+
+
+/** cond == trueã®æ™‚ã€breakæ–‡ã‚’å®Ÿè¡Œã—ã¾ã™ã€‚
  */
 #define X_BREAK_IF(cond)   if(cond) break
 
 
-/** cond == true‚ÌAlabel‚ÖƒWƒƒƒ“ƒv‚·‚égoto•¶‚ğÀs‚µ‚Ü‚·B
+/** cond == trueã®æ™‚ã€å¼exprã‚’å®Ÿè¡Œã—ã¾ã™ã€‚
+ */
+#define X_EXPR_IF(cond, expr)   if(cond) expr
+
+
+/** cond == trueã®æ™‚ã€labelã¸ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹gotoæ–‡ã‚’å®Ÿè¡Œã—ã¾ã™ã€‚
  */
 #define X_GOTO_IF(cond, label)   if(cond) goto label
 
 
-/** ƒRƒ“ƒpƒCƒ‰‚É‚æ‚é–¢g—p•Ï”‚ÌŒx‚ğ—}§‚·‚éƒ}ƒNƒ‚Å‚·B
+/** ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã«ã‚ˆã‚‹æœªä½¿ç”¨å¤‰æ•°ã®è­¦å‘Šã‚’æŠ‘åˆ¶ã™ã‚‹ãƒã‚¯ãƒ­ã§ã™ã€‚
  */
 #define X_UNUSED(x)    (void)(x)
 
 
-/** –³ŒÀƒ‹[ƒv‚ğ•\Œ»‚·‚éƒ}ƒNƒ‚Å‚·B
+/** ç„¡é™ãƒ«ãƒ¼ãƒ—ã‚’è¡¨ç¾ã™ã‚‹ãƒã‚¯ãƒ­ã§ã™ã€‚
  */
 #define X_FOREVER()    for (;;)
 
 
-/** xƒrƒbƒg–Ú‚Ìƒrƒbƒg‚ğ•Ô‚µ‚Ü‚·B
+/** xãƒ“ãƒƒãƒˆç›®ã®ãƒ“ãƒƒãƒˆã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_BIT(x) (1UL << (x))
 
 
-/** ˆêŸŒ³”z—ñ‚Ì—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** ä¸€æ¬¡å…ƒé…åˆ—ã®è¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_COUNT_OF(a)      (sizeof(a) / sizeof(*(a)))
 
 
-/** “ñŸŒ³”z—ñ‚Ìs—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** äºŒæ¬¡å…ƒé…åˆ—ã®è¡Œè¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_COUNT_OF_ROW(x) (sizeof(x) / sizeof(x[0]))
 
 
-/** “ñŸŒ³”z—ñ‚Ì—ñ—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** äºŒæ¬¡å…ƒé…åˆ—ã®åˆ—è¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_COUNT_OF_COL(x) (sizeof(x[0]) / sizeof(x[0][0]))
 
 
-/** “ñŸŒ³”z—ñ‚Ì—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** äºŒæ¬¡å…ƒé…åˆ—ã®è¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_COUNT_OF_2D(x)   (X_COUNT_OF_ROW(x) * X_COUNT_OF_COL(x))
 
 
-/** x‚ğm‚Ì”{”‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã‚’mã®å€æ•°ã«åˆ‡ã‚Šä¸Šã’ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_ROUNDUP_MULTIPLE(x, m)    (((m) == 0) ? (x) : (((uint32_t)(x) + (m) - 1) / (m)) * (m))
 
 
-/** x‚ğm‚Ì”{”‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B(m‚ª2‚Ì‚×‚«æ‚Ì‚ÉŒÀ‚é)
+/** X_ROUNDUP_MULTIPLE()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint32_t x_roundup_multiple(uint32_t x, uint32_t m)
+{
+    return X_ROUNDUP_MULTIPLE(x, m);
+}
+
+
+/** xã‚’mã®å€æ•°ã«åˆ‡ã‚Šä¸Šã’ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚(mãŒ2ã®ã¹ãä¹—ã®æ™‚ã«é™ã‚‹)
  *
  *  @note
- *  m‚ª2‚Ì‚×‚«æ‚Å‚ ‚é‚±‚Æ‚ª‚í‚©‚Á‚Ä‚¢‚é‚ÍA‚±‚¿‚ç‚Ìƒo[ƒWƒ‡ƒ“‚Ì•û‚ª‚‘¬‚Å‚·B
+ *  mãŒ2ã®ã¹ãä¹—ã§ã‚ã‚‹ã“ã¨ãŒã‚ã‹ã£ã¦ã„ã‚‹æ™‚ã¯ã€ã“ã¡ã‚‰ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã®æ–¹ãŒé«˜é€Ÿã§ã™ã€‚
  */
 #define X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(x, m) ((((uint32_t)(x)) + (m) - 1) & ((uint32_t)0 - (m)))
 
 
-/** x‚ğ2‚Ì”{”‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
  */
-#define X_ROUNDUP_MULTIPLE_OF_TWO(x) (X_ROUNDUP_MULTIPLE((x), 2))
+static inline uint32_t x_roundup_multiple_when_power_of_two(uint32_t x, uint32_t m)
+{
+    return X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(x, m);
+}
 
 
 /// @cond IGNORE
@@ -264,27 +267,46 @@ typedef union XMaxAlign
 /// @endcond IGNORE
 
 
-/** x‚ğÅ‚à‹ß‚¢2‚Ì‚×‚«æ‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã‚’æœ€ã‚‚è¿‘ã„2ã®ã¹ãä¹—ã«åˆ‡ã‚Šä¸Šã’ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_ROUNDUP_POWER_OF_TWO(x)   X_ROUNDUP_POWER_OF_TWO_1((uint32_t)(x) - 1)
 
 
-/** x‚ğ2‚Ì”{”‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** X_ROUNDUP_POWER_OF_TWO()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
  */
-#define X_ROUNDDOWN_MULTIPLE_OF_TWO(x)  (X_ROUNDDOWN_MULTIPLE((x), 2))
+static inline uint32_t x_roundup_power_of_two(uint32_t x)
+{
+    return X_ROUNDUP_POWER_OF_TWO(x);
+}
 
 
-/** x‚ğm‚Ì”{”‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã‚’mã®å€æ•°ã«åˆ‡ã‚Šä¸‹ã’ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_ROUNDDOWN_MULTIPLE(x, m)   (((m) == 0) ? (x) : ((uint32_t)(x) - ((x) % (m))))
 
 
-/** x‚ğm‚Ì”{”‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B(m‚ª2‚Ì‚×‚«æ‚Ì‚ÉŒÀ‚é)
+/** X_ROUNDDOWN_MULTIPLE()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint32_t x_rounddown_multiple(uint32_t x, uint32_t m)
+{
+    return X_ROUNDDOWN_MULTIPLE(x, m);
+}
+
+
+/** xã‚’mã®å€æ•°ã«åˆ‡ã‚Šä¸‹ã’ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚(mãŒ2ã®ã¹ãä¹—ã®æ™‚ã«é™ã‚‹)
  *
  *  @note
- *  m‚ª2‚Ì‚×‚«æ‚Å‚ ‚é‚±‚Æ‚ª‚í‚©‚Á‚Ä‚¢‚é‚ÍA‚±‚¿‚ç‚Ìƒo[ƒWƒ‡ƒ“‚Ì•û‚ª‚‘¬‚Å‚·B
+ *  mãŒ2ã®ã¹ãä¹—ã§ã‚ã‚‹ã“ã¨ãŒã‚ã‹ã£ã¦ã„ã‚‹æ™‚ã¯ã€ã“ã¡ã‚‰ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã®æ–¹ãŒé«˜é€Ÿã§ã™ã€‚
  */
 #define X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(x, m) (X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO((x) - (m), m))
+
+
+/** X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint32_t x_rounddown_multiple_when_power_of_two(uint32_t x, uint32_t m)
+{
+    return X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(x, m);
+}
 
 
 /// @cond IGNORE
@@ -296,208 +318,81 @@ typedef union XMaxAlign
 /// @endcond IGNORE
 
 
-/** x‚ğÅ‚à‹ß‚¢2‚Ì‚×‚«æ‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã‚’æœ€ã‚‚è¿‘ã„2ã®ã¹ãä¹—ã«åˆ‡ã‚Šä¸‹ã’ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_ROUNDDOWN_POWER_OF_TWO(x)   X_ROUNDDOWN_POWER_OF_TWO_1(((uint32_t)(x)) | (((uint32_t)(x)) >> 1))
 
 
-/** x‚ªm‚Ì”{”‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
+/** X_ROUNDDOWN_POWER_OF_TWO()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint32_t x_rounddown_power_of_two(uint32_t x)
+{
+    return X_ROUNDDOWN_POWER_OF_TWO(x);
+}
+
+
+/** xãŒmã®å€æ•°ã‹ã©ã†ã‹ã‚’Boolå€¤ã§è¿”ã—ã¾ã™ã€‚
  */
 #define X_IS_MULTIPLE(x, m)  (X_ROUNDUP_MULTIPLE(x, m) == (x))
 
 
-/** x‚ª2‚Ì‚×‚«æ‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
+/** X_IS_MULTIPLE()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline bool x_is_multiple(uint32_t x, uint32_t m)
+{
+    return X_IS_MULTIPLE(x, m);
+}
+
+
+/** xãŒ2ã®ã¹ãä¹—ã‹ã©ã†ã‹ã‚’Boolå€¤ã§è¿”ã—ã¾ã™ã€‚
  */
 #define X_IS_POWER_OF_TWO(x)   (((x) & -(x)) == (x))
 
 
-/** x‚ÌãˆÊ16bit‚Ì’l‚ğ•Ô‚µ‚Ü‚·B
+/** X_IS_POWER_OF_TWO()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline bool x_is_power_of_two(uint32_t x)
+{
+    return X_IS_POWER_OF_TWO(x);
+}
+
+
+/** xã®ä¸Šä½16bitã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_HIGH_WORD(x) ((uint16_t)((x) >> 16))
 
 
-/** x‚Ì‰ºˆÊ16bit‚Ì’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã®ä¸‹ä½16bitã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_LOW_WORD(x) ((uint16_t)(x))
 
 
-/** x‚ÌãˆÊ8bit‚Ì’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã®ä¸Šä½8bitã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_HIGH_BYTE(x) ((uint8_t)((x) >> 8))
 
 
-/** x‚Ì‰ºˆÊ8bit‚Ì’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã®ä¸‹ä½8bitã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_LOW_BYTE(x) ((uint8_t)(x))
 
 
-/** x‚ÌãˆÊ4bit‚Ì’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã®ä¸Šä½4bitã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_HIGH_NIBBLE(x) (((uint8_t)(x)) >> 4)
 
 
-/** x‚Ì‰ºˆÊ4bit‚Ì’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã®ä¸‹ä½4bitã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
 #define X_LOW_NIBBLE(x) (((uint8_t)(x)) & 0x0f)
 
 
-/// @cond IGNORE
-#define X_REVERSE_BITS8__(x)                      (((((x) & 0x55) << 1) | (((x) & 0xaa) >> 1)))
-#define X_REVERSE_BITS8_(x)   (X_REVERSE_BITS8__  ((((x) & 0x33) << 2) | (((x) & 0xcc) >> 2)))
-/// @endcond IGNORE
-
-
-/** x‚Ì‰ºˆÊ8bit‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
+/** xã®ä¸‹ä½8bitã‚’é€†è»¢ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
  */
-#define X_REVERSE_BITS8(x)    (X_REVERSE_BITS8_  (((uint8_t)(x)) << 4) |  (((uint8_t)(x)) >> 4))
-
-
-/** x‚Ì‰ºˆÊ16bit‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_REVERSE_BITS16(x)   (((uint16_t)(X_REVERSE_BITS8(ME_HIGH_BYTE(x)))) | \
-                               (((uint16_t) X_REVERSE_BITS8(X_LOW_BYTE(x)))  << 8))
-
-
-/** x‚Ì‰ºˆÊ32bit‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_REVERSE_BITS32(x)   (((uint32_t)(X_REVERSE_BITS16(X_HIGH_WORD(x)))) | \
-                               (((uint32_t)X_REVERSE_BITS16(X_LOW_WORD(x))) << 16))
-
-
-/** x‚Ì‰ºˆÊ2ƒoƒCƒg‚ÌƒoƒCƒgƒI[ƒ_[‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_REVERSE_ENDIAN16(x)  ((((uint16_t)(x)) << 8) | (((uint16_t)(x) >> 8) & 0x00ff))
-
-
-/** x‚Ì‰ºˆÊ4ƒoƒCƒg‚ÌƒoƒCƒgƒI[ƒ_[‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_REVERSE_ENDIAN32(x) (((((uint32_t)(x)) << 24)     | \
-                                (((x) <<  8) & 0x00ff0000)   | \
-                                (((x) >>  8) & 0x0000ff00)   | \
-                                (((x) >> 24) & 0x000000ff)))
-
-
-/** x‚Ì‰ºˆÊ8bit‚ğŠï”ƒrƒbƒg‚Åƒ}ƒXƒN‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_ODD_BITS8(x)  (((uint8_t)(x)) & 0x55)
-
-
-/** x‚Ì‰ºˆÊ16bit‚ğŠï”ƒrƒbƒg‚Åƒ}ƒXƒN‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_ODD_BITS16(x) (((uint16_t)(x)) & 0x5555)
-
-
-/** x‚Ì‰ºˆÊ32bit‚ğŠï”ƒrƒbƒg‚Åƒ}ƒXƒN‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_ODD_BITS32(x) (((uint32_t)(x)) & 0x55555555)
-
-
-/** x‚Ì‰ºˆÊ8bit‚ğ‹ô”ƒrƒbƒg‚Åƒ}ƒXƒN‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_EVEN_BITS8(x)  (((uint8_t)(x)) & 0xaa)
-
-
-/** x‚Ì‰ºˆÊ16bit‚ğ‹ô”ƒrƒbƒg‚Åƒ}ƒXƒN‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_EVEN_BITS16(x) (((uint16_t)(x)) & 0xaaaa)
-
-
-/** x‚Ì‰ºˆÊ32bit‚ğ‹ô”ƒrƒbƒg‚Åƒ}ƒXƒN‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_EVEN_BITS32(x) (((uint32_t)(x)) & 0xaaaaaaaa)
-
-
-/** x‚Ì‰ºˆÊ8bit‚Ì—×‚è‡‚Á‚½ƒrƒbƒg‚ğŒğŠ·‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_SWAP_ADJACENT_BITS8(x)  ((X_ODD_BITS8(x) << 1) | ((X_EVEN_BITS8(x)) >> 1))
-
-
-/** x‚Ì‰ºˆÊ16bit‚Ì—×‚è‡‚Á‚½ƒrƒbƒg‚ğŒğŠ·‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_SWAP_ADJACENT_BITS16(x) ((X_ODD_BITS16(x) << 1) | ((X_EVEN_BITS16(x)) >> 1))
-
-
-/** x‚Ì‰ºˆÊ32bit‚Ì—×‚è‡‚Á‚½ƒrƒbƒg‚ğŒğŠ·‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_SWAP_ADJACENT_BITS32(x) ((X_ODD_BITS32(x) << 1) | ((X_EVEN_BITS32(x)) >> 1))
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É8bitƒf[ƒ^‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_LD_U8(ptr)  (uint8_t)(*(uint8_t*)(ptr))
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É16bitƒŠƒgƒ‹ƒGƒ“ƒfƒBƒAƒ“ƒf[ƒ^‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_LD_U16_LIT(ptr) (uint16_t)(((uint16_t)*((uint8_t*)(ptr)+1)<<8)|(uint16_t)*(uint8_t*)(ptr))
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É32bitƒŠƒgƒ‹ƒGƒ“ƒfƒBƒAƒ“ƒf[ƒ^‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_LD_U32_LIT(ptr)                                          \
-        (uint32_t)(((uint32_t)*((uint8_t*)(ptr)+3)<<24)|            \
-                  ((uint32_t)*((uint8_t*)(ptr)+2)<<16) |            \
-                  ((uint16_t)*((uint8_t*)(ptr)+1)<<8)  |            \
-                  *(uint8_t*)(ptr))
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É16bitƒrƒbƒOƒGƒ“ƒfƒBƒAƒ“ƒf[ƒ^‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_LD_U16_BIG(ptr) (uint16_t)(((uint16_t)(*((uint8_t*)(ptr)))<<8)|(uint16_t)*((uint8_t*)(ptr) + 1))
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É32bitƒrƒbƒOƒGƒ“ƒfƒBƒAƒ“ƒf[ƒ^‚ğ•Ô‚µ‚Ü‚·B
- */
-#define X_LD_U32_BIG(ptr)                                         \
-        (uint32_t)(((uint32_t)*((uint8_t*)(ptr)+0)<<24)|           \
-                  ((uint32_t)*((uint8_t*)(ptr)+1)<<16) |           \
-                  ((uint16_t)*((uint8_t*)(ptr)+2)<<8)  |           \
-                  *(uint8_t*)((ptr) + 3))
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É8bitƒf[ƒ^‚ğƒZƒbƒg‚µ‚Ü‚·B
- */
-#define X_ST_U8(ptr, val)    *(uint8_t*)(ptr)=(uint8_t)(val)
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É16bitƒf[ƒ^‚ğƒŠƒgƒ‹ƒGƒ“ƒfƒBƒAƒ“‚ÅƒZƒbƒg‚µ‚Ü‚·B
- */
-#define X_ST_U16_LIT(ptr, val)                                             \
-        do {                                                                \
-            *(uint8_t*)(ptr)=(uint8_t)(val);                                \
-            *((uint8_t*)(ptr)+1)=(uint8_t)((uint16_t)(val)>>8);             \
-        } while(0)
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É32bitƒf[ƒ^‚ğƒŠƒgƒ‹ƒGƒ“ƒfƒBƒAƒ“‚ÅƒZƒbƒg‚µ‚Ü‚·B
- */
-#define X_ST_U32_LIT(ptr, val)                                             \
-    do {                                                                    \
-        *(uint8_t*)(ptr)=(uint8_t)(val);                                    \
-        *((uint8_t*)(ptr)+1)=(uint8_t)((uint16_t)(val)>>8);                 \
-        *((uint8_t*)(ptr)+2)=(uint8_t)((uint32_t)(val)>>16);                \
-        *((uint8_t*)(ptr)+3)=(uint8_t)((uint32_t)(val)>>24);                \
-    } while(0)
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É16bitƒf[ƒ^‚ğƒrƒbƒOƒGƒ“ƒfƒBƒAƒ“‚ÅƒZƒbƒg‚µ‚Ü‚·B
- */
-#define X_ST_U16_BIG(ptr, val)                                             \
-        do {                                                                \
-            *((uint8_t*)(ptr)+1)=(uint8_t)(val);                            \
-            *((uint8_t*)(ptr))=(uint8_t)((uint16_t)(val)>>8);               \
-        } while(0)
-
-
-/** ƒoƒCƒiƒŠƒZ[ƒt‚É32bitƒf[ƒ^‚ğƒrƒbƒOƒGƒ“ƒfƒBƒAƒ“‚ÅƒZƒbƒg‚µ‚Ü‚·B
- */
-#define X_ST_U32_BIG(ptr, val)                                             \
-    do {                                                                    \
-        *((uint8_t*)(ptr)+3)=(uint8_t)(val);                                \
-        *((uint8_t*)(ptr)+2)=(uint8_t)((uint16_t)(val)>>8);                 \
-        *((uint8_t*)(ptr)+1)=(uint8_t)((uint32_t)(val)>>16);                \
-        *((uint8_t*)(ptr)+0)=(uint8_t)((uint32_t)(val)>>24);                \
-    } while(0)
+#define X_REVERSE_BITS8(x)  (((x) >> 7) & 0x01) | (((x) >> 5) & 0x02) | \
+                            (((x) >> 3) & 0x04) | (((x) >> 1) & 0x08) | \
+                            (((x) << 7) & 0x80) | (((x) << 5) & 0x40) | \
+                            (((x) << 3) & 0x20) | (((x) << 1) & 0x10)
 
 
 /// @cond IGNORE
@@ -521,7 +416,270 @@ typedef union XMaxAlign
             7,  /* 1110 -> 0111 */          \
             15, /* 1111 -> 1111 */          \
         }
+/// @endcond IGNORE
 
+
+/** X_REVERSE_BITS8()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint8_t x_reverse_bits8(uint8_t x)
+{
+#if 0
+    x = (x & 0xF0) >> 4 | (x & 0x0F) << 4;
+    x = (x & 0xCC) >> 2 | (x & 0x33) << 2;
+    x = (x & 0xAA) >> 1 | (x & 0x55) << 1;
+    return x;
+#endif
+    X_DECLARE_BIT_REVERSE_TABLE;
+    const uint8_t a = bit_reverse_table[(x >> 4)];
+    const uint8_t b = bit_reverse_table[(x & 0xf)] << 4;
+    return a | b;
+}
+
+/** xã®ä¸‹ä½16bitã‚’é€†è»¢ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_REVERSE_BITS16(x) (((uint16_t)(X_REVERSE_BITS8(X_HIGH_BYTE(x)))) | \
+                            (((uint16_t) X_REVERSE_BITS8(X_LOW_BYTE(x)))  << 8))
+
+
+/** X_REVERSE_BITS16()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint16_t x_reverse_bits16(uint16_t x)
+{
+#if 0
+    x = ((x >> 1) & 0x5555) | ((x & 0x5555) << 1);
+    x = ((x >> 2) & 0x3333) | ((x & 0x3333) << 2);
+    x = ((x >> 4) & 0x0F0F) | ((x & 0x0F0F) << 4);
+    x = ((x >> 8) & 0x00FF) | ((x & 0x00FF) << 8);
+    return x;
+#endif
+    const uint16_t a = x_reverse_bits8(x >> 8);
+    const uint16_t b = x_reverse_bits8(x) << 8;
+    return a | b;
+}
+
+
+/** xã®ä¸‹ä½32bitã‚’é€†è»¢ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_REVERSE_BITS32(x) (((uint32_t)(X_REVERSE_BITS16(X_HIGH_WORD(x)))) | \
+                            (((uint32_t)(X_REVERSE_BITS16(X_LOW_WORD(x)))) << 16))
+
+
+/** X_REVERSE_BITS32()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint32_t x_reverse_bits32(register uint32_t x)
+{
+#if 0
+    x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
+    x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
+    x = (((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4));
+    x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
+    return ((x >> 16) | (x << 16));
+#endif
+    const uint32_t a = x_reverse_bits16(x >> 16);
+    const uint32_t b = ((uint32_t)x_reverse_bits16(x)) << 16;
+    return a | b;
+}
+
+
+/** xã®ä¸‹ä½2ãƒã‚¤ãƒˆã®ãƒã‚¤ãƒˆã‚ªãƒ¼ãƒ€ãƒ¼ã‚’é€†è»¢ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_REVERSE_ENDIAN16(x)  ((((uint16_t)(x)) << 8) | (((uint16_t)(x) >> 8) & 0x00ff))
+
+
+/** X_REVERSE_ENDIAN16()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint16_t x_reverse_endian16(register uint16_t x)
+{
+    return X_REVERSE_ENDIAN16(x);
+}
+
+
+/** xã®ä¸‹ä½4ãƒã‚¤ãƒˆã®ãƒã‚¤ãƒˆã‚ªãƒ¼ãƒ€ãƒ¼ã‚’é€†è»¢ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_REVERSE_ENDIAN32(x) (((((uint32_t)(x)) << 24)      | \
+                                (((x) <<  8) & 0x00ff0000)   | \
+                                (((x) >>  8) & 0x0000ff00)   | \
+                                (((x) >> 24) & 0x000000ff)))
+
+
+/** X_REVERSE_ENDIAN32()ã®é–¢æ•°ç‰ˆã§ã™ã€‚
+ */
+static inline uint32_t x_reverse_endian32(uint32_t x)
+{
+    return X_REVERSE_ENDIAN32(x);
+}
+
+
+/** xã®ä¸‹ä½8bitã‚’å¥‡æ•°ãƒ“ãƒƒãƒˆã§ãƒã‚¹ã‚¯ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_ODD_BITS8(x)  (((uint8_t)(x)) & 0x55)
+
+
+/** xã®ä¸‹ä½16bitã‚’å¥‡æ•°ãƒ“ãƒƒãƒˆã§ãƒã‚¹ã‚¯ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_ODD_BITS16(x) (((uint16_t)(x)) & 0x5555)
+
+
+/** xã®ä¸‹ä½32bitã‚’å¥‡æ•°ãƒ“ãƒƒãƒˆã§ãƒã‚¹ã‚¯ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_ODD_BITS32(x) (((uint32_t)(x)) & 0x55555555)
+
+
+/** xã®ä¸‹ä½8bitã‚’å¶æ•°ãƒ“ãƒƒãƒˆã§ãƒã‚¹ã‚¯ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_EVEN_BITS8(x)  (((uint8_t)(x)) & 0xaa)
+
+
+/** xã®ä¸‹ä½16bitã‚’å¶æ•°ãƒ“ãƒƒãƒˆã§ãƒã‚¹ã‚¯ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_EVEN_BITS16(x) (((uint16_t)(x)) & 0xaaaa)
+
+
+/** xã®ä¸‹ä½32bitã‚’å¶æ•°ãƒ“ãƒƒãƒˆã§ãƒã‚¹ã‚¯ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_EVEN_BITS32(x) (((uint32_t)(x)) & 0xaaaaaaaa)
+
+
+/** xã®ä¸‹ä½8bitã®éš£ã‚Šåˆã£ãŸãƒ“ãƒƒãƒˆã‚’äº¤æ›ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_SWAP_ADJACENT_BITS8(x)  ((X_ODD_BITS8(x) << 1) | ((X_EVEN_BITS8(x)) >> 1))
+
+
+/** xã®ä¸‹ä½16bitã®éš£ã‚Šåˆã£ãŸãƒ“ãƒƒãƒˆã‚’äº¤æ›ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_SWAP_ADJACENT_BITS16(x) ((X_ODD_BITS16(x) << 1) | ((X_EVEN_BITS16(x)) >> 1))
+
+
+/** xã®ä¸‹ä½32bitã®éš£ã‚Šåˆã£ãŸãƒ“ãƒƒãƒˆã‚’äº¤æ›ã—ãŸå€¤ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+#define X_SWAP_ADJACENT_BITS32(x) ((X_ODD_BITS32(x) << 1) | ((X_EVEN_BITS32(x)) >> 1))
+
+
+/** ãƒã‚¤ãƒ³ã‚¿ã‹ã‚‰ç¬¦å·ãªã—1ãƒã‚¤ãƒˆã‚’å–å¾—ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
+#define X_LOAD_U8(ptr)  (*(uint8_t*)(ptr))
+
+
+/** ãƒã‚¤ãƒ³ã‚¿ã‹ã‚‰ç¬¦å·ãªã—2Byteã‚’ãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‹ã‚‰ãƒ›ã‚¹ãƒˆå½¢å¼ã§å–å¾—ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
+#define X_LOAD_U16_LIT(ptr) ((uint16_t)(((uint16_t)*((uint8_t*)(ptr)+1)<<8)|(uint16_t)*(uint8_t*)(ptr)))
+
+
+/** ãƒã‚¤ãƒ³ã‚¿ã‹ã‚‰ç¬¦å·ãªã—4Byteã‚’ãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‹ã‚‰ãƒ›ã‚¹ãƒˆå½¢å¼ã§å–å¾—ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
+#define X_LOAD_U32_LIT(ptr)                                             \
+            ((uint32_t)((((uint32_t)*((uint8_t*)(ptr) + 3)) << 24) |    \
+                        (((uint32_t)*((uint8_t*)(ptr) + 2)) << 16) |    \
+                        (((uint16_t)*((uint8_t*)(ptr) + 1)) <<  8) |    \
+                         *(uint8_t*)(ptr)))
+
+
+/** ãƒã‚¤ãƒ³ã‚¿ã‹ã‚‰ç¬¦å·ãªã—2Byteã‚’ãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‹ã‚‰ãƒ›ã‚¹ãƒˆå½¢å¼ã§å–å¾—ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
+#define X_LOAD_U16_BIG(ptr) (uint16_t)(((uint16_t)(*((uint8_t*)(ptr)))<<8)|(uint16_t)*((uint8_t*)(ptr) + 1))
+
+
+/** ãƒã‚¤ãƒ³ã‚¿ã‹ã‚‰ç¬¦å·ãªã—4Byteã‚’ãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‹ã‚‰ãƒ›ã‚¹ãƒˆå½¢å¼ã§å–å¾—ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
+#define X_LOAD_U32_BIG(ptr)                                               \
+            ((uint32_t)((((uint32_t)*(((uint8_t*)(ptr)) + 0)) << 24) |    \
+                        (((uint32_t)*(((uint8_t*)(ptr)) + 1)) << 16) |    \
+                        (((uint16_t)*(((uint8_t*)(ptr)) + 2)) <<  8) |    \
+                         *(((uint8_t*)(ptr)) + 3)))
+
+
+/** ç¬¦å·ãªã—1Byteã‚’ãƒã‚¤ãƒ³ã‚¿å‚ç…§å…ˆã«ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ */
+#define X_STORE_U8(ptr, val)    (*(uint8_t*)(ptr)=(uint8_t)(val))
+
+
+/** ç¬¦å·ãªã—2Byteã‚’ãƒã‚¤ãƒ³ã‚¿å‚ç…§å…ˆã«ãƒ›ã‚¹ãƒˆå½¢å¼ã‹ã‚‰ãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã§ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ */
+#define X_STORE_U16_LIT(ptr, val)                                   \
+            (*(uint8_t*)(ptr)=(uint8_t)(val),                       \
+            *((uint8_t*)(ptr)+1)=(uint8_t)((uint16_t)(val)>>8))     \
+
+
+/** ç¬¦å·ãªã—4Byteã‚’ãƒã‚¤ãƒ³ã‚¿å‚ç…§å…ˆã«ãƒ›ã‚¹ãƒˆå½¢å¼ã‹ã‚‰ãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã§ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ */
+#define X_STORE_U32_LIT(ptr, val)                                   \
+            (*(uint8_t*)(ptr)=(uint8_t)(val),                       \
+            *((uint8_t*)(ptr)+1)=(uint8_t)((uint16_t)(val)>>8),     \
+            *((uint8_t*)(ptr)+2)=(uint8_t)((uint32_t)(val)>>16),    \
+            *((uint8_t*)(ptr)+3)=(uint8_t)((uint32_t)(val)>>24))
+
+
+/** ç¬¦å·ãªã—2Byteã‚’ãƒã‚¤ãƒ³ã‚¿å‚ç…§å…ˆã«ãƒ›ã‚¹ãƒˆå½¢å¼ã‹ã‚‰ãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã§ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ */
+#define X_STORE_U16_BIG(ptr, val)                                   \
+            (*((uint8_t*)(ptr)+1)=(uint8_t)(val),                   \
+            *((uint8_t*)(ptr))=(uint8_t)((uint16_t)(val)>>8))       \
+
+
+/** ç¬¦å·ãªã—4Byteã‚’ãƒã‚¤ãƒ³ã‚¿å‚ç…§å…ˆã«ãƒ›ã‚¹ãƒˆå½¢å¼ã‹ã‚‰ãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã§ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ */
+#define X_STORE_U32_BIG(ptr, val)                                   \
+            (*((uint8_t*)(ptr)+3)=(uint8_t)(val),                   \
+            *((uint8_t*)(ptr)+2)=(uint8_t)((uint16_t)(val)>>8),     \
+            *((uint8_t*)(ptr)+1)=(uint8_t)((uint32_t)(val)>>16),    \
+            *((uint8_t*)(ptr)+0)=(uint8_t)((uint32_t)(val)>>24))
+
+
+/** void*å¼•æ•°end, beginã®ãƒã‚¤ãƒˆå˜ä½ã®ã‚¢ãƒ‰ãƒ¬ã‚¹å·®ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+static inline ptrdiff_t x_distance_addr(const void* begin, const void* end)
+{
+    return (const char*)(end) - (const char*)(begin);
+}
+
+
+/** ptrãŒæŒ‡ã™ã‚¢ãƒ‰ãƒ¬ã‚¹ãŒ1ã¾ãŸã¯2ã®ã¹ãä¹—ã‹ã©ã†ã‹ã‚’Boolå€¤ã§è¿”ã—ã¾ã™ã€‚
+ */
+static inline bool x_is_alignment(const void* ptr)
+{
+    const uintptr_t uptr = (uintptr_t)ptr;
+    return (uptr > 0) && ((uptr & (uptr - 1)) == 0);
+}
+
+
+/** ptrãŒæŒ‡ã™ã‚¢ãƒ‰ãƒ¬ã‚¹ãŒalignmentã®å€æ•°ã‹ã©ã†ã‹ã‚’Boolå€¤ã§è¿”ã—ã¾ã™ã€‚
+ */
+static inline bool x_is_aligned(const void* ptr, size_t alignment)
+{
+    const uintptr_t uptr = (uintptr_t)ptr;
+    return X_IS_MULTIPLE(uptr, alignment);
+}
+
+
+/** (begin <= x) && (x < end)ã‚’åˆ¤å®šã—ã¾ã™ã€‚
+ */
+static inline bool x_is_within(int32_t x, int32_t begin, int32_t end)
+{
+    return ((begin <= x) && (x < end));
+}
+
+
+/** (begin <= x) && (x < end)ã‚’åˆ¤å®šã—ã¾ã™ã€‚
+ */
+static inline bool x_is_uwithin(uint32_t x, uint32_t begin, uint32_t end)
+{
+    return ((begin <= x) && (x < end));
+}
+
+
+/** ptrãŒæŒ‡ã™ã‚¢ãƒ‰ãƒ¬ã‚¹ãŒbegin ã¨endã®ç¯„å›²å†…ã‹ã©ã†ã‹ã‚’Boolå€¤ã§è¿”ã—ã¾ã™ã€‚
+ */
+static inline bool x_is_within_addr(const void* ptr, const void* begin, const void* end)
+{
+    const char* const p = (const char*)(ptr);
+    const char* const b = (const char*)(begin);
+    const char* const e = (const char*)(end);
+
+    return ((b <= p) && (p < e));
+}
+
+
+/// @cond IGNORE
 #define X_DECLARE_LSB_POS_TABLE            \
     const uint8_t lsb_pos_table[15] =       \
         {                                   \
@@ -541,84 +699,13 @@ typedef union XMaxAlign
             1, /* (1110 & 1 << 1) != 0 */   \
             0, /* (1111 & 1 << 0) != 0 */   \
         };
-
-#define X_DECLARE_MSB_POS_TABLE            \
-const uint8_t msb_pos_table[15] =           \
-    {                                       \
-        0,  /* (0001 & 1 << 0) != 0 */      \
-        1,  /* (0010 & 1 << 1) != 0 */      \
-        1,  /* (0011 & 1 << 1) != 0 */      \
-        2,  /* (0100 & 1 << 2) != 0 */      \
-        2,  /* (0101 & 1 << 2) != 0 */      \
-        2,  /* (0110 & 1 << 2) != 0 */      \
-        2,  /* (0111 & 1 << 2) != 0 */      \
-        3,  /* (1000 & 1 << 3) != 0 */      \
-        3,  /* (1001 & 1 << 3) != 0 */      \
-        3,  /* (1010 & 1 << 3) != 0 */      \
-        3,  /* (1011 & 1 << 3) != 0 */      \
-        3,  /* (1100 & 1 << 3) != 0 */      \
-        3,  /* (1101 & 1 << 3) != 0 */      \
-        3,  /* (1110 & 1 << 3) != 0 */      \
-        3,  /* (1111 & 1 << 3) != 0 */      \
-    };
 /// @endcond IGNORE
 
 
-/** void*ˆø”end, begin‚ÌƒoƒCƒg’PˆÊ‚ÌƒAƒhƒŒƒX·‚ğ•Ô‚µ‚Ü‚·B
- */
-static inline ptrdiff_t x_distance_addr(const void* begin, const void* end)
-{
-    return (const char*)(end) - (const char*)(begin);
-}
-
-
-/** ptr‚ªw‚·ƒAƒhƒŒƒX‚ª1‚Ü‚½‚Í2‚Ì‚×‚«æ‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
- */
-static inline bool x_is_alignment(const void* ptr)
-{
-    const uintptr_t uptr = (uintptr_t)ptr;
-    return (uptr > 0) && ((uptr & (uptr - 1)) == 0);
-}
-
-
-/** ptr‚ªw‚·ƒAƒhƒŒƒX‚ªalignment‚Ì”{”‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
- */
-static inline bool x_is_aligned(const void* ptr, size_t alignment)
-{
-    const uintptr_t uptr = (uintptr_t)ptr;
-    return X_IS_MULTIPLE(uptr, alignment);
-}
-
-
-/** (begin <= x) && (x < end)‚ğ”»’è‚µ‚Ü‚·B
- */
-static inline bool x_is_within(int32_t x, int32_t begin, int32_t end)
-{
-    return ((begin <= x) && (x < end));
-}
-
-
-/** (begin <= x) && (x < end)‚ğ”»’è‚µ‚Ü‚·B
- */
-static inline bool x_is_uwithin(uint32_t x, uint32_t begin, uint32_t end)
-{
-    return ((begin <= x) && (x < end));
-}
-
-
-/** ptr‚ªw‚·ƒAƒhƒŒƒX‚ªbegin ‚Æend‚Ì”ÍˆÍ“à‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
- */
-static inline bool x_is_within_addr(const void* ptr, const void* begin, const void* end)
-{
-    const char* const p = (const char*)(ptr);
-    const char* const b = (const char*)(begin);
-    const char* const e = (const char*)(end);
-
-    return ((b <= p) && (p < e));
-}
-
-
-/** ‰ºˆÊ‚©‚çÅ‚à‹ß‚­‚ÉƒZƒbƒg‚³‚ê‚½ƒrƒbƒgˆÊ’u‚ğ•Ô‚µ‚Ü‚·B
+/** ä¸‹ä½ã‹ã‚‰æœ€ã‚‚è¿‘ãã«ã‚»ãƒƒãƒˆã•ã‚ŒãŸãƒ“ãƒƒãƒˆä½ç½®ã‚’è¿”ã—ã¾ã™ã€‚
+ *
+ *  @attention
+ *  1ã¤ä»¥ä¸Šã®ãƒ“ãƒƒãƒˆãŒã‚»ãƒƒãƒˆã•ã‚Œã¦ã„ã‚‹ã“ã¨ã‚’å‰æã¨ã—ã¦ã„ã¾ã™ã€‚
  */
 static inline int x_find_lsb_pos8(uint8_t x)
 {
@@ -650,14 +737,37 @@ static inline int x_find_lsb_pos32(uint32_t x)
 }
 
 
-/** ‰ºˆÊ‚©‚çÅ‚à‹ß‚­‚ÉƒZƒbƒg‚³‚ê‚½ƒrƒbƒg‚ğ•Ô‚µ‚Ü‚·B
+/** ä¸‹ä½ã‹ã‚‰æœ€ã‚‚è¿‘ãã«ã‚»ãƒƒãƒˆã•ã‚ŒãŸãƒ“ãƒƒãƒˆã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline uint8_t  x_find_lsb8(uint8_t x)  { return x & ((~x) + 1); }
 static inline uint16_t x_find_lsb16(uint16_t x) { return x & ((~x) + 1); }
 static inline uint32_t x_find_lsb32(uint32_t x) { return x & ((~x) + 1); }
 
 
-/** ãˆÊ‚©‚çÅ‚à‹ß‚­‚ÉƒZƒbƒg‚³‚ê‚½ƒrƒbƒgˆÊ’u‚ğ•Ô‚µ‚Ü‚·B
+/// @cond IGNORE
+#define X_DECLARE_MSB_POS_TABLE            \
+const uint8_t msb_pos_table[15] =           \
+    {                                       \
+        0,  /* (0001 & 1 << 0) != 0 */      \
+        1,  /* (0010 & 1 << 1) != 0 */      \
+        1,  /* (0011 & 1 << 1) != 0 */      \
+        2,  /* (0100 & 1 << 2) != 0 */      \
+        2,  /* (0101 & 1 << 2) != 0 */      \
+        2,  /* (0110 & 1 << 2) != 0 */      \
+        2,  /* (0111 & 1 << 2) != 0 */      \
+        3,  /* (1000 & 1 << 3) != 0 */      \
+        3,  /* (1001 & 1 << 3) != 0 */      \
+        3,  /* (1010 & 1 << 3) != 0 */      \
+        3,  /* (1011 & 1 << 3) != 0 */      \
+        3,  /* (1100 & 1 << 3) != 0 */      \
+        3,  /* (1101 & 1 << 3) != 0 */      \
+        3,  /* (1110 & 1 << 3) != 0 */      \
+        3,  /* (1111 & 1 << 3) != 0 */      \
+    };
+/// @endcond IGNORE
+
+
+/** ä¸Šä½ã‹ã‚‰æœ€ã‚‚è¿‘ãã«ã‚»ãƒƒãƒˆã•ã‚ŒãŸãƒ“ãƒƒãƒˆä½ç½®ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline int x_find_msb_pos32(uint32_t x)
 {
@@ -689,7 +799,7 @@ static inline int x_find_msb_pos8(uint8_t x)
 }
 
 
-/** ãˆÊ‚©‚çÅ‚à‹ß‚­‚ÉƒZƒbƒg‚³‚ê‚½ƒrƒbƒg‚ğ•Ô‚µ‚Ü‚·B
+/** ä¸Šä½ã‹ã‚‰æœ€ã‚‚è¿‘ãã«ã‚»ãƒƒãƒˆã•ã‚ŒãŸãƒ“ãƒƒãƒˆã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline uint8_t  x_find_msb8(uint8_t x)   { return 1U  << x_find_msb_pos8(x); }
 static inline uint16_t x_find_msb16(uint16_t x) { return 1U  << x_find_msb_pos16(x); }
@@ -701,45 +811,16 @@ static inline uint32_t x_find_msb32(uint32_t x) { return 1UL << x_find_msb_pos32
 /// @endcond IGNORE
 
 
-/** ƒZƒbƒg‚³‚ê‚½ƒrƒbƒg”‚ğ•Ô‚µ‚Ü‚·B
+/** ã‚»ãƒƒãƒˆã•ã‚ŒãŸãƒ“ãƒƒãƒˆæ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline int x_count_bits8(uint8_t x)  { X_COUNT_BITS_IMPL(x); };
 static inline int x_count_bits16(uint16_t x) { X_COUNT_BITS_IMPL(x); };
 static inline int x_count_bits32(uint32_t x) { X_COUNT_BITS_IMPL(x); };
 
 
-/** ˆø”x‚ÌƒoƒCƒgƒI[ƒ_[‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-static inline uint16_t x_reverse_endian16(uint16_t x) { return X_REVERSE_ENDIAN16(x); }
-static inline uint32_t x_reverse_endian32(uint32_t x) { return X_REVERSE_ENDIAN32(x); }
-
-
-/** ˆø”x‚Ìƒrƒbƒg‚ğ‹t“]‚µ‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-static inline uint8_t x_reverse_bits8(uint8_t x)
-{
-    X_DECLARE_BIT_REVERSE_TABLE;
-    const uint8_t a = bit_reverse_table[(x >> 4)];
-    const uint8_t b = bit_reverse_table[(x & 0xf)] << 4;
-    return a | b;
-}
-static inline uint16_t x_reverse_bits16(uint16_t x)
-{
-    const uint16_t a = x_reverse_bits8(x >> 8);
-    const uint16_t b = x_reverse_bits8(x) << 8;
-    return a | b;
-}
-static inline uint32_t x_reverse_bits32(uint32_t x)
-{
-    const uint32_t a = x_reverse_bits16(x >> 16);
-    const uint32_t b = ((uint32_t)x_reverse_bits16(x)) << 16;
-    return a | b;
-}
-
-
 /** |A|B| -> |B|A|
  */
-static inline void x_swap_2byte(void* x)
+static inline void x_reverse_2byte(void* x)
 {
     uint8_t* p = (uint8_t*)(x);
     uint8_t tmp;
@@ -751,7 +832,7 @@ static inline void x_swap_2byte(void* x)
 
 /** |A|B|C|D| -> |D|C|B|A|
  */
-static inline void x_swap_4byte(void* x)
+static inline void x_reverse_4byte(void* x)
 {
     uint8_t* p = (uint8_t*)(x);
     uint8_t tmp;
@@ -764,86 +845,6 @@ static inline void x_swap_4byte(void* x)
 }
 
 
-/** x‚ğm‚Ì”{”‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B
- */
-static inline uint32_t x_roundup_multiple(uint32_t x, uint32_t m)
-{
-    return X_ROUNDUP_MULTIPLE(x, m);
-}
-
-
-/** x‚ğm‚Ì”{”‚ÉØ‚èã‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B(m‚ª2‚Ì‚×‚«æ‚Ì‚ÉŒÀ‚é)
- *
- *  @note
- *  m‚ª2‚Ì‚×‚«æ‚Å‚ ‚é‚±‚Æ‚ª‚í‚©‚Á‚Ä‚¢‚é‚ÍA‚±‚¿‚ç‚Ìƒo[ƒWƒ‡ƒ“‚Ì•û‚ª‚‘¬‚Å‚·B
- */
-static inline uint32_t x_roundup_multiple_when_power_of_two(uint32_t x, uint32_t m)
-{
-    return X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(x, m);
-}
-
-
-/** x‚ğÅ‚à‹ß‚¢2‚Ì‚×‚«æ‚ÉØ‚èã‚°‚Ü‚·B
- */
-static inline uint32_t x_roundup_power_of_two(uint32_t x)
-{
-    return X_ROUNDUP_POWER_OF_TWO(x);
-}
-
-
-/** x‚ğm‚Ì”{”‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·
- */
-static inline uint32_t x_rounddown_multiple(uint32_t x, uint32_t m)
-{
-    return X_ROUNDDOWN_MULTIPLE(x, m);
-}
-
-
-/** x‚ğm‚Ì”{”‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·B(m‚ª2‚Ì‚×‚«æ‚Ì‚ÉŒÀ‚é)
- *
- *  @note
- *  m‚ª2‚Ì‚×‚«æ‚Å‚ ‚é‚±‚Æ‚ª‚í‚©‚Á‚Ä‚¢‚é‚ÍA‚±‚¿‚ç‚Ìƒo[ƒWƒ‡ƒ“‚Ì•û‚ª‚‘¬‚Å‚·B
- */
-static inline uint32_t x_rounddown_multiple_when_power_of_two(uint32_t x, uint32_t m)
-{
-    return X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(x, m);
-}
-
-
-/** x‚ğ2‚Ì‚×‚«æ‚ÉØ‚è‰º‚°‚½’l‚ğ•Ô‚µ‚Ü‚·
- */
-static inline uint32_t x_rounddown_power_of_two(uint32_t x)
-{
-    return X_ROUNDDOWN_POWER_OF_TWO(x);
-}
-
-
-/** x‚ªm‚Ì”{”‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
- */
-static inline bool x_is_multiple(uint32_t x, uint32_t m)
-{
-    return X_IS_MULTIPLE(x, m);
-}
-
-
-/** x‚ª2‚Ì‚×‚«æ‚©‚Ç‚¤‚©‚ğBool’l‚Å•Ô‚µ‚Ü‚·B
- */
-static inline bool x_is_power_of_two(uint32_t x)
-{
-    return X_IS_POWER_OF_TWO(x);
-}
-
-
-/** @see http://www.musashinodenpa.com/arduino/ref/index.php?f=0&pos=2696
- */
-static inline int32_t x_constrain(int32_t x, int32_t a, int32_t b)
-{
-    if (x < a) return a;
-    else if (b < x) return b;
-    return x;
-}
-
-
 /** @see http://www.musashinodenpa.com/arduino/ref/index.php?f=0&pos=2719
  */
 static inline int32_t x_map(
@@ -853,24 +854,88 @@ static inline int32_t x_map(
 }
 
 
-/** ‹éŒ`ƒRƒs[‚ğs‚¢‚Ü‚·B
+/** aã¨bã‹ã‚‰sizeãƒã‚¤ãƒˆã‚’å…¥ã‚Œæ›¿ãˆã¾ã™ã€‚
  */
-static inline void x_copy_rect(
-    void* dest, const void* src, int linesize, int height, int stride)
+static inline void x_memswap(void *a, void *b, size_t size)
 {
-    char* cdest = (char*)(dest);
-    const char* csrc = (const char*)(src);
-
-    int y;
-    for (y = 0; y < height; ++y)
+    char* ca;
+    char* cb;
+    char  tmp;
+    for (ca = (char*)a, cb = (char*)b; size > 0; size--, ca++, cb++)
     {
-        memcpy(cdest, csrc, linesize);
-        cdest += linesize;
-        csrc += stride;
+        tmp = *ca;
+        *ca  = *cb;
+        *cb  = tmp;
     }
 }
 
 
+/** sizeãƒã‚¤ãƒˆã®è¦ç´ nå€‹ã‹ã‚‰ãªã‚‹é…åˆ—pã®è¦ç´ ã‚’é€†é †ã«ä¸¦ã¹æ›¿ãˆã¾ã™ã€‚
+ */
+static inline void x_memreverse(void *p, size_t size, size_t n)
+{
+    char* l;
+    char* r;
+
+    l = (char*)p;
+    r = (char*)p + ((n-1) * size);
+    for ( ; l < r; l = l+size, r = r-size)
+        x_memswap( l, r, size );
+}
+
+
+/** sizeãƒã‚¤ãƒˆã®è¦ç´ nå€‹ã‹ã‚‰ãªã‚‹é…åˆ—pã®è¦ç´ ã‚’å³æ–¹å‘ã«shiftå€‹åˆ†å›è»¢ç§»å‹•ã•ã›ã¾ã™ã€‚
+ */
+static inline void x_memrotate_right(void *p, size_t shift, size_t size, size_t n)
+{
+    x_memreverse(p,                      size, n);          // 012345678 -> 876543210
+    x_memreverse(p,                      size, shift);      // 876543210 -> 678543210
+    x_memreverse((char*)p+(size*shift),  size, n-shift);    // 678543210 -> 678012345
+}
+
+
+/** sizeãƒã‚¤ãƒˆã®è¦ç´ nå€‹ã‹ã‚‰ãªã‚‹é…åˆ—pã®è¦ç´ ã‚’å·¦æ–¹å‘ã«shiftå€‹åˆ†å›è»¢ç§»å‹•ã•ã›ã¾ã™ã€‚
+ */
+static inline void x_memrotate_left(void *p, size_t shift, size_t size, size_t n)
+{
+    x_memreverse(p,                      size, shift);      // 012345678 -> 210345678
+    x_memreverse((char*)p+(size*shift),  size, n-shift);    // 210345678 -> 210876543
+    x_memreverse(p,                      size, n);          // 210876543 -> 345678012
+}
+
+
+/** srcã‹ã‚‰dstã«ãƒ¡ãƒ¢ãƒªã®çŸ©å½¢ã‚³ãƒ”ãƒ¼ã‚’è¡Œã„ã¾ã™ã€‚
+ *
+ *  @param dst      è»¢é€å…ˆ
+ *  @param src      è»¢é€å…ƒ
+ *  @param linesize è»¢é€å¹…
+ *  @param height   è»¢é€é«˜ã•
+ *  @param dstride  è»¢é€å…ˆã®æ¬¡ã®ãƒ©ã‚¤ãƒ³ã¾ã§ã®å¹…
+ *  @param sstride  è»¢é€å…ƒã®æ¬¡ã®ãƒ©ã‚¤ãƒ³ã¾ã§ã®å¹…
+ *
+ *  @attention
+ *  srcã¨dstã®é ˜åŸŸã¯é‡ãªã£ã¦ã„ãªã„ã“ã¨ã‚’å‰æã¨ã—ã¾ã™ã€‚
+ */
+static inline void
+x_memblt(void* dst, const void* src,
+         size_t linesize, size_t height,
+         size_t dstride,  size_t sstride)
+{
+    char* cdst = dst;
+    const char* csrc = src;
+
+    size_t y;
+    for (y = 0; y < height; ++y)
+    {
+        memcpy(cdst, csrc, linesize);
+        cdst += dstride;
+        csrc += sstride;
+    }
+}
+
+
+/** ãƒã‚¤ãƒˆã‚ªãƒ¼ãƒ€ãƒ¼ãŒãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‹ã©ã†ã‹ã‚’è¿”ã—ã¾ã™ã€‚
+ */
 static inline bool x_is_big_endian(void)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_BIG
@@ -888,12 +953,16 @@ static inline bool x_is_big_endian(void)
 }
 
 
+/** ãƒã‚¤ãƒˆã‚ªãƒ¼ãƒ€ãƒ¼ãŒãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‹ã©ã†ã‹ã‚’è¿”ã—ã¾ã™ã€‚
+ */
 static inline bool x_is_little_endian(void)
 {
     return ! x_is_big_endian();
 }
 
 
+/** 2Byteãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ›ã‚¹ãƒˆã®ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint16_t x_big_to_host16(uint16_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_BIG
@@ -906,6 +975,8 @@ static inline uint16_t x_big_to_host16(uint16_t x)
 }
 
 
+/** 4Byteãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ›ã‚¹ãƒˆã®ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint32_t x_big_to_host32(uint32_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_BIG
@@ -918,6 +989,8 @@ static inline uint32_t x_big_to_host32(uint32_t x)
 }
 
 
+/** 2Byteãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ›ã‚¹ãƒˆã®ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint16_t x_little_to_host16(uint16_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_LITTLE
@@ -930,6 +1003,8 @@ static inline uint16_t x_little_to_host16(uint16_t x)
 }
 
 
+/** 4Byteãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ›ã‚¹ãƒˆã®ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint32_t x_little_to_host32(uint32_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_LITTLE
@@ -942,6 +1017,8 @@ static inline uint32_t x_little_to_host32(uint32_t x)
 }
 
 
+/** 2Byteãƒ›ã‚¹ãƒˆã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint16_t x_host_to_big16(uint16_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_BIG
@@ -954,6 +1031,8 @@ static inline uint16_t x_host_to_big16(uint16_t x)
 }
 
 
+/** 4Byteãƒ›ã‚¹ãƒˆã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ“ãƒƒã‚°ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint32_t x_host_to_big32(uint32_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_BIG
@@ -966,6 +1045,8 @@ static inline uint32_t x_host_to_big32(uint32_t x)
 }
 
 
+/** 2Byteãƒ›ã‚¹ãƒˆã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint16_t x_host_to_little16(uint16_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_LITTLE
@@ -978,6 +1059,8 @@ static inline uint16_t x_host_to_little16(uint16_t x)
 }
 
 
+/** 4Byteãƒ›ã‚¹ãƒˆã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ãƒªãƒˆãƒ«ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã«ã—ã¦è¿”ã—ã¾ã™ã€‚
+ */
 static inline uint32_t x_host_to_little32(uint32_t x)
 {
 #if X_BYTE_ORDER == X_BYTE_ORDER_LITTLE

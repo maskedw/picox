@@ -44,6 +44,7 @@
 #include <picox/core/xcompiler.h>
 #include <picox/core/xutils.h>
 #include <picox/core/xdebug.h>
+#include <picox/core/xpreprocessor.h>
 
 
 #endif // picox_xcore_h_

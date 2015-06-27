@@ -188,5 +188,3 @@ static const char* X__GetHeader(int level)
 
     return str;
 }
-
-
