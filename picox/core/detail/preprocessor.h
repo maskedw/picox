@@ -1,5 +1,5 @@
 /**
- *       @file  xgcc.h
+ *       @file  preprocessor.h
  *      @brief
  *
  *    @details
@@ -7,7 +7,7 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2015/06/21
+ *     Created  2015/06/27
  * ===================================================================
  */
 
@@ -37,22 +37,45 @@
  */
 
 
-#ifndef picox_core_compiler_xgcc_h_
-#define picox_core_compiler_xgcc_h_
+#ifndef picox_core_detail_preprocessor_h_
+#define picox_core_detail_preprocessor_h_
 
 
-#ifndef __GNUC__
-#error   This header file required 'GCC'
-#endif
+/// @cond IGNORE
+#define X_PP_CAT__(a, b)          a ## b
+/// @endcond IGNORE
+
+/** トークンa, bを連結します。
+ */
+#define X_PP_CAT(a, b)            X_PP_CAT__(a, b)
 
 
-#ifndef __STRICT_ANSI__
-    #define X_HAS_TYPEOF
-    #define X_TYPEOF(x)     typeof(x)
-    #define X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS
-#endif
+/** トークンa, b, cを連結します。
+ */
+#define X_PP_CAT3(a,b,c)          X_PP_CAT(X_PP_CAT(a,b),c)
 
 
+/** トークンa, b, c, dを連結します。
+ */
+#define X_PP_CAT4(a,b,c,d)        X_PP_CAT(X_PP_CAT3(a,b,c),d)
 
 
-#endif // picox_core_compiler_xgcc_h_
+/** トークンa, b, c, d, eを連結します。
+ */
+#define X_PP_CAT5(a,b,c,d,e)      X_PP_CAT(X_PP_CAT4(a,b,c,d),e)
+
+
+/// @cond IGNORE
+#define X_PP_STRINGIZE__(text)    #text
+/// @endcond IGNORE
+
+/** トークンtextを文字列化します。
+ *
+ *  @note
+ *  X_PP_STRINGIZE__()を通して2段階のマクロを使用しているのは、textにdefineされた
+ *  トークンを渡された時に、defineを展開した後の値で文字列化するためです。
+ */
+#define X_PP_STRINGIZE(text)      X_PP_STRINGIZE__(text)
+
+
+#endif // picox_core_detail_preprocessor_h_

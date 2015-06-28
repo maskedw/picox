@@ -1,13 +1,14 @@
 /**
- *       @file  xpreprocessor.h
+ *       @file  xconfig.h
  *      @brief
  *
  *    @details
+ *    コンフィグ設定の詳細についてはxconfig.mdを参照してください。
  *
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2015/06/27
+ *     Created  2015/06/28
  * ===================================================================
  */
 
@@ -37,45 +38,34 @@
  */
 
 
-#ifndef picox_core_xpreprocessor_h_
-#define picox_core_xpreprocessor_h_
+#ifndef picox_xconfig_h_
+#define picox_xconfig_h_
 
 
-/// @cond IGNORE
-#define X_PP_CAT__(a, b)          a ## b
-/// @endcond IGNORE
-
-/** トークンa, bを連結します。
- */
-#define X_PP_CAT(a, b)            X_PP_CAT__(a, b)
-
-
-/** トークンa, b, cを連結します。
- */
-#define X_PP_CAT3(a,b,c)          X_PP_CAT(X_PP_CAT(a,b),c)
-
-
-/** トークンa, b, c, dを連結します。
- */
-#define X_PP_CAT4(a,b,c,d)        X_PP_CAT(X_PP_CAT3(a,b,c),d)
-
-
-/** トークンa, b, c, d, eを連結します。
- */
-#define X_PP_CAT5(a,b,c,d,e)      X_PP_CAT(X_PP_CAT4(a,b,c,d),e)
-
-
-/// @cond IGNORE
-#define X_PP_STRINGIZE__(text)    #text
-/// @endcond IGNORE
-
-/** トークンtextを文字列化します。
- *
- *  @note
- *  X_PP_STRINGIZE__()を通して2段階のマクロを使用しているのは、textにdefineされた
- *  トークンを渡された時に、defineを展開した後の値で文字列化するためです。
- */
-#define X_PP_STRINGIZE(text)      X_PP_STRINGIZE__(text)
+// #define X_CONF_NDEBUG
+// #define X_CONF_VPRINTF
+// #define X_CONF_ASSERT
+// #define X_CONF_ASSERT_MSG
+// #define X_CONF_ABORT
+#define X_CONF_HAS_ANSI_COLOR
+// #define X_CONF_USE_LOG_TIMESTAMP
+// #define X_CONF_LOG_LEVEL
+// #define X_CONF_USE_DYNAMIC_LOG_SUPPRESS
+// #define X_CONF_VERB_COLOR
+// #define X_CONF_INFO_COLOR
+// #define X_CONF_NOTI_COLOR
+// #define X_CONF_WARN_COLOR
+// #define X_CONF_ERR_COLOR
+// #define X_CONF_COLOR_RESET
+// #define X_CONF_VERB_HEADER
+// #define X_CONF_INFO_HEADER
+// #define X_CONF_NOTI_HEADER
+// #define X_CONF_WARN_HEADER
+// #define X_CONF_ERR_HEADER
+// #define X_CONF_MALLOC
+// #define X_CONF_FREE
+// #define X_CONF_USE_DETECT_MALLOC_NULL
+// #define X_CONF_BYTE_ORDER
 
 
-#endif // picox_core_xpreprocessor_h_
+#endif // picox_xconfig_h_

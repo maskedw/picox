@@ -40,44 +40,61 @@
 #include "xsalloc.h"
 
 
-#define X__ROUNDUP_ALIGN(x)     ((((uintptr_t)(x)) + (XSALLOC_ALIGN) - 1) & ((uintptr_t)0 - (XSALLOC_ALIGN)))
-#define X__GET_BEGIN_ORIGIN()   ((uint8_t*)(X__ROUNDUP_ALIGN(self->heap)))
-#define X__IS_ALIGNED(x)        ((X__ROUNDUP_ALIGN(x)) == ((uintptr_t)(x)))
-#define X__IS_VALID_RANGE(x)    ((X__GET_BEGIN_ORIGIN() <= (x)) && ((x) < (X__GET_BEGIN_ORIGIN() + self->capacity)))
-
-
-void xsalloc_init(XSAlloc* self, void* heap, size_t size)
+static inline uint8_t*
+X__GetBeginOrigin(XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
-    XSALLOC_ASSERT(heap);
+    return (uint8_t*)(X_ROUNDUP_ALIGN((uint32_t)self->heap, self->alignment));
+}
+
+
+static inline bool
+X__IsValidRange(XSAlloc* self, const void* p)
+{
+    const uint8_t* b = X__GetBeginOrigin(self);
+    const uint8_t* e = b + self->capacity;
+
+    return x_is_within_addr(p, b, e + 1);
+}
+
+
+void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment)
+{
+    X_ASSERT(self);
+    X_ASSERT(heap);
+    X_ASSERT(X_IS_ALIGNMENT(alignment));
 
     self->heap = heap;
+    self->alignment = alignment;
 
     /* heapをアライメントで切り上げたアドレスが実際のtop位置になる。 */
-    self->begin = X__GET_BEGIN_ORIGIN();
+    self->begin = X__GetBeginOrigin(self);
 
     /* 切り上げた結果heapサイズに不整合がでていないか？ */
-    XSALLOC_ASSERT(size > (self->begin - self->heap));
+    X_ASSERT(size > (self->begin - self->heap));
     size -= self->begin - self->heap;
 
-    self->end = self->begin + size;
-    self->capacity = size;
+    self->end = (uint8_t*)(x_rounddown_align((uint32_t)self->begin + size, alignment));
+
+    /* 切り下げた結果heapサイズに不整合がでていないか？ */
+    X_ASSERT(self->end - self->begin >= self->alignment);
+
+    self->capacity = self->end - self->begin;
     self->growth_upward = true;
 }
 
 
 void* xsalloc_allocate(XSAlloc* self, size_t size)
 {
-    XSALLOC_ASSERT(self);
-    XSALLOC_ASSERT(size > 0);
+    X_ASSERT(self);
+    X_ASSERT(size > 0);
 
-    /* 通常は確保サイズを切り上げることでアラインメントを保証しているが、空にな
-     * る最後の1回は気にする必要なし!!
-     */
-    if (xsalloc_reserve(self) != size)
-        size = X__ROUNDUP_ALIGN(size);
-
+    const size_t reserve = xsalloc_reserve(self);
     void* ret;
+
+    X_ASSERT_MALLOC_NULL(reserve >= size);
+
+    size = x_roundup_align(size, self->alignment);
+
     if (self->growth_upward) {
         ret = self->begin;
         self->begin += size;
@@ -87,15 +104,14 @@ void* xsalloc_allocate(XSAlloc* self, size_t size)
         ret = self->end;
     }
 
-    XSALLOC_NULL_ASSERT(self->end >= self->begin);
-
     return ret;
 }
 
 
 void xsalloc_clear(XSAlloc* self)
 {
-    self->begin = X__GET_BEGIN_ORIGIN();
+    X_ASSERT(self);
+    self->begin = X__GetBeginOrigin(self);
     self->end = self->begin + self->capacity;
     self->growth_upward = true;
 }
@@ -103,20 +119,23 @@ void xsalloc_clear(XSAlloc* self)
 
 void xsalloc_rewind(XSAlloc* self, void* begin, void* end)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
 
     /* 両方がNULLは許容するが、片方だけNULLというのは明らかにおかしいので
      * assert対象とする。*/
     if ((begin == NULL) && (end == NULL))
         return;
-    XSALLOC_ASSERT(begin && end);
+    X_ASSERT(begin && end);
+
+    X_ASSERT(x_is_aligned(begin, self->alignment));
+    X_ASSERT(x_is_aligned(end, self->alignment));
 
     uint8_t* b = begin;
     uint8_t* e = end;
 
-    XSALLOC_ASSERT(e >= b);
-    XSALLOC_ASSERT(X__IS_VALID_RANGE(b));
-    XSALLOC_ASSERT(X__IS_VALID_RANGE(e));
+    X_ASSERT(e >= b);
+    X_ASSERT(X__IsValidRange(self, b));
+    X_ASSERT(X__IsValidRange(self, e));
 
     self->begin = b;
     self->end   = e;

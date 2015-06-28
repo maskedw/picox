@@ -165,11 +165,11 @@ TEST(xutils, roundup_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, X_ROUNDUP_MULTIPLE(32, 8));
     TEST_ASSERT_EQUAL_HEX32(444, X_ROUNDUP_MULTIPLE(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(8, X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(24, X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(256, X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDUP_MULTIPLE_WHEN_POWER_OF_TWO(1012, 128));
+    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDUP_ALIGN(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(8, X_ROUNDUP_ALIGN(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(24, X_ROUNDUP_ALIGN(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(256, X_ROUNDUP_ALIGN(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDUP_ALIGN(1012, 128));
 
     TEST_ASSERT_EQUAL_HEX32(4, x_roundup_multiple(3, 2));
     TEST_ASSERT_EQUAL_HEX32(8, x_roundup_multiple(6, 4));
@@ -177,11 +177,11 @@ TEST(xutils, roundup_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, x_roundup_multiple(32, 8));
     TEST_ASSERT_EQUAL_HEX32(444, x_roundup_multiple(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(4, x_roundup_multiple_when_power_of_two(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(8, x_roundup_multiple_when_power_of_two(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(24, x_roundup_multiple_when_power_of_two(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(256, x_roundup_multiple_when_power_of_two(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, x_roundup_multiple_when_power_of_two(1012, 128));
+    TEST_ASSERT_EQUAL_HEX32(4, x_roundup_align(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(8, x_roundup_align(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(24, x_roundup_align(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(256, x_roundup_align(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, x_roundup_align(1012, 128));
 }
 
 
@@ -193,11 +193,11 @@ TEST(xutils, rounddown_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, X_ROUNDDOWN_MULTIPLE(32, 8));
     TEST_ASSERT_EQUAL_HEX32(333, X_ROUNDDOWN_MULTIPLE(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(2, X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(16, X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(128, X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDDOWN_MULTIPLE_WHEN_POWER_OF_TWO(1055, 128));
+    TEST_ASSERT_EQUAL_HEX32(2, X_ROUNDDOWN_ALIGN(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDDOWN_ALIGN(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(16, X_ROUNDDOWN_ALIGN(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(128, X_ROUNDDOWN_ALIGN(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDDOWN_ALIGN(1055, 128));
 
     TEST_ASSERT_EQUAL_HEX32(2, x_rounddown_multiple(3, 2));
     TEST_ASSERT_EQUAL_HEX32(4, x_rounddown_multiple(6, 4));
@@ -205,11 +205,11 @@ TEST(xutils, rounddown_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, x_rounddown_multiple(32, 8));
     TEST_ASSERT_EQUAL_HEX32(333, x_rounddown_multiple(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(2, x_rounddown_multiple_when_power_of_two(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(4, x_rounddown_multiple_when_power_of_two(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(16, x_rounddown_multiple_when_power_of_two(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(128, x_rounddown_multiple_when_power_of_two(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, x_rounddown_multiple_when_power_of_two(1055, 128));
+    TEST_ASSERT_EQUAL_HEX32(2, x_rounddown_align(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(4, x_rounddown_align(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(16, x_rounddown_align(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(128, x_rounddown_align(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, x_rounddown_align(1055, 128));
 }
 
 
@@ -488,12 +488,12 @@ TEST(xutils, is_alignment)
 TEST(xutils, is_aligned)
 {
     int i;
-    uint32_t x = 3;
+    uint32_t x = 4;
 
     for (i = 0; i < 100; i++)
     {
-        TEST_ASSERT_TRUE(x_is_aligned((void*)x, 3));
-        x = x_roundup_multiple(x + 1, 3);
+        TEST_ASSERT_TRUE(x_is_aligned((void*)x, 4));
+        x = x_roundup_align(x + 1, 4);
     }
 }
 

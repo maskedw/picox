@@ -1,5 +1,5 @@
 /**
- *       @file  xcompiler.h
+ *       @file  memory.h
  *      @brief
  *
  *    @details
@@ -7,7 +7,7 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2015/06/21
+ *     Created  2015/06/28
  * ===================================================================
  */
 
@@ -37,24 +37,42 @@
  */
 
 
-#ifndef picox_core_xcompiler_h_
-#define picox_core_xcompiler_h_
+#ifndef picox_core_detail_memory_h_
+#define picox_core_detail_memory_h_
 
 
-#ifdef __GNUC__
-
-#include <picox/core/compiler/xgcc.h>
-
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 
-/*
- * X_HAS_TYPEOF
- * X_TYPEOF(x) で変数xの型を参照できる。
- *
- * X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS
- * {}で囲まれた複合文と変数の宣言を()の式の中で使用できる。
- */
+#ifdef X_CONF_MALLOC
+    #define X_MALLOC    X_CONF_MALLOC
+#else
+    #define X_MALLOC    malloc
+#endif
 
 
-#endif // picox_core_xcompiler_h_
+#ifdef X_CONF_FREE
+    #define X_FREE      X_CONF_FREE
+#else
+    #define X_FREE      free
+#endif
+
+
+#ifdef  X_CONF_USE_DETECT_MALLOC_NULL
+    #define X_ASSERT_MALLOC_NULL(expr)    X_ASSERT(expr)
+#else
+    #define X_ASSERT_MALLOC_NULL(expr)    do { if (!(expr)) return NULL; } while (0)
+#endif
+
+
+#define X_SAFE_FREE(ptr)  (X_FREE((ptr)), (ptr) = NULL)
+
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif // picox_core_detail_memory_h_

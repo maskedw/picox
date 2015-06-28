@@ -77,36 +77,11 @@
 #define picox_xsalloc_h_
 
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-
-/** メモリブロックのアライメントです
- *
- *  各ブロックのアドレスはXSALLOC_ALIGNに切り上げられます。
- */
-#ifndef XSALLOC_ALIGN
-    #define XSALLOC_ALIGN   sizeof(double)
-#endif
-
-
-/** 不正状態を検出します
- */
-#ifndef XSALLOC_ASSERT
-    #define XSALLOC_ASSERT(expr)   do { if (! (expr)) for(;;); } while (0)
-#endif
-
-
-/** メモリNULLを検出します
- */
-#ifndef XSALLOC_NULL_ASSERT
-    #define XSALLOC_NULL_ASSERT(ptr)   XSALLOC_ASSERT(ptr)
 #endif
 
 
@@ -119,27 +94,34 @@ typedef struct XSAlloc
     uint8_t*    begin;
     uint8_t*    end;
     size_t      capacity;
+    size_t      alignment;
     bool        growth_upward;
 } XSAlloc;
 
 
 /** メモリブロックを初期化します
  *
- *  @param heap     スタック管理するメモリ領域
- *  @param size     heap領域のサイズ
+ *  @param heap         スタック管理するメモリ領域
+ *  @param size         heap領域のサイズ
+ *  @param alignment    メモリ確保のアライメント
  *
  *  @pre
  *  + heap != NULL
- *  + size  > 0
+ *  + size  >= alignment
+ *  + alignment == 2のべき乗
  *
- *  @attention
- *  heap領域はXSALLOC_ALIGNに切り上げられます。できればあらかじめアラインしてお
- *  く方がよいでしょう。
+ *  @note
+ *  heap領域はalignmentに切り上げられ、さらに、sizeは、alignmentに切り下げられま
+ *  す。1バイトも無駄にしたくない場合は、heapをあらかじめアラインして確保し、
+ *  sizeはalignmentの倍数にしてください。
  */
-void xsalloc_init(XSAlloc* self, void* heap, size_t size);
+void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment);
 
 
 /** ヒープからsizeバイトのメモリを切り出して返します
+ *
+ *  @note
+ *  確保するメモリサイズはalignmentに切り上げられます。
  */
 void* xsalloc_allocate(XSAlloc* self, size_t size);
 
@@ -153,33 +135,37 @@ void xsalloc_clear(XSAlloc* self);
  *  @pre
  *  + end >= begin
  *  + begin, endはこのオブジェクトのheap領域を指していること。
+ *  + begin, endはalignmentの倍数であること。
  */
 void xsalloc_rewind(XSAlloc* self, void* begin, void* end);
 
 
 /** スタック伸長方向を返します
  */
-bool xsalloc_growth_direction(XSAlloc* self)
+static inline bool
+xsalloc_growth_direction(XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->growth_upward;
 }
 
 
 /** スタック伸長方向を設定します
  */
-void xsalloc_set_growth_direction(XSAlloc* self, bool growth_upward)
+static inline void
+xsalloc_set_growth_direction(XSAlloc* self, bool growth_upward)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     self->growth_upward = growth_upward;
 }
 
 
 /** 空きメモリバイト数を返します
  */
-size_t xsalloc_reserve(const XSAlloc* self)
+static inline size_t
+xsalloc_reserve(const XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->end - self->begin;
 }
 
@@ -189,8 +175,18 @@ size_t xsalloc_reserve(const XSAlloc* self)
 static inline size_t
 xsalloc_capacity(const XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->capacity;
+}
+
+
+/** 初期化時に指定したアラインメントを返します
+ */
+static inline size_t
+xsalloc_alignemnt(const XSAlloc* self)
+{
+    X_ASSERT(self);
+    return self->alignment;
 }
 
 
@@ -199,7 +195,7 @@ xsalloc_capacity(const XSAlloc* self)
 static inline uint8_t*
 xsalloc_heap(const XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->heap;
 }
 
@@ -209,7 +205,7 @@ xsalloc_heap(const XSAlloc* self)
 static inline uint8_t*
 xsalloc_bedin(const XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->begin;
 }
 
@@ -219,7 +215,7 @@ xsalloc_bedin(const XSAlloc* self)
 static inline uint8_t*
 xsalloc_end(const XSAlloc* self)
 {
-    XSALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->end;
 }
 

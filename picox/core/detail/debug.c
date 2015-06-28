@@ -1,5 +1,5 @@
 /**
- *       @file  xdebug.c
+ *       @file  debug.c
  *      @brief
  *
  *    @details
@@ -36,13 +36,7 @@
  * SOFTWARE.
  */
 
-#include "xdebug.h"
-
-// std
-#include <stdarg.h>
-#include <string.h>
-#include <stdbool.h>
-#include <ctype.h>
+#include <picox/core/xcore.h>
 
 
 typedef struct X__Debug
@@ -50,13 +44,59 @@ typedef struct X__Debug
     int level;
 } X__Debug;
 
-X__Debug    g_picox_debug = {X_LOG_LEVEL};
-static X__Debug* const priv = &g_picox_debug;
-
-
 static void X__VPrintLog(int level, const char* fmt, va_list args);
 static void X__Putc(int c);
 static const char* X__GetHeader(int level);
+static void X__PreAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
+static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
+static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
+
+
+#ifdef X_CONF_USE_LOG_TIMESTAMP
+
+#ifdef X_CONF_LOG_TIMESTAMP_BUF_SIZE
+    #define X_LOG_TIMESTAMP_BUF_SIZE    X_CONF_LOG_TIMESTAMP_BUF_SIZE
+#else
+    #define X_LOG_TIMESTAMP_BUF_SIZE    32
+#endif
+
+void x_port_stimestamp(char* dst, size_t size);
+
+#endif
+
+
+X__Debug    g_picox_debug = {X_LOG_LEVEL};
+static X__Debug* const priv = &g_picox_debug;
+XAssertionFailedFunc x_pre_assertion_failed = X__PreAssertionFailed;
+XAssertionFailedFunc x_post_assertion_failed = X__PostAssertionFailed;
+XAssertionFailedFunc x_assertion_failed = X__AssertionFailed;
+
+
+static void X__PreAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
+{
+    X_UNUSED(expr);
+    X_UNUSED(msg);
+    X_UNUSED(func);
+    X_UNUSED(file);
+    X_UNUSED(line);
+}
+
+
+static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
+{
+    X_UNUSED(expr);
+    X_UNUSED(msg);
+    X_UNUSED(func);
+    X_UNUSED(file);
+    X_UNUSED(line);
+
+    int i = 0;
+    for (;;)
+    {
+        i++;
+        i++;
+    }
+}
 
 
 int x_set_log_level(int level)
@@ -88,9 +128,23 @@ void x_print_log(int level, const char* fmt, ...)
 }
 
 
-void x_hexdump(const void* src, unsigned len, unsigned cols)
+void x_log_hexdump(int level, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
-    unsigned int i, j;
+    va_list args;
+
+    if (level <= priv->level) {
+
+        va_start(args, fmt);
+        X__VPrintLog(level, fmt, args);
+        va_end(args);
+        x_hexdump(src, len, cols);
+    }
+}
+
+
+void x_hexdump(const void* src, size_t len, size_t cols)
+{
+    size_t i, j;
     const unsigned char* p = src;
 
     for (i = 0; i < len + ((len % cols) ? (cols - len % cols) : 0); i++)
@@ -129,7 +183,7 @@ void x_hexdump(const void* src, unsigned len, unsigned cols)
 }
 
 
-void x_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line)
+static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
     /*
      * fileがフルパスで出力されると環境によってコンパイル環境によって出力が変
@@ -142,7 +196,7 @@ void x_assertion_failed(const char* expr, const char* msg, const char* func, con
     file = p ? p + 1 : file;
     const char* none = "none";
 
-    X_PRE_ASSERTION_FAILED();
+    x_pre_assertion_failed(expr, msg, func, file, line);
 
     x_printf("Assertion failed\n");
     x_printf("[MSG ] %s\n", msg ? msg : none);
@@ -152,14 +206,21 @@ void x_assertion_failed(const char* expr, const char* msg, const char* func, con
     x_printf("[LINE] %d\n", line);
     x_printf("************************\n");
 
-    X_POST_ASSERTION_FAILED();
+    x_post_assertion_failed(expr, msg, func, file, line);
 }
 
 
 static void X__VPrintLog(int level, const char* fmt, va_list args)
 {
-    if (level <= priv->level) {
+    if (level <= priv->level)
+    {
+#ifdef X_CONF_USE_LOG_TIMESTAMP
+        char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
+        x_port_stimestamp(buf, sizeof(tstamp));
+        x_printf("%s%s", X__GetHeader(level), tstamp);
+#else
         x_printf("%s", X__GetHeader(level));
+#endif
         x_vprintf(fmt, args);
         X__Putc('\n');
     }
