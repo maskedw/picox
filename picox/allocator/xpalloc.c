@@ -56,21 +56,19 @@ typedef struct X__Chunk
 
 static void* X__Allocate(XPAlloc* self, size_t size);
 static void X__Deallocate(XPAlloc* self, void* ptr, size_t size);
-
-
-static const size_t X__ALIGN = ((sizeof(X__Chunk) <= XPALLOC_ALIGN) ?
-                                XPALLOC_ALIGN : X_ROUNDUP_MULTIPLE(sizeof(X__Chunk), XPALLOC_ALIGN));
+#define X__ALIGN    (X_ALIGN_OF(XMaxAlign))
 
 
 void xpalloc_init(XPAlloc* self, void* heap, size_t size)
 {
-    XPALLOC_ASSERT(self);
-    XPALLOC_ASSERT(heap);
+    X_ASSERT(self);
+    X_ASSERT(heap);
 
     self->heap = heap;
     self->top = (uint8_t*)x_roundup_multiple((uintptr_t)heap, X__ALIGN);
 
-    XPALLOC_ASSERT(size > (self->top - self->heap));
+    X_ASSERT(self->top - self->heap >= 0);
+    X_ASSERT(size > (size_t)(self->top - self->heap));
     self->capacity = size - (self->top - self->heap);
     self->reserve = self->capacity;
 
@@ -80,49 +78,22 @@ void xpalloc_init(XPAlloc* self, void* heap, size_t size)
 }
 
 
-void xpalloc_clear(XPAlloc* self)
-{
-    XPALLOC_ASSERT(self);
-
-    self->reserve = self->capacity;
-    self->top = (uint8_t*)x_roundup_multiple((uintptr_t)self->heap, X__ALIGN);
-
-    X__Chunk* chunk = (X__Chunk*)self->top;
-    chunk->next = NULL;
-    chunk->size = self->capacity;
-}
-
-
-void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user)
-{
-    XPALLOC_ASSERT(self);
-    XPALLOC_ASSERT(walker);
-
-    const X__Chunk* chunk = (const X__Chunk*)self->top;
-    while (chunk)
-    {
-        walker((const uint8_t*)chunk, chunk->size, user);
-        chunk = chunk->next;
-    }
-}
-
-
 void* xpalloc_allocate(XPAlloc* self, size_t size)
 {
-    XPALLOC_ASSERT(self);
-    XPALLOC_ASSERT(size > 0);
+    X_ASSERT(self);
+    X_ASSERT(size > 0);
 
     char* ptr;
 
     /* サイズ情報確保用の領域を余分に確保する。 */
-    size = x_roundup_multiple(size + X__ALIGN, X__ALIGN);
+    size = x_roundup_multiple(size + sizeof(X__Chunk), X__ALIGN);
     ptr = X__Allocate(self, size);
 
-    XPALLOC_NULL_ASSERT(ptr);
+    X_ASSERT_MALLOC_NULL(ptr);
 
     if (ptr != NULL)
     {
-        XPALLOC_ASSERT(x_is_aligned(ptr, X_ALIGN_OF(size_t)));
+        X_ASSERT(x_is_aligned(ptr, X_ALIGN_OF(size_t)));
         *(size_t*)(ptr) = size;
         ptr += X__ALIGN;
         self->reserve -= size;
@@ -134,12 +105,14 @@ void* xpalloc_allocate(XPAlloc* self, size_t size)
 
 void xpalloc_deallocate(XPAlloc* self, void* ptr)
 {
+    X_ASSERT(self);
+
     if (ptr == NULL)
         return;
 
     /* メモリ確保の時点でアラインされてるんだから、解放メモリがアラインされてな
      * かったら、不正なアドレスですわな。 */
-    XPALLOC_ASSERT(x_is_aligned(ptr, X__ALIGN));
+    X_ASSERT(x_is_aligned(ptr, X__ALIGN));
 
     /* 解放メモリの前にサイズ情報が仕込まれているのだ。 */
     char* const p = ((char*)ptr) - X__ALIGN;
@@ -147,6 +120,41 @@ void xpalloc_deallocate(XPAlloc* self, void* ptr)
 
     X__Deallocate(self, p, size);
     self->reserve += size;
+}
+
+
+void xpalloc_clear(XPAlloc* self)
+{
+    X_ASSERT(self);
+
+    self->reserve = self->capacity;
+    self->top = (uint8_t*)x_roundup_multiple((uintptr_t)self->heap, X__ALIGN);
+
+    X__Chunk* chunk = (X__Chunk*)self->top;
+    chunk->next = NULL;
+    chunk->size = self->capacity;
+}
+
+
+size_t xpalloc_allocation_overhead(const XPAlloc* self, size_t n)
+{
+    X_ASSERT(self);
+    X_ASSERT(n > 0);
+    return x_roundup_multiple((n + sizeof(X__Chunk)), X__ALIGN) - n;
+}
+
+
+void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user)
+{
+    X_ASSERT(self);
+    X_ASSERT(walker);
+
+    const X__Chunk* chunk = (const X__Chunk*)self->top;
+    while (chunk)
+    {
+        walker((const uint8_t*)chunk, chunk->size, user);
+        chunk = chunk->next;
+    }
 }
 
 
@@ -204,8 +212,8 @@ static void X__Deallocate(XPAlloc* self, void* ptr, size_t size)
     X__Chunk* chunk = (X__Chunk*)self->top;
     X__Chunk* next_chunk;
 
-    XPALLOC_ASSERT(x_is_within_addr(ptr, self->heap, self->heap + self->capacity));
-    XPALLOC_ASSERT((uint8_t*)ptr + size <= self->heap + self->capacity);
+    X_ASSERT(x_is_within_ptr(ptr, self->heap, self->heap + self->capacity));
+    X_ASSERT((uint8_t*)ptr + size <= self->heap + self->capacity);
 
     for(;;)
     {
@@ -215,7 +223,7 @@ static void X__Deallocate(XPAlloc* self, void* ptr, size_t size)
         if ((next_chunk == NULL) || (blk < next_chunk))
         {
             /* 不正な解放ブロックとサイズ指定のチェック */
-            XPALLOC_ASSERT((next_chunk == NULL) || (next_chunk >= (X__Chunk*)((uint8_t*)blk + size)));
+            X_ASSERT((next_chunk == NULL) || (next_chunk >= (X__Chunk*)((uint8_t*)blk + size)));
 
             /* マージできる？ */
             if (blk == (X__Chunk*)((uint8_t*)chunk + chunk->size))
@@ -261,6 +269,6 @@ static void X__Deallocate(XPAlloc* self, void* ptr, size_t size)
         }
         /* 次のループへ */
         chunk = next_chunk;
-        XPALLOC_ASSERT((blk >= ((X__Chunk*)((uint8_t*)chunk + chunk->size))));
+        X_ASSERT((blk >= ((X__Chunk*)((uint8_t*)chunk + chunk->size))));
     }
 }

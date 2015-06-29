@@ -323,15 +323,29 @@ static inline bool x_is_power_of_two(uint32_t x)
  *  @note
  *  アライメントは2のべき乗であることを前提とします。
  */
-#define X_ROUNDUP_ALIGN(x, a) ((((uint32_t)(x)) + (a) - 1) & ((uint32_t)0 - (a)))
+#define X_ROUNDUP_ALIGNMENT(x, a) ((((uint32_t)(x)) + (a) - 1) & ((uint32_t)0 - (a)))
 
 
-/** X_ROUNDUP_ALIGN()の関数版です。
+/** X_ROUNDUP_ALIGNMENT()の関数版です。
  */
-static inline uint32_t x_roundup_align(uint32_t x, uint32_t a)
+static inline uint32_t x_roundup_alignment(uint32_t x, uint32_t a)
 {
     X_ASSERT(X_IS_POWER_OF_TWO(a));
-    return X_ROUNDUP_ALIGN(x, a);
+    return X_ROUNDUP_ALIGNMENT(x, a);
+}
+
+
+/** X_ROUNDUP_ALIGNMENT()のポインタ版です。
+ */
+#define X_ROUNDUP_ALIGNMENT_PTR(x, a) ((void*)((((uintptr_t)(x)) + (a) - 1) & ((uintptr_t)0 - (a))))
+
+
+/** X_ROUNDUP_ALIGNMENT_PTR()の関数版です。
+ */
+static inline void* x_roundup_alignment_ptr(const void* x, size_t a)
+{
+    X_ASSERT(X_IS_POWER_OF_TWO(a));
+    return X_ROUNDUP_ALIGNMENT_PTR(x, a);
 }
 
 
@@ -340,15 +354,29 @@ static inline uint32_t x_roundup_align(uint32_t x, uint32_t a)
  *  @note
  *  アライメントは2のべき乗であることを前提とします。
  */
-#define X_ROUNDDOWN_ALIGN(x, a) (X_ROUNDUP_ALIGN((x) - (a) + 1, a))
+#define X_ROUNDDOWN_ALIGNMENT(x, a) (X_ROUNDUP_ALIGNMENT((x) - (a) + 1, a))
 
 
-/** X_ROUNDDOWN_ALIGN()の関数版です。
+/** X_ROUNDDOWN_ALIGNMENT()の関数版です。
  */
-static inline uint32_t x_rounddown_align(uint32_t x, uint32_t a)
+static inline uint32_t x_rounddown_alignment(uint32_t x, uint32_t a)
 {
     X_ASSERT(X_IS_POWER_OF_TWO(a));
-    return X_ROUNDDOWN_ALIGN(x, a);
+    return X_ROUNDDOWN_ALIGNMENT(x, a);
+}
+
+
+/** X_ROUNDDOWN_ALIGNMENT()のポインタ版です。
+ */
+#define X_ROUNDDOWN_ALIGNMENT_PTR(x, a) (X_ROUNDUP_ALIGNMENT_PTR(((uintptr_t)(x)) - (a) + 1, a))
+
+
+/** X_ROUNDDOWN_ALIGNMENT_PTR()の関数版です。
+ */
+static inline void* x_rounddown_alignment_ptr(const void* x, uint32_t a)
+{
+    X_ASSERT(X_IS_POWER_OF_TWO(a));
+    return X_ROUNDDOWN_ALIGNMENT_PTR(x, a);
 }
 
 
@@ -367,7 +395,7 @@ static inline bool x_is_alignment(const void* ptr)
 
 /** xがアライメントの倍数かどうかをBool値で返します。
  */
-#define X_IS_ALIGNED(x, a)  (X_ROUNDUP_ALIGN((x), (a)) == (x))
+#define X_IS_ALIGNED(x, a)  (X_ROUNDUP_ALIGNMENT((x), (a)) == (x))
 
 
 /** ptrが指すアドレスがalignmentの倍数かどうかをBool値で返します。
@@ -649,7 +677,7 @@ static inline uint32_t x_reverse_endian32(uint32_t x)
 
 /** void*引数end, beginのバイト単位のアドレス差を返します。
  */
-static inline ptrdiff_t x_distance_addr(const void* begin, const void* end)
+static inline ptrdiff_t x_distance_ptr(const void* begin, const void* end)
 {
     return (const char*)(end) - (const char*)(begin);
 }
@@ -673,7 +701,7 @@ static inline bool x_is_uwithin(uint32_t x, uint32_t begin, uint32_t end)
 
 /** ptrが指すアドレスがbegin とendの範囲内かどうかをBool値で返します。
  */
-static inline bool x_is_within_addr(const void* ptr, const void* begin, const void* end)
+static inline bool x_is_within_ptr(const void* ptr, const void* begin, const void* end)
 {
     const char* const p = (const char*)(ptr);
     const char* const b = (const char*)(begin);

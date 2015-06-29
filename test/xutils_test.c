@@ -165,11 +165,11 @@ TEST(xutils, roundup_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, X_ROUNDUP_MULTIPLE(32, 8));
     TEST_ASSERT_EQUAL_HEX32(444, X_ROUNDUP_MULTIPLE(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDUP_ALIGN(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(8, X_ROUNDUP_ALIGN(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(24, X_ROUNDUP_ALIGN(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(256, X_ROUNDUP_ALIGN(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDUP_ALIGN(1012, 128));
+    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDUP_ALIGNMENT(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(8, X_ROUNDUP_ALIGNMENT(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(24, X_ROUNDUP_ALIGNMENT(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(256, X_ROUNDUP_ALIGNMENT(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDUP_ALIGNMENT(1012, 128));
 
     TEST_ASSERT_EQUAL_HEX32(4, x_roundup_multiple(3, 2));
     TEST_ASSERT_EQUAL_HEX32(8, x_roundup_multiple(6, 4));
@@ -177,11 +177,11 @@ TEST(xutils, roundup_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, x_roundup_multiple(32, 8));
     TEST_ASSERT_EQUAL_HEX32(444, x_roundup_multiple(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(4, x_roundup_align(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(8, x_roundup_align(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(24, x_roundup_align(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(256, x_roundup_align(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, x_roundup_align(1012, 128));
+    TEST_ASSERT_EQUAL_HEX32(4, x_roundup_alignment(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(8, x_roundup_alignment(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(24, x_roundup_alignment(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(256, x_roundup_alignment(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, x_roundup_alignment(1012, 128));
 }
 
 
@@ -193,11 +193,11 @@ TEST(xutils, rounddown_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, X_ROUNDDOWN_MULTIPLE(32, 8));
     TEST_ASSERT_EQUAL_HEX32(333, X_ROUNDDOWN_MULTIPLE(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(2, X_ROUNDDOWN_ALIGN(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDDOWN_ALIGN(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(16, X_ROUNDDOWN_ALIGN(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(128, X_ROUNDDOWN_ALIGN(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDDOWN_ALIGN(1055, 128));
+    TEST_ASSERT_EQUAL_HEX32(2, X_ROUNDDOWN_ALIGNMENT(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(4, X_ROUNDDOWN_ALIGNMENT(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(16, X_ROUNDDOWN_ALIGNMENT(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(128, X_ROUNDDOWN_ALIGNMENT(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, X_ROUNDDOWN_ALIGNMENT(1055, 128));
 
     TEST_ASSERT_EQUAL_HEX32(2, x_rounddown_multiple(3, 2));
     TEST_ASSERT_EQUAL_HEX32(4, x_rounddown_multiple(6, 4));
@@ -205,11 +205,11 @@ TEST(xutils, rounddown_multiple)
     TEST_ASSERT_EQUAL_HEX32(32, x_rounddown_multiple(32, 8));
     TEST_ASSERT_EQUAL_HEX32(333, x_rounddown_multiple(345, 111));
 
-    TEST_ASSERT_EQUAL_HEX32(2, x_rounddown_align(3, 2));
-    TEST_ASSERT_EQUAL_HEX32(4, x_rounddown_align(6, 4));
-    TEST_ASSERT_EQUAL_HEX32(16, x_rounddown_align(19, 8));
-    TEST_ASSERT_EQUAL_HEX32(128, x_rounddown_align(211, 128));
-    TEST_ASSERT_EQUAL_HEX32(1024, x_rounddown_align(1055, 128));
+    TEST_ASSERT_EQUAL_HEX32(2, x_rounddown_alignment(3, 2));
+    TEST_ASSERT_EQUAL_HEX32(4, x_rounddown_alignment(6, 4));
+    TEST_ASSERT_EQUAL_HEX32(16, x_rounddown_alignment(19, 8));
+    TEST_ASSERT_EQUAL_HEX32(128, x_rounddown_alignment(211, 128));
+    TEST_ASSERT_EQUAL_HEX32(1024, x_rounddown_alignment(1055, 128));
 }
 
 
@@ -464,10 +464,10 @@ TEST(xutils, store)
 }
 
 
-TEST(xutils, distance_addr)
+TEST(xutils, distance_ptr)
 {
-    TEST_ASSERT_EQUAL_HEX32(5, x_distance_addr((void*)10, (void*)15));
-    TEST_ASSERT_EQUAL_HEX32(0x0F, x_distance_addr((void*)0xFFFFFFF0, (void*)0xFFFFFFFF));
+    TEST_ASSERT_EQUAL_HEX32(5, x_distance_ptr((void*)10, (void*)15));
+    TEST_ASSERT_EQUAL_HEX32(0x0F, x_distance_ptr((void*)0xFFFFFFF0, (void*)0xFFFFFFFF));
 }
 
 
@@ -493,7 +493,7 @@ TEST(xutils, is_aligned)
     for (i = 0; i < 100; i++)
     {
         TEST_ASSERT_TRUE(x_is_aligned((void*)x, 4));
-        x = x_roundup_align(x + 1, 4);
+        x = x_roundup_alignment(x + 1, 4);
     }
 }
 
@@ -528,19 +528,19 @@ TEST(xutils, is_uwithin)
 }
 
 
-TEST(xutils, is_within_addr)
+TEST(xutils, is_within_ptr)
 {
     const uint8_t* b = (void*)50;
     const uint8_t* e = (void*)1000;
-    TEST_ASSERT_TRUE(x_is_within_addr(b, b, e));
-    TEST_ASSERT_TRUE(x_is_within_addr(b + 1, b, e));
-    TEST_ASSERT_TRUE(x_is_within_addr(b + 2, b, e));
-    TEST_ASSERT_TRUE(x_is_within_addr(e - 1, b, e));
-    TEST_ASSERT_TRUE(x_is_within_addr(e - 2, b, e));
+    TEST_ASSERT_TRUE(x_is_within_ptr(b, b, e));
+    TEST_ASSERT_TRUE(x_is_within_ptr(b + 1, b, e));
+    TEST_ASSERT_TRUE(x_is_within_ptr(b + 2, b, e));
+    TEST_ASSERT_TRUE(x_is_within_ptr(e - 1, b, e));
+    TEST_ASSERT_TRUE(x_is_within_ptr(e - 2, b, e));
 
-    TEST_ASSERT_FALSE(x_is_within_addr(b - 1, b, e));
-    TEST_ASSERT_FALSE(x_is_within_addr(e, b, e));
-    TEST_ASSERT_FALSE(x_is_within_addr(e + 1, b, e));
+    TEST_ASSERT_FALSE(x_is_within_ptr(b - 1, b, e));
+    TEST_ASSERT_FALSE(x_is_within_ptr(e, b, e));
+    TEST_ASSERT_FALSE(x_is_within_ptr(e + 1, b, e));
 }
 
 
@@ -784,12 +784,12 @@ TEST_GROUP_RUNNER(xutils)
     RUN_TEST_CASE(xutils, reverse_bits);
     RUN_TEST_CASE(xutils, load);
     RUN_TEST_CASE(xutils, store);
-    RUN_TEST_CASE(xutils, distance_addr);
+    RUN_TEST_CASE(xutils, distance_ptr);
     RUN_TEST_CASE(xutils, is_alignment);
     RUN_TEST_CASE(xutils, is_aligned);
     RUN_TEST_CASE(xutils, is_within);
     RUN_TEST_CASE(xutils, is_uwithin);
-    RUN_TEST_CASE(xutils, is_within_addr);
+    RUN_TEST_CASE(xutils, is_within_ptr);
     RUN_TEST_CASE(xutils, find_lsb);
     RUN_TEST_CASE(xutils, find_msb);
     RUN_TEST_CASE(xutils, count_bits);

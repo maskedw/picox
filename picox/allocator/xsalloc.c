@@ -43,7 +43,7 @@
 static inline uint8_t*
 X__GetBeginOrigin(XSAlloc* self)
 {
-    return (uint8_t*)(X_ROUNDUP_ALIGN((uint32_t)self->heap, self->alignment));
+    return X_ROUNDUP_ALIGNMENT_PTR(self->heap, self->alignment);
 }
 
 
@@ -53,7 +53,7 @@ X__IsValidRange(XSAlloc* self, const void* p)
     const uint8_t* b = X__GetBeginOrigin(self);
     const uint8_t* e = b + self->capacity;
 
-    return x_is_within_addr(p, b, e + 1);
+    return x_is_within_ptr(p, b, e + 1);
 }
 
 
@@ -74,7 +74,7 @@ void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment)
     X_ASSERT(size > (size_t)(self->begin - self->heap));
     size -= self->begin - self->heap;
 
-    self->end = (uint8_t*)(x_rounddown_align((uint32_t)self->begin + size, alignment));
+    self->end = (uint8_t*)(x_rounddown_alignment((uint32_t)self->begin + size, alignment));
 
     /* 切り下げた結果heapサイズに不整合がでていないか？ */
     X_ASSERT(self->end - self->begin >= 1);
@@ -95,7 +95,7 @@ void* xsalloc_allocate(XSAlloc* self, size_t size)
 
     X_ASSERT_MALLOC_NULL(reserve >= size);
 
-    size = x_roundup_align(size, self->alignment);
+    size = x_roundup_alignment(size, self->alignment);
 
     if (self->growth_upward) {
         ret = self->begin;

@@ -21,13 +21,13 @@ set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
 add_executable(alltests
     alltests.c
     testutils.c
+    test_xsalloc.c
+    test_xpalloc.c
     sds_test.c
     xfifo_test.c
     xlist_test.c
     xmsgbuf_test.c
-    xpalloc_test.c
     xutils_test.c
-    test_xsalloc.c
     ${PICOX_DIR}/core/detail/debug.c
     ${PICOX_DIR}/filesystem/xfile.c
     ${PICOX_DIR}/allocator/xsalloc.c

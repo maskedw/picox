@@ -63,29 +63,6 @@ extern "C" {
 #endif
 
 
-/** メモリブロックのアライメントです
- *
- *  各ブロックのアドレスはXPALLOC_ALIGNに切り上げられます。
- */
-#ifndef XPALLOC_ALIGN
-    #define XPALLOC_ALIGN   sizeof(double)
-#endif
-
-
-/** 不正状態を検出します
- */
-#ifndef XPALLOC_ASSERT
-    #define XPALLOC_ASSERT(expr)   X_ASSERT(expr)
-#endif
-
-
-/** メモリNULLを検出します
- */
-#ifndef XPALLOC_NULL_ASSERT
-    #define XPALLOC_NULL_ASSERT(ptr)   XPALLOC_ASSERT(ptr)
-#endif
-
-
 /** 可変長メモリアロケータ管理クラスです
  */
 typedef struct XPAlloc
@@ -96,6 +73,11 @@ typedef struct XPAlloc
     size_t          capacity;
     size_t          reserve;
 } XPAlloc;
+
+
+/** メモリ確保時のアラインメントです
+ */
+#define XPALLOC_ALIGNMENT   (X_ALIGN_OF(XMaxAlign))
 
 
 /** メモリブロックを初期化します
@@ -134,7 +116,7 @@ void xpalloc_clear(XPAlloc* self);
 static inline uint8_t*
 xpalloc_heap(const XPAlloc* self)
 {
-    XPALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->heap;
 }
 
@@ -144,7 +126,7 @@ xpalloc_heap(const XPAlloc* self)
 static inline size_t
 xpalloc_reserve(const XPAlloc* self)
 {
-    XPALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->reserve;
 }
 
@@ -154,14 +136,14 @@ xpalloc_reserve(const XPAlloc* self)
 static inline size_t
 xpalloc_capacity(const XPAlloc* self)
 {
-    XPALLOC_ASSERT(self);
+    X_ASSERT(self);
     return self->capacity;
 }
 
 
-/** nバイトのメモリ確保を行った場合に必要な余分なメモリサイズ
+/** nバイトのメモリ確保を行った場合に必要な余分なメモリサイズを返します。
  */
-size_t xpalloc_overhead(const XPAlloc* self, size_t n);
+size_t xpalloc_allocation_overhead(const XPAlloc* self, size_t n);
 
 
 /** ヒープの空きブロック走査用コールバック関数です
@@ -176,6 +158,9 @@ typedef void (*XPAllocWalker)(const uint8_t* chunk, size_t size, void* user);
 /** ヒープ内の空きブロックを走査し、ブロックごとにwalkerを呼び出します
  *
  *  デバッグ用です。walkerがデータを収集することで、断片化状況等を確認できます。
+ *
+ *  @param walker   空きブロック検出毎に呼び出される関数
+ *  @param user     walker呼び出し時に渡されるポインタ
  */
 void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user);
 
