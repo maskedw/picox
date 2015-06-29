@@ -54,7 +54,21 @@ static void X__TestAlloc(bool growth_upward)
 }
 
 
-TEST(xsalloc, alloc)
+TEST(xsalloc, init)
+{
+    uint8_t* heap = xsalloc_heap(&alloc);
+    X_TEST_ASSERTION_FAILED(xsalloc_init(NULL, heap, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign)));
+    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, NULL, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign)));
+    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 0, X_ALIGN_OF(XMaxAlign)));
+    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 0, 9));
+    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 4, 8));
+    X_TEST_ASSERTION_SUCCESS(xsalloc_init(&alloc, heap, X__HEAP_SIZE, 2));
+    TEST_ASSERT_EQUAL(X__HEAP_SIZE, xsalloc_reserve(&alloc));
+    TEST_ASSERT_EQUAL(X__HEAP_SIZE, xsalloc_capacity(&alloc));
+}
+
+
+TEST(xsalloc, allocate)
 {
     X_TEST_ASSERTION_FAILED(xsalloc_allocate(NULL, 10));
     X_TEST_ASSERTION_FAILED(xsalloc_allocate(&alloc, 0));
@@ -82,7 +96,7 @@ TEST(xsalloc, rewind)
     X_TEST_ASSERTION_FAILED(xsalloc_rewind(&alloc, end, begin));
     X_TEST_ASSERTION_FAILED(xsalloc_rewind(&alloc, begin - 1, end));
     X_TEST_ASSERTION_FAILED(xsalloc_rewind(&alloc, begin, end + 1));
-    X_TEST_ASSERTION_FAILED(xsalloc_rewind(&alloc, begin - xsalloc_alignemnt(&alloc), end));
+    X_TEST_ASSERTION_FAILED(xsalloc_rewind(&alloc, begin - xsalloc_alignment(&alloc), end));
     X_TEST_ASSERTION_SUCCESS(xsalloc_rewind(&alloc, NULL, NULL));
 
     xsalloc_rewind(&alloc, begin, end);
@@ -122,24 +136,74 @@ TEST(xsalloc, clear)
 }
 
 
-TEST(xsalloc, init)
+TEST(xsalloc, growth_direction)
 {
+    X_TEST_ASSERTION_FAILED(xsalloc_set_growth_direction(NULL, true));
+    X_TEST_ASSERTION_FAILED(xsalloc_growth_direction(NULL));
+
+    xsalloc_set_growth_direction(&alloc, false);
+    TEST_ASSERT_EQUAL(xsalloc_growth_direction(&alloc), false);
+    xsalloc_set_growth_direction(&alloc, true);
+    TEST_ASSERT_EQUAL(xsalloc_growth_direction(&alloc), true);
+}
+
+
+TEST(xsalloc, reserve)
+{
+    X_TEST_ASSERTION_FAILED(xsalloc_reserve(NULL));
+
     uint8_t* heap = xsalloc_heap(&alloc);
-    X_TEST_ASSERTION_FAILED(xsalloc_init(NULL, heap, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign)));
-    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, NULL, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign)));
-    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 0, X_ALIGN_OF(XMaxAlign)));
-    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 0, 9));
-    X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 4, 8));
-    X_TEST_ASSERTION_SUCCESS(xsalloc_init(&alloc, heap, X__HEAP_SIZE, 2));
+    xsalloc_init(&alloc, heap, X__HEAP_SIZE, X_ALIGN_OF(char));
     TEST_ASSERT_EQUAL(X__HEAP_SIZE, xsalloc_reserve(&alloc));
+}
+
+
+TEST(xsalloc, capacity)
+{
+    X_TEST_ASSERTION_FAILED(xsalloc_capacity(NULL));
+
+    uint8_t* heap = xsalloc_heap(&alloc);
+    xsalloc_init(&alloc, heap, X__HEAP_SIZE, X_ALIGN_OF(char));
     TEST_ASSERT_EQUAL(X__HEAP_SIZE, xsalloc_capacity(&alloc));
+}
+
+
+TEST(xsalloc, alignment)
+{
+    X_TEST_ASSERTION_FAILED(xsalloc_alignment(NULL));
+
+    uint8_t* heap = xsalloc_heap(&alloc);
+    size_t alignment = 1;
+    while (alignment <= 128)
+    {
+        xsalloc_init(&alloc, heap, X__HEAP_SIZE, alignment);
+        TEST_ASSERT_EQUAL(alignment, xsalloc_alignment(&alloc));
+        alignment <<= 1;
+    }
+}
+
+
+TEST(xsalloc, heap)
+{
+    X_TEST_ASSERTION_FAILED(xsalloc_heap(NULL));
+
+    XSAlloc alloc;
+    char buf[10];
+
+    xsalloc_init(&alloc, buf, sizeof(buf), X_ALIGN_OF(char));
+    TEST_ASSERT_EQUAL_PTR(buf, xsalloc_heap(&alloc));
 }
 
 
 TEST_GROUP_RUNNER(xsalloc)
 {
     RUN_TEST_CASE(xsalloc, init);
-    RUN_TEST_CASE(xsalloc, alloc);
+    RUN_TEST_CASE(xsalloc, allocate);
     RUN_TEST_CASE(xsalloc, clear);
     RUN_TEST_CASE(xsalloc, rewind);
+    RUN_TEST_CASE(xsalloc, growth_direction);
+    RUN_TEST_CASE(xsalloc, reserve);
+    RUN_TEST_CASE(xsalloc, capacity);
+    RUN_TEST_CASE(xsalloc, alignment);
+    RUN_TEST_CASE(xsalloc, heap);
 }

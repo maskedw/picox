@@ -37,7 +37,7 @@
  */
 
 
-#include "xsalloc.h"
+#include <picox/allocator/xsalloc.h>
 
 
 static inline uint8_t*
@@ -70,13 +70,15 @@ void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment)
     self->begin = X__GetBeginOrigin(self);
 
     /* 切り上げた結果heapサイズに不整合がでていないか？ */
-    X_ASSERT(size > (self->begin - self->heap));
+    X_ASSERT(self->begin - self->heap >= 0);
+    X_ASSERT(size > (size_t)(self->begin - self->heap));
     size -= self->begin - self->heap;
 
     self->end = (uint8_t*)(x_rounddown_align((uint32_t)self->begin + size, alignment));
 
     /* 切り下げた結果heapサイズに不整合がでていないか？ */
-    X_ASSERT(self->end - self->begin >= self->alignment);
+    X_ASSERT(self->end - self->begin >= 1);
+    X_ASSERT((size_t)(self->end - self->begin) >= self->alignment);
 
     self->capacity = self->end - self->begin;
     self->growth_upward = true;

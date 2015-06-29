@@ -45,22 +45,22 @@
 #define X_PP_CAT__(a, b)          a ## b
 /// @endcond IGNORE
 
-/** �g�[�N��a, b��A�����܂��B
+/** トークンa, bを連結します。
  */
 #define X_PP_CAT(a, b)            X_PP_CAT__(a, b)
 
 
-/** �g�[�N��a, b, c��A�����܂��B
+/** トークンa, b, cを連結します。
  */
 #define X_PP_CAT3(a,b,c)          X_PP_CAT(X_PP_CAT(a,b),c)
 
 
-/** �g�[�N��a, b, c, d��A�����܂��B
+/** トークンa, b, c, dを連結します。
  */
 #define X_PP_CAT4(a,b,c,d)        X_PP_CAT(X_PP_CAT3(a,b,c),d)
 
 
-/** �g�[�N��a, b, c, d, e��A�����܂��B
+/** トークンa, b, c, d, eを連結します。
  */
 #define X_PP_CAT5(a,b,c,d,e)      X_PP_CAT(X_PP_CAT4(a,b,c,d),e)
 
@@ -69,11 +69,11 @@
 #define X_PP_STRINGIZE__(text)    #text
 /// @endcond IGNORE
 
-/** �g�[�N��text�𕶎��񉻂��܂��B
+/** トークンtextを文字列化します。
  *
  *  @note
- *  X_PP_STRINGIZE__()��ʂ���2�i�K�̃}�N�����g�p���Ă���̂́Atext��define���ꂽ
- *  �g�[�N����n���ꂽ���ɁAdefine��W�J������̒l�ŕ����񉻂��邽�߂ł��B
+ *  X_PP_STRINGIZE__()を通して2段階のマクロを使用しているのは、textにdefineされた
+ *  トークンを渡された時に、defineを展開した後の値で文字列化するためです。
  */
 #define X_PP_STRINGIZE(text)      X_PP_STRINGIZE__(text)
 

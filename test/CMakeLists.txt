@@ -15,7 +15,8 @@ include_directories(${EX_DIR}/sds)
 include_directories(${UNITY_DIR})
 include_directories(${UNITY_EX_DIR})
 
-set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wno-sign-compare ")
+# set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wno-sign-compare ")
+set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
 
 add_executable(alltests
     alltests.c

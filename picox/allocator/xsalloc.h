@@ -183,7 +183,7 @@ xsalloc_capacity(const XSAlloc* self)
 /** 初期化時に指定したアラインメントを返します
  */
 static inline size_t
-xsalloc_alignemnt(const XSAlloc* self)
+xsalloc_alignment(const XSAlloc* self)
 {
     X_ASSERT(self);
     return self->alignment;
