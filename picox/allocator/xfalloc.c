@@ -36,47 +36,50 @@
  * SOFTWARE.
  */
 
-#include "xfalloc.h"
+#include <picox/allocator/xfalloc.h>
 
 
 static void X__MakeBlocks(XFAlloc* self);
-#define X__ROUNDUP_ALIGN(x)  ((((uintptr_t)(x)) + (XFALLOC_ALIGN) - 1) & ((uintptr_t)0 - (XFALLOC_ALIGN)))
-#define X__IS_ALIGNED(x)     ((X__ROUNDUP_ALIGN(x)) == ((uintptr_t)(x)))
-#define X__IS_VALID_RANGE(x) ((self->top <= (x)) && ((x) < (self->top + (self->block_size * (self->num_blocks - 1)))))
+#define X__IS_VALID_RANGE(x) (x_is_within_ptr(x, self->top, self->top + 1 + (self->block_size * (self->num_blocks - 1))))
 
 
-void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size)
+void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size, size_t alignment)
 {
-    XFALLOC_ASSERT(self);
-    XFALLOC_ASSERT(heap);
+    X_ASSERT(self);
+    X_ASSERT(heap);
+    X_ASSERT(heap_size > 0);
+    X_ASSERT(block_size > 0);
+    X_ASSERT(x_is_alignment(alignment));
 
     self->heap = heap;
 
     /* heapをアライメントで切り上げたアドレスが実際のtop位置になる。 */
-    uint8_t* const p = (void*)(X__ROUNDUP_ALIGN(heap));
+    uint8_t* const p = X_ROUNDUP_MULTIPLE_PTR(heap, alignment);
     self->top = p;
 
     /* 切り上げた結果heapサイズに不整合がでていないか？ */
-    XFALLOC_ASSERT(heap_size > self->top - self->heap);
+    X_ASSERT(self->top - self->heap >= 0);
+    X_ASSERT(heap_size > (size_t)(self->top - self->heap));
     heap_size -= self->top - self->heap;
 
     /* 1ブロックのサイズもアライメントに切り上げないとまずいよね。 */
-    XFALLOC_ASSERT(block_size > 0);
-    block_size = X__ROUNDUP_ALIGN(block_size);
-    XFALLOC_ASSERT(block_size >= heap_size);
+    X_ASSERT(block_size > 0);
+    block_size = X_ROUNDUP_MULTIPLE(block_size, alignment);
+    X_ASSERT(heap_size >= block_size);
 
     /* ここでブロックサイズと数が確定する。*/
     self->block_size = block_size;
     self->num_blocks = heap_size / block_size;
-    XFALLOC_ASSERT(self->num_blocks > 0);
+    X_ASSERT(self->num_blocks > 0);
 
+    self->alignment = alignment;
     X__MakeBlocks(self);
 }
 
 
 void xfalloc_clear(XFAlloc* self)
 {
-    XFALLOC_ASSERT(self);
+    X_ASSERT(self);
 
     /* ブロックを再構築 */
     X__MakeBlocks(self);
@@ -85,13 +88,10 @@ void xfalloc_clear(XFAlloc* self)
 
 void* xfalloc_allocate(XFAlloc* self)
 {
-    XFALLOC_ASSERT(self);
-    XFALLOC_NULL_ASSERT(self->next);
+    X_ASSERT(self);
+    X_ASSERT_MALLOC_NULL(self->next);
 
-    if (self->next)
-        return NULL;
-
-    XFALLOC_ASSERT(self->remain_blocks);
+    X_ASSERT(self->remain_blocks);
 
     /* 次のブロックの先頭領域には次の次のブロックのアドレスが保存されているの
      * だ!! */
@@ -105,17 +105,18 @@ void* xfalloc_allocate(XFAlloc* self)
 
 void xfalloc_deallocate(XFAlloc* self, void* ptr)
 {
-    XFALLOC_ASSERT(self);
+    X_ASSERT(self);
 
     if (! ptr)
         return;
 
-    uint8_t* const block = ptr;
-    XFALLOC_ASSERT(X__IS_ALIGNED(ptr));
-    XFALLOC_ASSERT(X__IS_VALID_RANGE((uint8_t*)ptr));
+    X_ASSERT(x_is_aligned(ptr, self->alignment));
+    X_ASSERT(x_is_multiple_ptr(ptr, self->block_size));
+    X_ASSERT(X__IS_VALID_RANGE((uint8_t*)ptr));
 
     /* 回収するブロックに次のブロックのポインタを保存してからnextポインタを更新
      * する。*/
+    uint8_t* const block = ptr;
     *(uint8_t**)block = self->next;
     self->next = block;
     self->remain_blocks++;

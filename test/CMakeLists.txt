@@ -23,6 +23,7 @@ add_executable(alltests
     testutils.c
     test_xsalloc.c
     test_xpalloc.c
+    test_xfalloc.c
     sds_test.c
     xfifo_test.c
     xlist_test.c

@@ -22,7 +22,7 @@ static XPAlloc alloc;
 
 TEST_SETUP(xpalloc)
 {
-    void* buf = malloc(X__HEAP_SIZE);
+    void* buf = X_MALLOC(X__HEAP_SIZE);
     TEST_ASSERT_NOT_NULL(buf);
     memset(buf, 0x00, X__HEAP_SIZE);
     xpalloc_init(&alloc, buf, X__HEAP_SIZE);
@@ -31,7 +31,7 @@ TEST_SETUP(xpalloc)
 
 TEST_TEAR_DOWN(xpalloc)
 {
-    free(xpalloc_heap(&alloc));
+    X_FREE(xpalloc_heap(&alloc));
 }
 
 

@@ -235,6 +235,19 @@ static inline uint32_t x_roundup_multiple(uint32_t x, uint32_t m)
 }
 
 
+/** X_ROUNDUP_MULTIPLE()のポインタ版です。
+ */
+#define X_ROUNDUP_MULTIPLE_PTR(x, m)    (((m) == 0) ? (void*)(x) : (void*)((((uintptr_t)(x) + (m) - 1) / (m)) * (m)))
+
+
+/** X_ROUNDUP_MULTIPLE_PTR()の関数版です。
+ */
+static inline void* x_roundup_multiple_ptr(const void* x, uint32_t m)
+{
+    return (void*)X_ROUNDUP_MULTIPLE_PTR(x, m);
+}
+
+
 /** xをmの倍数に切り下げた値を返します。
  */
 #define X_ROUNDDOWN_MULTIPLE(x, m)   (((m) == 0) ? (x) : ((uint32_t)(x) - ((x) % (m))))
@@ -245,6 +258,19 @@ static inline uint32_t x_roundup_multiple(uint32_t x, uint32_t m)
 static inline uint32_t x_rounddown_multiple(uint32_t x, uint32_t m)
 {
     return X_ROUNDDOWN_MULTIPLE(x, m);
+}
+
+
+/** xをmの倍数に切り下げた値を返します。
+ */
+#define X_ROUNDDOWN_MULTIPLE_PTR(x, m)   (((m) == 0) ? (void*)(x) : (void*)((uintptr_t)(x) - (((uintptr_t)(x)) % (m))))
+
+
+/** X_ROUNDDOWN_MULTIPLE()の関数版です。
+ */
+static inline void* x_rounddown_multiple_ptr(const void* x, uintptr_t m)
+{
+    return (void*)X_ROUNDDOWN_MULTIPLE_PTR(x, m);
 }
 
 
@@ -270,6 +296,19 @@ static inline uint32_t x_roundup_power_of_two(uint32_t x)
 }
 
 
+/** X_ROUNDUP_POWER_OF_TWO()のポインタ版です。
+ */
+#define X_ROUNDUP_POWER_OF_TWO_PTR(x)   ((void*)X_ROUNDUP_POWER_OF_TWO_1((uintptr_t)(x) - 1))
+
+
+/** X_ROUNDUP_POWER_OF_TWO_PTR()の関数版です。
+ */
+static inline void* x_roundup_power_of_two_ptr(const void* x)
+{
+    return (void*)X_ROUNDUP_POWER_OF_TWO_PTR(x);
+}
+
+
 /// @cond IGNORE
 #define X_ROUNDDOWN_POWER_OF_TWO_5(x) ((x) - ((x) >> 1))
 #define X_ROUNDDOWN_POWER_OF_TWO_4(x) X_ROUNDDOWN_POWER_OF_TWO_5((x) | ((x) >> 16))
@@ -292,6 +331,19 @@ static inline uint32_t x_rounddown_power_of_two(uint32_t x)
 }
 
 
+/** X_ROUNDDOWN_POWER_OF_TWO()のポインタ版です。
+ */
+#define X_ROUNDDOWN_POWER_OF_TWO_PTR(x)   ((void*)X_ROUNDDOWN_POWER_OF_TWO_1(((uintptr_t)(x)) | (((uintptr_t)(x)) >> 1)))
+
+
+/** X_ROUNDDOWN_POWER_OF_TWO_PTR()の関数版です。
+ */
+static inline void* x_rounddown_power_of_two_ptr(const void* x)
+{
+    return X_ROUNDDOWN_POWER_OF_TWO_PTR(x);
+}
+
+
 /** xがmの倍数かどうかをBool値で返します。
  */
 #define X_IS_MULTIPLE(x, m)  (X_ROUNDUP_MULTIPLE(x, m) == (x))
@@ -305,6 +357,19 @@ static inline bool x_is_multiple(uint32_t x, uint32_t m)
 }
 
 
+/** X_IS_MULTIPLE()のポインタ版です。
+ */
+#define X_IS_MULTIPLE_PTR(x, m)  (X_ROUNDUP_MULTIPLE_PTR(x, m) == (x))
+
+
+/** X_IS_MULTIPLE_PTR()の関数版です。
+ */
+static inline bool x_is_multiple_ptr(const void* x, uint32_t m)
+{
+    return X_IS_MULTIPLE_PTR(x, m);
+}
+
+
 /** xが2のべき乗かどうかをBool値で返します。
  */
 #define X_IS_POWER_OF_TWO(x)   (((x) & -(x)) == (x))
@@ -315,6 +380,19 @@ static inline bool x_is_multiple(uint32_t x, uint32_t m)
 static inline bool x_is_power_of_two(uint32_t x)
 {
     return X_IS_POWER_OF_TWO(x);
+}
+
+
+/** X_IS_POWER_OF_TWO()のポインタ版です。
+ */
+#define X_IS_POWER_OF_TWO_PTR(x)   ((((intptr_t)(x)) & -((intptr_t)(x))) == ((intptr_t)(x)))
+
+
+/** X_IS_POWER_OF_TWO_PTR()の関数版です。
+ */
+static inline bool x_is_power_of_two_ptr(const void* x)
+{
+    return X_IS_POWER_OF_TWO_PTR(x);
 }
 
 
@@ -387,15 +465,15 @@ static inline void* x_rounddown_alignment_ptr(const void* x, uint32_t a)
 
 /** X_IS_ALIGNMENT()の関数版です。
  */
-static inline bool x_is_alignment(const void* ptr)
+static inline bool x_is_alignment(uint32_t x)
 {
-    return X_IS_ALIGNMENT(ptr);
+    return X_IS_ALIGNMENT(x);
 }
 
 
 /** xがアライメントの倍数かどうかをBool値で返します。
  */
-#define X_IS_ALIGNED(x, a)  (X_ROUNDUP_ALIGNMENT((x), (a)) == (x))
+#define X_IS_ALIGNED(x, a)  (X_ROUNDUP_ALIGNMENT_PTR((x), (a)) == (x))
 
 
 /** ptrが指すアドレスがalignmentの倍数かどうかをBool値で返します。
@@ -403,7 +481,9 @@ static inline bool x_is_alignment(const void* ptr)
 static inline bool x_is_aligned(const void* ptr, size_t alignment)
 {
     X_ASSERT(X_IS_POWER_OF_TWO(alignment));
-    return X_IS_ALIGNED((uint32_t)ptr, alignment);
+
+    const bool ok = (X_ROUNDUP_ALIGNMENT_PTR(ptr, alignment) == ptr);
+    return ok;
 }
 
 

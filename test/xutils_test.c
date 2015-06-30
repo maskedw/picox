@@ -478,8 +478,8 @@ TEST(xutils, is_alignment)
 
     for (i = 0; i < 32; i++)
     {
-        TEST_ASSERT_TRUE(x_is_alignment((void*)x));
-        TEST_ASSERT_FALSE(x_is_alignment((void*)(x + 5)));
+        TEST_ASSERT_TRUE(x_is_alignment(x));
+        TEST_ASSERT_FALSE(x_is_alignment(x + 5));
         x = x_roundup_power_of_two(x + 1);
     }
 }
