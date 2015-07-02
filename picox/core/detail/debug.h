@@ -115,13 +115,8 @@ extern XAssertionFailedFunc x_assertion_failed;
 #endif
 
 
-#ifdef __GNUC__
-    void x_print_log(int level, const char* fmt, ...);
-#else
-    void x_print_log(int level, ...);
-#endif
-
-void x_log_hexdump(int level, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_print_log(int level, const char* tag, const char* fmt, ...);
+void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
 
 
 #ifdef X_CONF_LOG_LEVEL
@@ -186,14 +181,14 @@ void x_log_hexdump(int level, const void* src, size_t len, size_t cols, const ch
 #ifdef X_CONF_INFO_COLOR
     #define X_INFO_COLOR    X_CONF_INFO_COLOR
 #else
-    #define X_INFO_COLOR
+    #define X_INFO_COLOR    X_COLOR_GREEN
 #endif
 
 
 #ifdef X_CONF_NOTI_COLOR
     #define X_NOTI_COLOR    X_CONF_NOTI_COLOR
 #else
-    #define X_NOTI_COLOR    X_COLOR_GREEN
+    #define X_NOTI_COLOR    X_COLOR_MAGENTA
 #endif
 
 
@@ -214,35 +209,35 @@ void x_log_hexdump(int level, const void* src, size_t len, size_t cols, const ch
 #ifdef X_CONF_VERB_HEADER
     #define X_VERB_HEADER     X_VERB_COLOR X_CONF_VERB_HEADER X_COLOR_RESET
 #else
-    #define X_VERB_HEADER     X_VERB_COLOR "[VERB] " X_COLOR_RESET
+    #define X_VERB_HEADER     X_VERB_COLOR "[VERB]" X_COLOR_RESET
 #endif
 
 
 #ifdef X_CONF_INFO_HEADER
     #define X_INFO_HEADER     X_INFO_COLOR X_CONF_INFO_HEADER X_COLOR_RESET
 #else
-    #define X_INFO_HEADER     X_INFO_COLOR "[INFO] " X_COLOR_RESET
+    #define X_INFO_HEADER     X_INFO_COLOR "[INFO]" X_COLOR_RESET
 #endif
 
 
 #ifdef X_CONF_NOTI_HEADER
     #define X_NOTI_HEADER     X_NOTI_COLOR X_CONF_NOTI_HEADER X_COLOR_RESET
 #else
-    #define X_NOTI_HEADER     X_NOTI_COLOR "[NOTI] " X_COLOR_RESET
+    #define X_NOTI_HEADER     X_NOTI_COLOR "[NOTI]" X_COLOR_RESET
 #endif
 
 
 #ifdef X_CONF_WARN_HEADER
     #define X_WARN_HEADER     X_WARN_COLOR X_CONF_WARN_HEADER X_COLOR_RESET
 #else
-    #define X_WARN_HEADER     X_WARN_COLOR "[WARN] " X_COLOR_RESET
+    #define X_WARN_HEADER     X_WARN_COLOR "[WARN]" X_COLOR_RESET
 #endif
 
 
 #ifdef X_CONF_ERR_HEADER
     #define X_ERR_HEADER      X_ERR_COLOR X_CONF_ERR_HEADER X_COLOR_RESET
 #else
-    #define X_ERR_HEADER      X_ERR_COLOR "[ERR ] " X_COLOR_RESET
+    #define X_ERR_HEADER      X_ERR_COLOR "[ERR ]" X_COLOR_RESET
 #endif
 
 
@@ -278,6 +273,7 @@ void x_log_hexdump(int level, const void* src, size_t len, size_t cols, const ch
 #define x_vprintf   X_VPRINTF
 int x_set_log_level(int level);
 void x_printf(const char* fmt, ...);
+void x_putc(int c);
 void x_hexdump(const void* src, size_t len, size_t cols);
 
 

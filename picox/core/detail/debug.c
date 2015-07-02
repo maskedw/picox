@@ -44,8 +44,7 @@ typedef struct X__Debug
     int level;
 } X__Debug;
 
-static void X__VPrintLog(int level, const char* fmt, va_list args);
-static void X__Putc(int c);
+static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list args);
 static const char* X__GetHeader(int level);
 static void X__PreAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
 static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
@@ -118,24 +117,24 @@ void x_printf(const char* fmt, ...)
 }
 
 
-void x_print_log(int level, const char* fmt, ...)
+void x_print_log(int level, const char* tag, const char* fmt, ...)
 {
     va_list args;
 
     va_start(args, fmt);
-    X__VPrintLog(level, fmt, args);
+    X__VPrintLog(level, tag, fmt, args);
     va_end(args);
 }
 
 
-void x_log_hexdump(int level, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
     if (level <= priv->level) {
 
         va_start(args, fmt);
-        X__VPrintLog(level, fmt, args);
+        X__VPrintLog(level, tag, fmt, args);
         va_end(args);
         x_hexdump(src, len, cols);
     }
@@ -171,13 +170,13 @@ void x_hexdump(const void* src, size_t len, size_t cols)
             for(j = i - (cols - 1); j <= i; j++)
             {
                 if(j >= len) /* end of block, not really printing */
-                    X__Putc(' ');
+                    x_putc(' ');
                 else if (isprint((int)p[j])) /* printable char */
-                    X__Putc(p[j]);
+                    x_putc(p[j]);
                 else /* other char */
-                    X__Putc('.');
+                    x_putc('.');
             }
-            X__Putc('\n');
+            x_putc('\n');
         }
     }
 }
@@ -210,24 +209,24 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
 }
 
 
-static void X__VPrintLog(int level, const char* fmt, va_list args)
+static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list args)
 {
     if (level <= priv->level)
     {
 #ifdef X_CONF_USE_LOG_TIMESTAMP
         char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
         x_port_stimestamp(buf, sizeof(tstamp));
-        x_printf("%s%s", X__GetHeader(level), tstamp);
+        x_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);
 #else
-        x_printf("%s", X__GetHeader(level));
+        x_printf("%s[%s] ", X__GetHeader(level), tag);
 #endif
         x_vprintf(fmt, args);
-        X__Putc('\n');
+        x_putc('\n');
     }
 }
 
 
-static void X__Putc(int c)
+void x_putc(int c)
 {
     x_printf("%c", c);
 }
