@@ -37,21 +37,15 @@
  */
 
 
-#ifndef picox_xstr_h_
-#define picox_xstr_h_
+#ifndef picox_string_xstr_h_
+#define picox_string_xstr_h_
 
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-
-#ifndef XSTR_ASSERT
-    #define XSTR_ASSERT(expr)   do { if (! expr) for(;;); } while (0)
 #endif
 
 
@@ -67,14 +61,59 @@ bool xstr_equal(const char* s1, const char* s2);
 bool xstr_case_equal(const char* s1, const char* s2);
 
 
+/** std::strcmp()のラッパーです。
+ */
+int xstr_compare(const char* s1, const char* s2);
+
+
 /** 大文字小文字の違いを無視したstd::strcmp()です。
  */
-int xstr_casecmp(const char* s1, const char* s2);
+int xstr_case_compare(const char* s1, const char* s2);
 
 
 /** 大文字小文字の違いを無視したstd::strncmp()です。
  */
-int xstr_ncasecmp(const char* s1, const char* s2, size_t n);
+int xstr_ncase_compare(const char* s1, const char* s2, size_t n);
+
+
+/** std::strstrのラッパーです。
+ */
+char* xstr_search_substring(const char* s1, const char* s2);
+
+
+/** 大文字小文字の違いを無視したstd::strstrです。
+ */
+char* xstr_case_search_substring(const char* s1, const char* s2);
+
+
+/** strdup相当の処理を行います。
+ *
+ *  不要になった文字列はX_FREE()でメモリを解放してください。
+ */
+char* xstr_duplicate(const char* str);
+
+
+/** 指定のメモリ確保関数を使用してxstr_duplicate()を実行します。
+ *
+ *  不要になった文字列はmalloc_func()に対応するメモリ解放関数でメモリを解放して
+ *  ください。
+ */
+char* xstr_duplicate2(const char* str, void* (*malloc_func)(size_t));
+
+
+/** strndup相当の処理を行います。
+ *
+ *  不要になった文字列はX_FREE()でメモリを解放してください。
+ */
+char* xstr_nduplicate(const char* str, size_t n);
+
+
+/** 指定のメモリ確保関数を使用してxstr_nduplicate()を実行します。
+ *
+ *  不要になった文字列はmalloc_func()に対応するメモリ解放関数でメモリを解放して
+ *  ください。
+ */
+char* xstr_nduplicate2(const char* str, size_t n, void* (*malloc_func)(size_t));
 
 
 /** 文字列を逆転させた結果を返します。
@@ -95,44 +134,44 @@ char* xstr_strip(char* str, const char* space);
  *
  *  space == NULLの場合はstd::isspace()が使用されます。
  */
-char* xstr_lstrip(char* str, const char* space);
+char* xstr_strip_left(char* str, const char* space);
 
 
 /** 文字列の後ろからspaceに含まれる文字列を取り除いた結果を返します。
  *
  *  space == NULLの場合はstd::isspace()が使用されます。
  */
-char* xstr_rstrip(char* str, const char* space);
+char* xstr_strip_right(char* str, const char* space);
 
 
 /** 文字列をintに変換して返します。
  */
-bool xstr_to_int(const char* str, int def, int* dst);
+bool xstr_to_int(const char* str, int* dst, int def);
 
 
 /** 文字列をunsigned intに変換して返します。
  */
-bool xstr_to_uint(const char* str, unsigned def, unsigned* dst);
+bool xstr_to_uint(const char* str, unsigned* dst, unsigned int def);
 
 
 /** 文字列をint32_tに変換して返します。
  */
-bool xstr_to_int32(const char* str, int32_t def, int32_t* dst);
+bool xstr_to_int32(const char* str, int32_t* dst, int32_t def);
 
 
 /** 文字列をuint32_tに変換して返します。
  */
-bool xstr_to_uint32(const char* str, uint32_t def, uint32_t* dst);
+bool xstr_to_uint32(const char* str, uint32_t* dst, uint32_t def);
 
 
 /** 文字列をdoubleに変換して返します。
  */
-bool xstr_to_double(const char* str, double def, double* dst);
+bool xstr_to_double(const char* str, double* dst, double def);
 
 
 /** 文字列をfloatに変換して返します。
  */
-bool xstr_to_float(const char* str, float def, float* dst);
+bool xstr_to_float(const char* str, float* dst, float);
 
 
 /** 文字列をboolに変換して返します。
@@ -140,7 +179,7 @@ bool xstr_to_float(const char* str, float def, float* dst);
  *  + y, yes, true, 1 => true
  *  + n, no, false, 0 => false
  */
-bool xstr_to_bool(const char* str, bool def, bool* dst);
+bool xstr_to_bool(const char* str, bool* dst, bool def);
 
 
 #ifdef __cplusplus
@@ -148,4 +187,4 @@ bool xstr_to_bool(const char* str, bool def, bool* dst);
 #endif
 
 
-#endif // picox_xstr_h_
+#endif // picox_string_xstr_h_
