@@ -16,7 +16,7 @@ include_directories(${UNITY_DIR})
 include_directories(${UNITY_EX_DIR})
 
 # set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wno-sign-compare ")
-set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
+set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -include unity.h -include unity_fixture.h")
 
 add_executable(alltests
     alltests.c

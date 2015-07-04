@@ -37,19 +37,13 @@
  */
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include "xstr.h"
+#include <picox/string/xstr.h>
 
 
-#define isalpha(c) (((c) >= 'A' && (c) <= 'Z') || ((c) >= 'a' && (c) <= 'z'))
-#define toupper(c) ((c) & 0xDF)
-static inline bool X__IsSkip(char c, const char* skip_chars);
-static char* X__LStrip(char* str, int len, const char* strip_chars);
-static char* X__RStrip(char* str, int len, const char* strip_chars);
-static uint32_t X__ToInt(const char* str, bool* ok, uint32_t def);
-static double X__ToDouble(const char* str, bool* ok, double def);
+static bool X__ToInt(const char* s, uint32_t* dst, bool negativable);
+static bool X__IsSkip(char c, const char* skip_chars);
+static char* X__StripLeft(char* str, int len, const char* strip_chars);
+static char* X__StripRight(char* str, int len, const char* strip_chars);
 
 
 
@@ -155,18 +149,7 @@ char* xstr_duplicate(const char* str)
 
 char* xstr_duplicate2(const char* str, void* (*malloc_func)(size_t))
 {
-    X_ASSERT(str);
-    X_ASSERT(malloc_func);
-
-    const size_t len = strlen(str);
-    char* p = malloc_func(len + 1);
-    if (!p)
-        return NULL;
-
-    memcpy(p, str, len);
-    p[len] = '\0';
-
-    return p;
+    return xstr_nduplicate2(str, SIZE_MAX, malloc_func);
 }
 
 
@@ -217,12 +200,10 @@ char* xstr_strip(char* str, const char* space)
     const int len = strlen(str);
     char* ret = NULL;
 
-    ret = X__LStrip(str, len, space);
+    ret = X__StripLeft(str, len, space);
 
     if (ret)
-    {
-        ret = X__RStrip(ret, len - (ret - str), space);
-    }
+        ret = X__StripRight(ret, len - (ret - str), space);
 
     return ret;
 }
@@ -233,7 +214,7 @@ char* xstr_strip_left(char* str, const char* space)
     X_ASSERT(str);
     const int len = strlen(str);
 
-    return X__LStrip(str, len, space);
+    return X__StripLeft(str, len, space);
 }
 
 
@@ -242,117 +223,109 @@ char* xstr_strip_right(char* str, const char* space)
     X_ASSERT(str);
     const int len = strlen(str);
 
-    return X__RStrip(str, len, space);
+    return X__StripRight(str, len, space);
 }
 
 
-bool xstr_to_int(const char* str, int* dst, int def)
+int32_t xstr_to_int32(const char* str, int32_t def, bool* ok)
 {
     X_ASSERT(str);
-    X_ASSERT(dst);
 
-    bool ok;
-    *dst = X__ToInt(str, &ok, def);
+    bool sub;
+    if (! ok) ok = &sub;
 
-    return ok;
+    uint32_t dst;
+    *ok = X__ToInt(str, &dst, true);
+    const int32_t ret = *ok ? (int32_t)dst : def;
+
+    return ret;
 }
 
 
-bool xstr_to_uint(const char* str, unsigned* dst, unsigned int def)
+uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok)
 {
     X_ASSERT(str);
-    X_ASSERT(dst);
 
-    bool ok;
-    *dst = X__ToInt(str, &ok, def);
+    bool sub;
+    if (! ok) ok = &sub;
 
-    return ok;
+    uint32_t dst;
+    *ok = X__ToInt(str, &dst, false);
+    const uint32_t ret = *ok ? dst : def;
+
+    return ret;
 }
 
 
-bool xstr_to_int32(const char* str, int32_t* dst, int32_t def)
+float xstr_to_float(const char* str, float def, bool* ok)
 {
+#ifndef X_CONF_HAS_C99_MATH
+    return xstr_to_double(str, def, ok);
+#endif
+
     X_ASSERT(str);
-    X_ASSERT(dst);
 
-    bool ok;
-    *dst = X__ToInt(str, &ok, def);
+    bool sub;
+    if (! ok) ok = &sub;
 
-    return ok;
+    char* endptr;
+    const float v  = strtof(str, &endptr);
+    *ok = (endptr[0] == '\0');
+    const float ret = *ok ? v : def;
+
+    return ret;
 }
 
 
-bool xstr_to_uint32(const char* str, uint32_t* dst, uint32_t def)
+double xstr_to_double(const char* str, double def, bool* ok)
 {
     X_ASSERT(str);
-    X_ASSERT(dst);
 
-    bool ok;
-    *dst = X__ToInt(str, &ok, def);
+    bool sub;
+    if (! ok) ok = &sub;
 
-    return ok;
+    char* endptr;
+    const double v  = strtod(str, &endptr);
+    *ok = (endptr[0] == '\0');
+    const double ret = *ok ? v : def;
+
+    return ret;
 }
 
 
-bool xstr_to_double(const char* str, double* dst, double def)
+bool xstr_to_bool(const char* str, bool def, bool* ok)
 {
     X_ASSERT(str);
-    X_ASSERT(dst);
 
-    bool ok;
-    *dst = X__ToDouble(str, &ok, def);
+    bool v;
+    bool sub;
+    if (! ok) ok = &sub;
 
-    return ok;
-}
-
-
-bool xstr_to_float(const char* str, float* dst, float def)
-{
-    X_ASSERT(str);
-    X_ASSERT(dst);
-
-    bool ok;
-    *dst = X__ToDouble(str, &ok, def);
-
-    return ok;
-}
-
-
-bool xstr_to_bool(const char* str, bool* dst, bool def)
-{
-    X_ASSERT(str);
-    X_ASSERT(dst);
-
-    bool value;
-    bool ok = true;
-
+    *ok = true;
     if (xstr_case_equal(str, "y")       ||
         xstr_case_equal(str, "yes")     ||
         xstr_case_equal(str, "true")    ||
         xstr_case_equal(str, "1"))
     {
-        value = true;
+        v = true;
     }
     else if (xstr_case_equal(str, "n")      ||
              xstr_case_equal(str, "no")     ||
              xstr_case_equal(str, "false")  ||
              xstr_case_equal(str, "0"))
     {
-        value = false;
+        v = false;
     }
     else
-    {
-        ok = false;
-    }
+        *ok = false;
 
-    *dst = ok ? value : def;
+    const bool ret = *ok ? v : def;
 
-    return ok;
+    return ret;
 }
 
 
-
-static inline bool X__IsSkip(char c, const char* skip_chars)
+static bool X__IsSkip(char c, const char* skip_chars)
 {
     for (;;)
     {
@@ -365,7 +338,7 @@ static inline bool X__IsSkip(char c, const char* skip_chars)
 }
 
 
-static char* X__LStrip(char* str, int len, const char* strip_chars)
+static char* X__StripLeft(char* str, int len, const char* strip_chars)
 {
     int i;
     char* ret = str;
@@ -396,7 +369,7 @@ static char* X__LStrip(char* str, int len, const char* strip_chars)
 }
 
 
-static char* X__RStrip(char* str, int len, const char* strip_chars)
+static char* X__StripRight(char* str, int len, const char* strip_chars)
 {
     int i;
     char* ret = str;
@@ -427,33 +400,97 @@ static char* X__RStrip(char* str, int len, const char* strip_chars)
 }
 
 
-static uint32_t X__ToInt(const char* str, bool* ok, uint32_t def)
+/*
+ * strtul()は便利だが、やや曖昧な変換を行うのでもう少し厳密な変換を行う。
+ *
+ * + 先頭の1個以上の空白は認める。
+ * + 10進数の時のみ、+-の符号を認める。
+ * + 2, 10, 16進数に対応する。2進数は0[bB], 16進数は0[xX]を先頭につける。
+ * + strtolは"0x"だけを渡すと、0の部分だけを10進数として解釈するが、これはエラーとして扱うことにする。
+ */
+static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
 {
-    char* endptr;
-    uint32_t value;
-    *ok = false;
+    int c;
+    bool minus = false;
+    bool sign = false;
 
-    value = strtoul(str, &endptr, 0);
-    *ok = (endptr[0] == '\0');
+    /* 先頭の空白はすっ飛ばす。*/
+    do { c = *s++; } while (isspace(c));
 
-    if (! *ok)
-        value = def;
+    /* 符号の確認 */
+    if (c == '-')
+    {
+        minus = true;
+        sign = true;
+        c = *s++;
+    }
+    else if (c == '+')
+    {
+        sign = true;
+        c = *s++;
+    }
 
-    return value;
-}
+    int base;
+    /* 基数の確認。 2, 10, 16進数に対応する。 */
+    if (c == '0' && (*s == 'x' || *s == 'X'))
+    {
+        if (sign)
+            return false;
 
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+    else if (c == '0' && (*s == 'b' || *s == 'B'))
+    {
+        if (sign)
+            return false;
 
-static double X__ToDouble(const char* str, bool* ok, double def)
-{
-    char* endptr;
-    double value;
-    *ok = false;
+        c = s[1];
+        s += 2;
+        base = 2;
+    }
+    else
+    {
+        if (minus && (!negativable))
+            return false;
+        base = 10;
+    }
 
-    value = strtod(str, &endptr);
-    *ok = (endptr[0] == '\0');
+    if (c == '\0')
+        return false;
 
-    if (! *ok)
-        value = def;
+    uint32_t cutoff = (minus ? -((uint32_t)INT32_MIN) : negativable ? INT32_MAX : UINT32_MAX);
+    const int cutlimit = cutoff % base;
+    cutoff /= base;
 
-    return value;
+    uint32_t acc;
+    for (acc = 0;; c = *s++)
+    {
+        if (isdigit(c))
+            c -= '0';
+        else if (isalpha(c))
+            c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+        else
+            break;
+
+        if (c >= base)
+            return false;
+
+        if ((acc > cutoff) || ((acc == cutoff) && (c > cutlimit)))
+            return false;
+
+        acc *= base;
+        acc += c;
+    }
+
+    if (c != '\0')
+        return false;
+
+    if (minus)
+        acc = -acc;
+
+    *dst = acc;
+
+    return true;
 }

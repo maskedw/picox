@@ -49,14 +49,14 @@ extern "C" {
 #endif
 
 
-/** s1とs2の比較結果を返します。
+/** 文字列s1とs2が一致するかどうかを返します。
  *
  * (std::strcmp(s1, s2) == 0)と同じです。
  */
 bool xstr_equal(const char* s1, const char* s2);
 
 
-/** 大文字小文字の違いを無視してs1, s2を比較した結果を返します。
+/** 大文字小文字の違いを無視して文字列s1, s2が一致するかどうかを返します。
  */
 bool xstr_case_equal(const char* s1, const char* s2);
 
@@ -118,68 +118,78 @@ char* xstr_nduplicate2(const char* str, size_t n, void* (*malloc_func)(size_t));
 
 /** 文字列を逆転させた結果を返します。
  *
- *  str自身が逆転されることに注意してください。戻り値はstrと同じです。
+ *  str自身が破壊されることに注意してください。
  */
 char* xstr_reverse(char* str);
 
 
 /** 文字列の前後からspaceに含まれる文字列を取り除いた結果を返します。
  *
- *  space == NULLの場合はstd::isspace()が使用されます。
+ *  + str自身が破壊されることに注意してください。
+ *  + space == NULLの場合はstd::isspace()が使用されます。
  */
 char* xstr_strip(char* str, const char* space);
 
 
 /** 文字列の前からspaceに含まれる文字列を取り除いた結果を返します。
  *
- *  space == NULLの場合はstd::isspace()が使用されます。
+ *  + str自身が破壊されることに注意してください。
+ *  + space == NULLの場合はstd::isspace()が使用されます。
  */
 char* xstr_strip_left(char* str, const char* space);
 
 
 /** 文字列の後ろからspaceに含まれる文字列を取り除いた結果を返します。
  *
- *  space == NULLの場合はstd::isspace()が使用されます。
+ *  + str自身が破壊されることに注意してください。
+ *  + space == NULLの場合はstd::isspace()が使用されます。
  */
 char* xstr_strip_right(char* str, const char* space);
 
 
-/** 文字列をintに変換して返します。
- */
-bool xstr_to_int(const char* str, int* dst, int def);
-
-
-/** 文字列をunsigned intに変換して返します。
- */
-bool xstr_to_uint(const char* str, unsigned* dst, unsigned int def);
-
-
 /** 文字列をint32_tに変換して返します。
+ *
+ *  + 文字列先頭の任意の数の空白(std::isspace())は無視されます。
+ *  + +-の符号は数字の直前のみ許可されます。
+ *  + 数字直前の"0[xX]"は16進数に、"0[bB]"は2進数に解釈されます。
+ *  + 16進数、2進数解釈時に+-符号がついていた場合は変換失敗とします。
+ *  + okにNULLが渡されることは許容します。
+ *
+ *  @param str 変換対象の文字列
+ *  @param def 変換に失敗した場合に返すデフォルト値
+ *  @param ok  変換に成功したかどうか
  */
-bool xstr_to_int32(const char* str, int32_t* dst, int32_t def);
+int32_t xstr_to_int32(const char* str, int32_t def, bool* ok);
 
 
 /** 文字列をuint32_tに変換して返します。
+ *
+ *  + -の符号がついていた場合は常時変換失敗となります。
+ *  + その他の条件はxstr_to_int32()を参照してください。
  */
-bool xstr_to_uint32(const char* str, uint32_t* dst, uint32_t def);
-
-
-/** 文字列をdoubleに変換して返します。
- */
-bool xstr_to_double(const char* str, double* dst, double def);
+uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok);
 
 
 /** 文字列をfloatに変換して返します。
+ *
+ *  c99のstd::strtof()が使用できない場合はstd::strtod()の結果を返します。
  */
-bool xstr_to_float(const char* str, float* dst, float);
+float xstr_to_float(const char* str, float def, bool* ok);
+
+
+/** 文字列をdoubleに変換して返します。
+ *
+ *  std::strtod()の結果を返します。
+ */
+double xstr_to_double(const char* str, double def, bool* ok);
 
 
 /** 文字列をboolに変換して返します。
  *
- *  + y, yes, true, 1 => true
- *  + n, no, false, 0 => false
+ *  大文字小文字の違いは無視し、("y", "yes", "true", "1")のいづれかであればtrue。
+ *  ("n", "no", "false", "0")のいづれかであればfalseと解釈します。
  */
-bool xstr_to_bool(const char* str, bool* dst, bool def);
+bool xstr_to_bool(const char* str, bool def, bool* ok);
 
 
 #ifdef __cplusplus

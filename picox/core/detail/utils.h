@@ -187,6 +187,21 @@ typedef union XMaxAlign
 #define X_GOTO_IF(cond, label)   if(cond) goto label
 
 
+/** cond == trueの時、x に vを代入します。
+ */
+#define X_ASIGN_IF(cond, x, v)   if(cond) x = v
+
+
+/** cond == trueの時、return文を実行します。
+ */
+#define X_RETURN_IF(cond)   if(cond) return
+
+
+/** cond == trueの時、xを返すreturn文を実行します。
+ */
+#define X_RETURN_VALUE_IF(cond, x)   if(cond) return x
+
+
 /** コンパイラによる未使用変数の警告を抑制するマクロです。
  */
 #define X_UNUSED(x)    (void)(x)
