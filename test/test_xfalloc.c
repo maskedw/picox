@@ -64,7 +64,9 @@ TEST(xfalloc, allocate)
 
 TEST(xfalloc, deallocate)
 {
+    uint8_t* heap = xfalloc_heap(alloc);
     uint8_t* p = xfalloc_allocate(alloc);
+
     int dammy;
     X_TEST_ASSERTION_FAILED(xfalloc_deallocate(NULL, p));
     X_TEST_ASSERTION_FAILED(xfalloc_deallocate(alloc, &dammy));
@@ -73,6 +75,7 @@ TEST(xfalloc, deallocate)
     X_TEST_ASSERTION_SUCCESS(xfalloc_deallocate(alloc, NULL));
     X_TEST_ASSERTION_SUCCESS(xfalloc_deallocate(alloc, p));
 
+    xfalloc_init(alloc, heap, X__HEAP_SIZE, X__BLOCK_SIZE, X__ALIGNMENT);
 
     void* ptrs[X__NUM_BLOCKS];
     size_t i;

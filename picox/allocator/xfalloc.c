@@ -111,7 +111,7 @@ void xfalloc_deallocate(XFAlloc* self, void* ptr)
         return;
 
     X_ASSERT(x_is_aligned(ptr, self->alignment));
-    X_ASSERT(x_is_multiple_ptr(ptr, self->block_size));
+    X_ASSERT(x_is_multiple((uint8_t*)ptr - self->top, self->block_size));
     X_ASSERT(X__IS_VALID_RANGE((uint8_t*)ptr));
 
     /* 回収するブロックに次のブロックのポインタを保存してからnextポインタを更新
