@@ -39,13 +39,11 @@
  * SOFTWARE.
  */
 
-#ifndef xtokenizer_h_
-#define xtokenizer_h_
+#ifndef picox_misc_xtokenizer_h_
+#define picox_misc_xtokenizer_h_
 
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus
@@ -53,99 +51,68 @@ extern "C" {
 #endif
 
 
-#ifndef XTOK_MAX_NUM_COLS
-    /** 最大列数 */
-    #define XTOK_MAX_NUM_COLS    10
-#endif
-
-
-#ifndef XTOK_MAX_COL_SIZE
-    /** 1列の最大文字数 */
-    #define XTOK_MAX_COL_SIZE    128
-#endif
-
-
-#ifndef XTOK_ASSERT
-    #define XTOK_ASSERT(expr)   do { if (! expr) for(;;); } while (0)
-#endif
-
-
 typedef struct XTokenizer
 {
-    char*       tokens[XTOK_MAX_NUM_COLS];
+/// @privatesection
+    char*       row;
+    char**      tokens;
     int         ntokens;
 } XTokenizer;
 
 
-/** 指定されたseparaterで行を分割します。
+/** 文字列を指定文字で列に分解します。
  *
- *  rowはstd::strtok()よろしく破壊されることに注意してください。
- *  また、XTokenizerオブジェクトのメソッドを呼ぶ間、rowは保持される必要がありま
- *  す。
- */
-int xtok_parse_row(XTokenizer* tok, char* row, char separater);
-
-
-/** 列数を返します。
- */
-int xtok_num_tokens(XTokenizer* tok);
-
-
-/** 指定列の要素を返します。
+ *  文字列はオブジェクトにコピーされます。初期化後はxtok_release()で必ずリソース
+ *  を解放させてください。
  *
- *  範囲外が指定された場合はNULLを返します。
- */
-const char* xtok_get_token(XTokenizer* tok, int col);
-
-
-/** 指定列をintに変換して返します。
- */
-bool xtok_to_int(XTokenizer* tok, int col, int def, int* dst);
-
-
-/** 指定列をunsigned intに変換して返します。
- */
-bool xtok_to_uint(XTokenizer* tok, int col, unsigned def, unsigned* dst);
-
-
-/** 指定列をint32_tに変換して返します。
- */
-bool xtok_to_int32(XTokenizer* tok, int col, int32_t def, int32_t* dst);
-
-
-/** 指定列をuint32_tに変換して返します。
- */
-bool xtok_to_uint32(XTokenizer* tok, int col, uint32_t def, uint32_t* dst);
-
-
-/** 指定列をdoubleに変換して返します。
- */
-bool xtok_to_double(XTokenizer* tok, int col, double def, double* dst);
-
-
-/** 指定列をfloatに変換して返します。
- */
-bool xtok_to_float(XTokenizer* tok, int col, float def, float* dst);
-
-
-/** 指定列の文字列を返します。
+ *  @param row          行文字列
+ *  @param separater    区切り文字
+ *  @param max_tokens   最大列数
+ *  @retval false
+ *      + メモリ確保失敗
+ *      + 最大列数を超えた
  *
- *  strip == true時は前後のstd::isspace()でトリムします。
+ *  @pre
+ *  + row != NULL
+ *  + max_tokens > 0
  */
-bool xtok_to_string(XTokenizer* tok, int col, const char* def, char* dst, size_t size, bool strip);
+bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens);
 
 
-/** 指定列をboolに変換して返します。
+/** オブジェクトが保持するリソースを解放します。
  *
- *  + y, yes, true, 1 => true
- *  + n, no, false, 0 => false
+ *  @note
+ *  xtok_init()で失敗後の呼び出しでも安全に動作します。
  */
-bool xtok_to_bool(XTokenizer* tok, int col, bool def, bool* dst);
+void xtok_release(XTokenizer* self);
 
+
+/** 列を参照します
+ *
+ *  @pre
+ *  col <= (xtok_num_tokens() - 1)
+ */
+static inline const char*
+xtok_ref_token(const XTokenizer* self, int col)
+{
+    X_ASSERT(self);
+    X_ASSERT(x_is_within(col, 0, self->ntokens));
+    return self->tokens[col];
+}
+
+
+/** 列数を返します
+ */
+static inline int
+xtok_num_tokens(const XTokenizer* self)
+{
+    X_ASSERT(self);
+    return self->ntokens;
+}
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif // xtokenizer_h_
+#endif // picox_misc_xtokenizer_h_
