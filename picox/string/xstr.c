@@ -343,8 +343,9 @@ static char* X__StripLeft(char* str, int len, const char* strip_chars)
     int i;
     char* ret = str;
 
-    if ((len == 0) || (str == NULL))
-        return NULL;
+    X_ASSERT(str);
+    if (len == 0)
+        return str;
 
     if (strip_chars == NULL)
     {
@@ -374,8 +375,9 @@ static char* X__StripRight(char* str, int len, const char* strip_chars)
     int i;
     char* ret = str;
 
-    if ((len == 0) || (str == NULL))
-        return NULL;
+    X_ASSERT(str);
+    if (len == 0)
+        return str;
 
     if (strip_chars == NULL)
     {
@@ -401,12 +403,12 @@ static char* X__StripRight(char* str, int len, const char* strip_chars)
 
 
 /*
- * strtul()ã¯ä¾¿åˆ©ã ãŒã€ã‚„ã‚„æ›–æ˜§ãªå¤‰æ›ã‚’è¡Œã†ã®ã§ã‚‚ã†å°‘ã—å³å¯†ãªå¤‰æ›ã‚’è¡Œã†ã€‚
+ * strtul()‚Í•Ö—˜‚¾‚ªA‚â‚âB–†‚È•ÏŠ·‚ğs‚¤‚Ì‚Å‚à‚¤­‚µŒµ–§‚È•ÏŠ·‚ğs‚¤B
  *
- * + å…ˆé ­ã®1å€‹ä»¥ä¸Šã®ç©ºç™½ã¯èªã‚ã‚‹ã€‚
- * + 10é€²æ•°ã®æ™‚ã®ã¿ã€+-ã®ç¬¦å·ã‚’èªã‚ã‚‹ã€‚
- * + 2, 10, 16é€²æ•°ã«å¯¾å¿œã™ã‚‹ã€‚2é€²æ•°ã¯0[bB], 16é€²æ•°ã¯0[xX]ã‚’å…ˆé ­ã«ã¤ã‘ã‚‹ã€‚
- * + strtolã¯"0x"ã ã‘ã‚’æ¸¡ã™ã¨ã€0ã®éƒ¨åˆ†ã ã‘ã‚’10é€²æ•°ã¨ã—ã¦è§£é‡ˆã™ã‚‹ãŒã€ã“ã‚Œã¯ã‚¨ãƒ©ãƒ¼ã¨ã—ã¦æ‰±ã†ã“ã¨ã«ã™ã‚‹ã€‚
+ * + æ“ª‚Ì1ŒÂˆÈã‚Ì‹ó”’‚Í”F‚ß‚éB
+ * + 10i”‚Ì‚Ì‚İA+-‚Ì•„†‚ğ”F‚ß‚éB
+ * + 2, 10, 16i”‚É‘Î‰‚·‚éB2i”‚Í0[bB], 16i”‚Í0[xX]‚ğæ“ª‚É‚Â‚¯‚éB
+ * + strtol‚Í"0x"‚¾‚¯‚ğ“n‚·‚ÆA0‚Ì•”•ª‚¾‚¯‚ğ10i”‚Æ‚µ‚Ä‰ğß‚·‚é‚ªA‚±‚ê‚ÍƒGƒ‰[‚Æ‚µ‚Äˆµ‚¤‚±‚Æ‚É‚·‚éB
  */
 static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
 {
@@ -414,10 +416,10 @@ static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
     bool minus = false;
     bool sign = false;
 
-    /* å…ˆé ­ã®ç©ºç™½ã¯ã™ã£é£›ã°ã™ã€‚*/
+    /* æ“ª‚Ì‹ó”’‚Í‚·‚Á”ò‚Î‚·B*/
     do { c = *s++; } while (isspace(c));
 
-    /* ç¬¦å·ã®ç¢ºèª */
+    /* •„†‚ÌŠm”F */
     if (c == '-')
     {
         minus = true;
@@ -431,7 +433,7 @@ static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
     }
 
     int base;
-    /* åŸºæ•°ã®ç¢ºèªã€‚ 2, 10, 16é€²æ•°ã«å¯¾å¿œã™ã‚‹ã€‚ */
+    /* Šî”‚ÌŠm”FB 2, 10, 16i”‚É‘Î‰‚·‚éB */
     if (c == '0' && (*s == 'x' || *s == 'X'))
     {
         if (sign)

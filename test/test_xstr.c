@@ -1,16 +1,8 @@
-#include <unity.h>
-#include <unity_fixture.h>
 #include <picox/string/xstr.h>
 #include "testutils.h"
 
-#ifdef UNITY_EXCLUDE_FLOAT
-#error hgoe
-#endif
-
 
 TEST_GROUP(xstr);
-
-
 
 
 TEST_SETUP(xstr)
