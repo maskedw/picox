@@ -189,7 +189,7 @@ typedef union XMaxAlign
 
 /** cond == trueの時、x に vを代入します。
  */
-#define X_ASIGN_IF(cond, x, v)   if(cond) x = v
+#define X_ASSIGN_IF(cond, x, v)   if(cond) x = v
 
 
 /** cond == trueの時、return文を実行します。
