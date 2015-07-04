@@ -15,7 +15,6 @@ include_directories(${EX_DIR}/sds)
 include_directories(${UNITY_DIR})
 include_directories(${UNITY_EX_DIR})
 
-# set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wno-sign-compare ")
 set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -include unity.h -include unity_fixture.h")
 
 add_executable(alltests
@@ -26,6 +25,7 @@ add_executable(alltests
     test_xfalloc.c
     test_xstr.c
     test_xtokenizer.c
+    test_xargparser.c
     sds_test.c
     xfifo_test.c
     xlist_test.c
@@ -38,6 +38,7 @@ add_executable(alltests
     ${PICOX_DIR}/allocator/xpalloc.c
     ${PICOX_DIR}/string/xstr.c
     ${PICOX_DIR}/misc/xtokenizer.c
+    ${PICOX_DIR}/misc/xargparser.c
     ${EX_DIR}/sds/sds.c
     ${UNITY_DIR}/unity.c
     ${UNITY_EX_DIR}/unity_fixture.c)

@@ -7,7 +7,7 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2015”N06Œ14“ú
+ *     Created  2015å¹´06æœˆ14æ—¥
  * ===================================================================
  */
 
@@ -36,24 +36,30 @@
  * SOFTWARE.
  */
 
-#include "xargparser.h"
-#include <stdbool.h>
-#include <string.h>
+#include <picox/misc/xargparser.h>
 
 
-XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_argc, char** endptr)
+XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, int max_argc)
 {
-    bool in_token = false;          /* —LŒø‚È•¶š‚ª1•¶š‚Å‚à‚ ‚é‚©‚Ç‚¤‚© */
-    bool in_quart = false;          /* '\"'‚©'\"'‚Ì’†‚É‚¢‚é‚©‚Ç‚¤‚© */
-    bool escaped = false;           /* '\\'‚ÅƒGƒXƒP[ƒv’†‚©‚Ç‚¤‚© */
-    bool shuld_add = false;         /* Œ»İ•¶š‚ğƒg[ƒNƒ“‚É‰Á‚¦‚é‚©‚Ç‚¤‚© */
-    bool token_finish = false;      /* ƒg[ƒNƒ“‚ªŠ®¬‚µ‚½‚©‚Ç‚¤‚© */
+    bool in_token = false;          /* æœ‰åŠ¹ãªæ–‡å­—ãŒ1æ–‡å­—ã§ã‚‚ã‚ã‚‹ã‹ã©ã†ã‹ */
+    bool in_quart = false;          /* '\"'ã‹'\"'ã®ä¸­ã«ã„ã‚‹ã‹ã©ã†ã‹ */
+    bool escaped = false;           /* '\\'ã§ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ä¸­ã‹ã©ã†ã‹ */
+    bool shuld_add = false;         /* ç¾åœ¨æ–‡å­—ã‚’ãƒˆãƒ¼ã‚¯ãƒ³ã«åŠ ãˆã‚‹ã‹ã©ã†ã‹ */
+    bool token_finished = false;    /* ãƒˆãƒ¼ã‚¯ãƒ³ãŒå®Œæˆã—ãŸã‹ã©ã†ã‹ */
     char quart_start = '\0';        /* '\0' or '\"' or '\'' */
-    int  stoken = 0;                /* Œ»İ‚Ìƒg[ƒNƒ“‚ÌƒTƒCƒY */
-    int  argv_start = 0;            /* str‚©‚çƒg[ƒPƒ“‚ğØ‚èo‚µn‚ß‚½ŠJnˆÊ’u */
-    char token[XARG_PARSER_MAX_TOKEN_SIZE]; /* ƒg[ƒNƒ“ƒoƒbƒtƒ@ */
-    XArgParserErr err = XARG_PARSER_ERR_NONE;
+    size_t stoken = 0;              /* ç¾åœ¨ã®ãƒˆãƒ¼ã‚¯ãƒ³ã®ã‚µã‚¤ã‚º */
+    size_t argv_start = 0;          /* strã‹ã‚‰ãƒˆãƒ¼ã‚±ãƒ³ã‚’åˆ‡ã‚Šå‡ºã—å§‹ã‚ãŸé–‹å§‹ä½ç½® */
+    char* token = NULL;             /* ãƒˆãƒ¼ã‚¯ãƒ³ãƒãƒƒãƒ•ã‚¡ */
+    XArgParserErr err = X_ARG_PARSER_ERR_NONE;
 
+    X_ASSERT(str);
+    X_ASSERT(argc);
+    X_ASSERT(argv);
+    X_ASSERT(max_argc > 0);
+
+    token = X_MALLOC(strlen(str) + 1);
+    if (! token)
+        return X_ARG_PARSER_ERR_MEMORY;
 
     *argc = 0;
     token[0] = '\0';
@@ -64,7 +70,6 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
     do {
         c = str[i];
         switch (c) {
-        /* ƒg[ƒNƒ“I’[•¶š‚Ìˆ— */
         case ' ':
         case '\t':
         case '\n':
@@ -84,10 +89,10 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
             }
 
             in_token = false;
-            token_finish = true;
+            token_finished = true;
             break;
 
-        /* ƒNƒI[ƒg•¶š‚Ìˆ— */
+        /* ã‚¯ã‚ªãƒ¼ãƒˆæ–‡å­—ã®å‡¦ç† */
         case '\'':
         case '\"':
             if (escaped) {
@@ -108,7 +113,7 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
                 if (c == quart_start) {
                     in_quart = false;
                     in_token = false;
-                    token_finish = true;
+                    token_finished = true;
                     break;
                 } else {
                     shuld_add = true;
@@ -117,19 +122,19 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
             }
 
             /*
-                * ‚±‚±‚Ü‚Å—ˆ‚½‚çƒGƒ‰[B
-                * ƒg[ƒNƒ“’†‚ÉƒGƒXƒP[ƒv‚³‚ê‚Ä‚¢‚È‚¢ƒNƒI[ƒg•¶š‚ª—ˆ‚½ƒP[ƒX‚ª
-                * l‚¦‚ç‚ê‚éB
-                * [—á]
-                *      hell"o
-                */
-                err = XARG_PARSER_ERR_QUATE;
-                goto X__ERROR_EXIT;
+             * ã“ã“ã¾ã§æ¥ãŸã‚‰ã‚¨ãƒ©ãƒ¼ã€‚
+             * ãƒˆãƒ¼ã‚¯ãƒ³ä¸­ã«ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã•ã‚Œã¦ã„ãªã„ã‚¯ã‚ªãƒ¼ãƒˆæ–‡å­—ãŒæ¥ãŸã‚±ãƒ¼ã‚¹ãŒ
+             * è€ƒãˆã‚‰ã‚Œã‚‹ã€‚
+             * [ä¾‹]
+             *      hell"o
+             */
+            err = X_ARG_PARSER_ERR_QUATE;
+            goto X__ERROR_EXIT;
 
-        /* ƒGƒXƒP[ƒv•¶š‚Ìˆ— */
+        /* ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—æ–‡å­—ã®å‡¦ç† */
         case '\\':
 
-            /* ƒNƒI[ƒg“à‚Å‚ÍAƒNƒI[ƒg•¶š©g‚ÌƒGƒXƒP[ƒv‚¾‚¯‚ª—LŒø */
+            /* ã‚¯ã‚ªãƒ¼ãƒˆå†…ã§ã¯ã€ã‚¯ã‚ªãƒ¼ãƒˆæ–‡å­—è‡ªèº«ã®ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã ã‘ãŒæœ‰åŠ¹ */
             if (in_quart && str[i+1] != quart_start) {
                 shuld_add = true;
                 break;
@@ -145,14 +150,14 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
 
         default:
             /*
-                * –³Œø‚ÈƒGƒXƒP[ƒvƒV[ƒPƒ“ƒX‚Ìê‡‚É‚Ç‚¤‚·‚é‚©‚Æ‚¢‚¤–â‘è‚ª‚ 
-                * ‚éB‚±‚ê‚Íshell‚É‚æ‚Á‚Ä‚Ó‚é‚Ü‚¢‚ª‚±‚Æ‚È‚é‚æ‚¤‚¾B
-                * bash 4.3.11    g\c\c => gcc
-                * nyaos 3.3.9_0  g\c\c => g\c\c
-                * ‚±‚Ìƒ‚ƒWƒ…[ƒ‹‚Å‚Íbash‚ÌU‚é•‘‚¢‚ğÌ—p‚·‚éB
-                * ‚±‚ê‚É‚Ídefault:‚É—ˆ‚½‚Íescaped‚Ìó‘Ô‚ÉŠÖ‚í‚ç‚¸í‚É•¶š‚ğ’Ç
-                * ‰Á‚·‚ê‚Î‚æ‚¢B
-                */
+             * ç„¡åŠ¹ãªã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã®å ´åˆã«ã©ã†ã™ã‚‹ã‹ã¨ã„ã†å¾®å¦™ãªå•é¡ŒãŒã‚
+             * ã‚‹ã€‚ã“ã‚Œã¯shellã«ã‚ˆã£ã¦ãµã‚‹ã¾ã„ãŒã“ã¨ãªã‚‹ã‚ˆã†ã ã€‚
+             * bash 4.3.11    g\c\c => gcc
+             * nyaos 3.3.9_0  g\c\c => g\c\c
+             * ã“ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ã¯bashã®æŒ¯ã‚‹èˆã„ã‚’æ¡ç”¨ã™ã‚‹ã€‚
+             * ã“ã‚Œã«ã¯default:ã«æ¥ãŸæ™‚ã¯escapedã®çŠ¶æ…‹ã«é–¢ã‚ã‚‰ãšå¸¸ã«æ–‡å­—ã‚’è¿½
+             * åŠ ã™ã‚Œã°ã‚ˆã„ã€‚
+             */
             escaped = false;
             in_token = true;
             shuld_add = true;
@@ -166,30 +171,24 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
                 argv_start = i;
 
             token[stoken++] = c;
-
-            if (stoken == XARG_PARSER_MAX_TOKEN_SIZE - 1) {
-                err = XARG_PARSER_ERR_OVERFLOW;
-                goto X__ERROR_EXIT;
-            }
         }
 
-        if (token_finish) {
-            token_finish = false;
+        if (token_finished) {
+            token_finished = false;
             if (*argc == max_argc) {
-                err = XARG_PARSER_ERR_OVERFLOW;
+                err = X_ARG_PARSER_ERR_OVERFLOW;
                 goto X__ERROR_EXIT;
             }
 
-            /*
-             * ˆø”•¶š—ñ‚ğã‘‚«‚·‚éB ƒg[ƒNƒ“ƒTƒCƒY‚Í•K‚¸‹«ŠE‚ğ’´‚¦‚È‚¢ƒTƒCƒY
-             * ‚Éû‚Ü‚é‚Í‚¸‚È‚Ì‚Å‚±‚ê‚ÍˆÀ‘S‚ÈƒRƒs[‚Å‚ ‚éB
+            /* å¼•æ•°æ–‡å­—åˆ—ã‚’ä¸Šæ›¸ãã™ã‚‹ã€‚ ãƒˆãƒ¼ã‚¯ãƒ³ã‚µã‚¤ã‚ºã¯å¿…ãšå¢ƒç•Œã‚’è¶…ãˆãªã„ã‚µã‚¤ã‚º
+             * ã«åã¾ã‚‹ã¯ãšãªã®ã§ã“ã‚Œã¯å®‰å…¨ãªã‚³ãƒ”ãƒ¼ã§ã‚ã‚‹ã€‚
              */
             token[stoken] = '\0';
             strcpy(&str[argv_start], token);
             argv[*argc] = &str[argv_start];
             (*argc)++;
 
-            /* ƒg[ƒNƒ“ƒoƒbƒtƒ@‚ğ‰Šú‰»‚·‚éB */
+            /* ãƒˆãƒ¼ã‚¯ãƒ³ãƒãƒƒãƒ•ã‚¡ã‚’åˆæœŸåŒ–ã™ã‚‹ã€‚ */
             token[0] = '\0';
             stoken = 0;
             argv_start = i;
@@ -197,29 +196,18 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, size_t max_a
         i++;
     } while (c != '\0');
 
-
-    /* ƒNƒI[ƒg‚ª•Â‚¶‚ç‚ê‚Ä‚¢‚È‚¢ */
-    if (in_quart)
-    {
-        err = XARG_PARSER_ERR_QUATE;
+    /* ã‚¯ã‚ªãƒ¼ãƒˆãŒé–‰ã˜ã‚‰ã‚Œã¦ã„ãªã„ */
+    if (in_quart) {
+        err = X_ARG_PARSER_ERR_QUATE;
     }
-    /* escape•¶š‚ÅI—¹ */
-    else if (escaped || in_token)
-    {
-        err = XARG_PARSER_ERR_ESCAPE;
+    /* escapeæ–‡å­—ã§çµ‚äº†ã—ãŸ */
+    else if (escaped || in_token) {
+        err = X_ARG_PARSER_ERR_ESCAPE;
     }
-
-    if (in_token)
-    {
-    }
-
 
 X__ERROR_EXIT:
 
-    if (endptr)
-    {
-        *endptr = (err == XARG_PARSER_ERR_NONE) ? &str[i] : &str[argv_start];
-    }
+    X_FREE(token);
 
     return err;
 }
@@ -229,58 +217,13 @@ const char* xargparser_strerror(XArgParserErr err)
 {
     const char* str = NULL;
     switch (err) {
-    case XARG_PARSER_ERR_NONE:        str = "XARG_PARSER_ERR_NONE";        break;
-    case XARG_PARSER_ERR_QUATE:       str = "XARG_PARSER_ERR_QUATE";       break;
-    case XARG_PARSER_ERR_OVERFLOW:    str = "XARG_PARSER_ERR_OVERFLOW";    break;
-    case XARG_PARSER_ERR_ESCAPE:      str = "XARG_PARSER_ERR_ESCAPE";      break;
-    default:                          str = "XARG_PARSER_ERR_UNKNOWN";     break;
+    case X_ARG_PARSER_ERR_NONE:        str = "X_ARG_PARSER_ERR_NONE";        break;
+    case X_ARG_PARSER_ERR_QUATE:       str = "X_ARG_PARSER_ERR_QUATE";       break;
+    case X_ARG_PARSER_ERR_OVERFLOW:    str = "X_ARG_PARSER_ERR_OVERFLOW";    break;
+    case X_ARG_PARSER_ERR_ESCAPE:      str = "X_ARG_PARSER_ERR_ESCAPE";      break;
+    case X_ARG_PARSER_ERR_MEMORY:      str = "X_ARG_PARSER_ERR_MEMORY";      break;
+    default:                           str = "X_ARG_PARSER_ERR_UNKNOWN";     break;
     }
 
     return str;
 }
-
-
-#if 0
-#include <stdio.h>
-
-int
-main(int argc, char *argv[])
-{
-    const char* tests[] = {
-        "ABC DEF",
-        "ABC DEF\\",
-        "ABC D\"EF",
-        "ABC GHIJKEMNOPQRSTU",
-        "ABC DEF GHI HOGE",
-        "ABC \"'D'E'F\" ",
-        "ABC DEF\\",
-        "\\A\\B\\C DEF",
-    };
-   char* my_argv[2];
-   int   my_argc;
-   char* endptr;
-   char  line[255];
-   int   i;
-
-   int num = 0;
-   for (num = 0; num < sizeof(tests) / sizeof(tests[0]); num++)
-   {
-       strcpy(line, tests[num]);
-       printf("parsing...\n");
-       fflush(stdout);
-       XArgParserErr err = xargparser_to_argv(line, my_argv, &my_argc, sizeof(my_argv) / sizeof(my_argv[0]), &endptr);
-
-       if (err == XARG_PARSER_ERR_NONE)
-       {
-         for (i = 0; i < my_argc; i++)
-            printf("\t_argv[%d] = ['%s']\n", i, my_argv[i]); fflush(stdout);
-       }
-       else
-       {
-           printf("err %s => [%s]\n", xargparser_strerror(err), endptr);
-       }
-   }
-
-   return 0;
-}
-#endif

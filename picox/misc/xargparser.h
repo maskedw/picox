@@ -7,7 +7,7 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2015”N06Œ14“ú
+ *     Created  2015å¹´06æœˆ14æ—¥
  * ===================================================================
  */
 
@@ -37,11 +37,11 @@
  */
 
 
-#ifndef xargparser_h_
-#define xargparser_h_
+#ifndef picox_misc_xargparser_h_
+#define picox_misc_xargparser_h_
 
 
-#include <stddef.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus
@@ -49,42 +49,40 @@ extern "C" {
 #endif
 
 
-#ifndef X_ARG_PARSER_MAX_TOKEN_SIZE
-    #define X_ARG_PARSER_MAX_TOKEN_SIZE 256
-#endif
-
-
 typedef enum XArgParserErr
 {
-    X_ARG_PARSER_ERR_NONE,
-
-    /* ƒNƒI[ƒg‚ª•Â‚¶‚ç‚ê‚Ä‚¢‚È‚¢ */
-    X_ARG_PARSER_ERR_QUATE,
-
-    /* ‹K’è‚ÌÅ‘å’l‚ğ’´‚¦‚½ */
-    X_ARG_PARSER_ERR_OVERFLOW,
-
-    /* •s³‚ÈƒGƒXƒP[ƒv */
-    X_ARG_PARSER_ERR_ESCAPE,
+    X_ARG_PARSER_ERR_NONE,      /** æ­£å¸¸çµ‚äº† */
+    X_ARG_PARSER_ERR_QUATE,     /** ã‚¯ã‚ªãƒ¼ãƒˆãŒé–‰ã˜ã‚‰ã‚Œã¦ã„ãªã„ */
+    X_ARG_PARSER_ERR_OVERFLOW,  /** argcã®æœ€å¤§å€¤ã‚’è¶…ãˆãŸ */
+    X_ARG_PARSER_ERR_ESCAPE,    /** ä¸æ­£ãªã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚’æ¤œå‡ºã—ãŸ */
+    X_ARG_PARSER_ERR_MEMORY,    /** ä¸€æ™‚çš„ãªãƒ¡ãƒ¢ãƒªç¢ºä¿ã«å¤±æ•—ã—ãŸ */
 } XArgParserErr;
 
 
-/** str‚ğ‰ğÍ‚µ‚Äargv‚ğİ’è‚µ‚Ü‚·B
+/** strã‚’è§£æã—ã¦argvã‚’è¨­å®šã—ã¾ã™ã€‚
  *
- *  @param str      ‰ğÍ•¶š—ñ
- *  @param argc     ˆø”‚Ì”‚Ìo—Íæ
- *  @param argv     ˆø”o—ÍæBmax_argcˆÈã‚Ì—Ìˆæ‚ª‚ ‚é‚±‚ÆB
- *  @param max_argc argc‚ÌÅ‘å’l
- *  @param endptr   ‰ğÍˆ—‚ÌI—¹ˆÊ’u(NULLw’è‚Í‰½‚à‚µ‚È‚¢)
+ *  @param str      è§£ææ–‡å­—åˆ—
+ *  @param argc     å¼•æ•°ã®æ•°ã®å‡ºåŠ›å…ˆ
+ *  @param argv     å¼•æ•°å‡ºåŠ›å…ˆ
+ *  @param max_argc argcã®æœ€å¤§å€¤
+ *
+ *  @pre
+ *  + str != NULL
+ *  + argc != NULL
+ *  + argv != NULL
+ *  + max_argc > 0
+ *  + *argvã¯sizeof(char*) * max_argcä»¥ä¸Šã®é ˜åŸŸã‚’æŒã¤ã“ã¨
  *
  *  @note
- *  str©g‚ª‰ğÍ‚É‚æ‚Á‚Äƒg[ƒNƒ“‚²‚Æ‚É'\0'‚Å•ª’f‚³‚ê‚é‚±‚Æ‚É’ˆÓ‚µ‚Ä‚­‚¾‚³‚¢B
- *  ƒŠ[ƒhƒIƒ“ƒŠ[‚Ì•¶š—ñ‚ğ“n‚µ‚Ä‚Í‚¢‚¯‚Ü‚¹‚ñB
+ *  strè‡ªèº«ãŒè§£æã«ã‚ˆã£ã¦ãƒˆãƒ¼ã‚¯ãƒ³ã”ã¨ã«'\0'ã§åˆ†æ–­ã•ã‚Œã¾ã™ã€‚
+ *  ãƒªãƒ¼ãƒ‰ã‚ªãƒ³ãƒªãƒ¼ã®æ–‡å­—åˆ—ã‚’æ¸¡ã—ã¦ã¯ã„ã‘ã¾ã›ã‚“ã€‚
  */
-XArgParserErr xargparser_to_argv(char* str, int* argc, char* argv[], size_t max_argc, char** endptr);
+XArgParserErr xargparser_to_argv(char* str, int* argc, char* argv[], int max_argc);
 
 
-const char* xargparser_strerror(XArgParserErr err);
+/** ã‚¨ãƒ©ãƒ¼ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã®æ–‡å­—åˆ—è¡¨ç¾ã‚’è¿”ã—ã¾ã™ã€‚
+ */
+const char* xargparser_err_to_string(XArgParserErr err);
 
 
 #ifdef __cplusplus
@@ -92,4 +90,4 @@ const char* xargparser_strerror(XArgParserErr err);
 #endif
 
 
-#endif /* xargparser_h_ */
+#endif // picox_misc_xargparser_h_
