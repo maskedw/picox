@@ -177,6 +177,11 @@ typedef union XMaxAlign
 #define X_BREAK_IF(cond)   if(cond) break
 
 
+/** cond == trueの時、continue文を実行します。
+ */
+#define X_CONTINUE_IF(cond)   if(cond) continue
+
+
 /** cond == trueの時、式exprを実行します。
  */
 #define X_EXPR_IF(cond, expr)   if(cond) expr
