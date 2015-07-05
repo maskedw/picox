@@ -26,6 +26,7 @@ add_executable(alltests
     test_xstr.c
     test_xtokenizer.c
     test_xargparser.c
+    test_xfile.c
     sds_test.c
     xfifo_test.c
     xlist_test.c

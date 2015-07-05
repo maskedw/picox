@@ -36,11 +36,7 @@
  * SOFTWARE.
  */
 
-#include "xfile.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <limits.h>
+#include <picox/filesystem/xfile.h>
 
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
@@ -65,9 +61,6 @@
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
-    #ifdef __STRICT_ANSI__
-        #undef __STRICT_ANSI__
-    #endif
     #include <sys/stat.h>
     #include <errno.h>
     #include <unistd.h>
@@ -77,26 +70,28 @@
 
 #define X__ASSIGN_ERR(v)               ((err) ? (*err = v) : (void)0)
 #define X__ASSIGN_IF(x, v)             ((x) ? (*x = v) : (void)0)
-#define X__ASSIGN_ERR_IF(cond, x, v)   ((cond) ? X__ASSIGN_ERR(v) : (void)0)
-#define X__BREAK_IF(cond)              if (cond) break
 #define X__EQUAL_STR(s1, s2)           (strcmp(s1, s2) == 0)
-
 
 XFile* xfile_open(const char* path, const char* mode, int* err)
 {
+    X_ASSERT(path);
+    X_ASSERT(mode);
+
     XFile* fp = NULL;
+    int sub_err;
+    if (! err) err = &sub_err;
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     bool ok = false;
     do
     {
-        X__ASSIGN_ERR(FR_INVALID_PARAMETER);
+        *err = FR_INVALID_PARAMETER;
 
         /* 最大長はw+b, r+b, a+bなので3文字 */
         const size_t len = strlen(mode);
-        X__BREAK_IF(len > 3);
-        X__BREAK_IF(len == 0);
+        X_BREAK_IF(len > 3);
+        X_BREAK_IF(len == 0);
 
         /* fatfsではb指定は無視 */
         char buf[4];
@@ -168,12 +163,12 @@ XFile* xfile_open(const char* path, const char* mode, int* err)
         }
 
         X__ASSIGN_ERR(FR_NOT_ENOUGH_CORE);
-        fp = XFILE_MEM_ALLOC(sizeof(FIL));
-        X__BREAK_IF(! fp);
+        fp = X_MALLOC(sizeof(FIL));
+        X_BREAK_IF(! fp);
 
         FRESULT result = f_open(fp, path, fsmode);
         X__ASSIGN_ERR(result);
-        X__BREAK_IF(result != FR_OK);
+        X_BREAK_IF(result != FR_OK);
 
         if (at_end)
         {
@@ -191,7 +186,7 @@ XFile* xfile_open(const char* path, const char* mode, int* err)
 
     if (! ok)
     {
-        XFILE_MEM_FREE(fp);
+        X_FREE(fp);
         fp = NULL;
     }
 
@@ -208,12 +203,13 @@ XFile* xfile_open(const char* path, const char* mode, int* err)
 
 bool xfile_close(XFile* fp, int* err)
 {
-    XFILE_ASSERT(fp);
+    if (!fp)
+        return true;
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     const FRESULT result = f_close(fp);
-    XFILE_MEM_FREE(fp);
+    X_FREE(fp);
     const bool ok = (result == FR_OK);
     X__ASSIGN_ERR(result);
 
@@ -230,7 +226,8 @@ bool xfile_close(XFile* fp, int* err)
 
 bool xfile_write(XFile* fp, const void* src, size_t size, size_t* nwritten, int* err)
 {
-    XFILE_ASSERT(fp);
+    X_ASSERT(fp);
+    X_ASSERT(src);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
     const char* p = src;
@@ -242,13 +239,13 @@ bool xfile_write(XFile* fp, const void* src, size_t size, size_t* nwritten, int*
         UINT written;
         result = f_write(fp, p, to_write, &written);
 
-        X__BREAK_IF(result != FR_OK);
+        X_BREAK_IF(result != FR_OK);
 
         size -= to_write;
         p    += to_write;
 
         /* Disk full チェック */
-        X__BREAK_IF(to_write != written);
+        X_BREAK_IF(to_write != written);
     }
     X__ASSIGN_ERR(result);
     X__ASSIGN_IF(nwritten, p - (const char*)src);
@@ -270,7 +267,8 @@ bool xfile_write(XFile* fp, const void* src, size_t size, size_t* nwritten, int*
 
 bool xfile_read(XFile* fp, void* dst, size_t size, size_t* nread, int* err)
 {
-    XFILE_ASSERT(fp);
+    X_ASSERT(fp);
+    X_ASSERT(dst);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
     char* p = dst;
@@ -283,14 +281,14 @@ bool xfile_read(XFile* fp, void* dst, size_t size, size_t* nread, int* err)
         UINT read;
         result = f_read(fp, p, to_read, &read);
 
-        X__BREAK_IF(result != FR_OK);
+        X_BREAK_IF(result != FR_OK);
 
         size    -= to_read;
         p       += to_read;
         total   += to_read;
 
         /* ファイル終端チェック */
-        X__BREAK_IF(to_read != read);
+        X_BREAK_IF(to_read != read);
     }
     X__ASSIGN_ERR(result);
     X__ASSIGN_IF(nread, total);
@@ -310,10 +308,10 @@ bool xfile_read(XFile* fp, void* dst, size_t size, size_t* nread, int* err)
 }
 
 
-bool xfile_size(XFile* fp, size_t* dst, int* err)
+bool xfile_size(XFile* fp, XFileSize* dst, int* err)
 {
-    XFILE_ASSERT(fp);
-    XFILE_ASSERT(dst);
+    X_ASSERT(fp);
+    X_ASSERT(dst);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
     *dst = f_size(fp);
@@ -330,16 +328,16 @@ bool xfile_size(XFile* fp, size_t* dst, int* err)
     do
     {
         save_pos = ftell(fp);
-        X__BREAK_IF(save_pos == -1);
+        X_BREAK_IF(save_pos == -1);
 
         seek_ret = fseek(fp, 0, SEEK_END);
-        X__BREAK_IF(seek_ret != 0);
+        X_BREAK_IF(seek_ret != 0);
 
         size = ftell(fp);
-        X__BREAK_IF(size == -1);
+        X_BREAK_IF(size == -1);
 
         seek_ret = fseek(fp, save_pos, SEEK_SET);
-        X__BREAK_IF(seek_ret != 0);
+        X_BREAK_IF(seek_ret != 0);
 
         *dst = size;
         ok = true;
@@ -353,15 +351,18 @@ bool xfile_size(XFile* fp, size_t* dst, int* err)
 }
 
 
-bool xfile_size_with_path(const char* path, size_t* dst, int* err)
+bool xfile_size_with_path(const char* path, XFileSize* dst, int* err)
 {
+    X_ASSERT(path);
+    X_ASSERT(dst);
+
     bool ok = false;
     XFile* fp = NULL;
 
     do
     {
         fp = xfile_open(path, "r", err);
-        X__BREAK_IF(! fp);
+        X_BREAK_IF(! fp);
 
         ok = xfile_size(fp, dst, err);
     } while (0);
@@ -376,20 +377,27 @@ bool xfile_size_with_path(const char* path, size_t* dst, int* err)
 }
 
 
-bool xfile_exists(const char* path, int* err)
+bool xfile_exists(const char* path, bool* exists, int* err)
 {
+    X_ASSERT(path);
+    X_ASSERT(exists);
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
-    FILINFO info;
-    const FRESULT result = f_stat(path, &info);
+    X__DECLARE_FINFO(finfo);
+    const FRESULT result = f_stat(path, &finfo);
+    const bool ok = ((result == FR_OK) || (result == FR_NO_PATH));
+    *exists = (result == FR_OK);
 
-    const bool ok = (result == FR_OK);
     X__ASSIGN_ERR(result);
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
     struct stat statbuf;
-    const bool ok = (stat(path, &statbuf) == 0);
+    errno = 0;
+    const int result = stat(path, &statbuf);
+    const bool ok = ((result == 0) || (errno == ENOENT));
+    *exists = (result == 0);
     X__ASSIGN_ERR(errno);
 
 #endif
@@ -398,25 +406,9 @@ bool xfile_exists(const char* path, int* err)
 }
 
 
-bool xfile_eof(XFile* fp)
+bool xfile_seek(XFile* fp, XFileSize pos, int* err)
 {
-    XFILE_ASSERT(fp);
-
-#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
-
-    return f_eof(fp) != 0;
-
-#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
-
-    return feof(fp) != 0;
-
-#endif
-}
-
-
-bool xfile_seek(XFile* fp, size_t pos, int* err)
-{
-    XFILE_ASSERT(fp);
+    X_ASSERT(fp);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
@@ -425,13 +417,7 @@ bool xfile_seek(XFile* fp, size_t pos, int* err)
     X__ASSIGN_ERR(result);
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
-    /*
-     * fseekの位置指定型はlongなので、size_tの型によるが、最大値までは受けれない
-     * 可能性が高い。64bit版のfseekもあるが、使用方法が環境によってまちまちでこ
-     * れも使いにくい。
-     * 実際の所この問題が表面化することはほぼほぼないと考えられるので、この問題
-     * は無視してよしとする。
-     */
+
     const int result = fseek(fp, pos, SEEK_SET);
     const bool ok = (result != -1);
 
@@ -443,9 +429,32 @@ bool xfile_seek(XFile* fp, size_t pos, int* err)
 }
 
 
+bool xfile_tell(XFile* fp, XFileSize* pos, int* err)
+{
+    X_ASSERT(fp);
+    X_ASSERT(pos);
+
+#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
+
+    *pos = f_tell(fp);
+    const bool ok = true;
+    X__ASSIGN_ERR(FR_OK);
+
+#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
+
+    *pos = ftell(fp);
+    const bool ok = true;
+    X__ASSIGN_ERR(0);
+
+#endif
+
+    return ok;
+}
+
+
 bool xfile_flush(XFile* fp, int* err)
 {
-    XFILE_ASSERT(fp);
+    X_ASSERT(fp);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
@@ -464,8 +473,28 @@ bool xfile_flush(XFile* fp, int* err)
 }
 
 
+bool xfile_mkdir(const char* path, int* err)
+{
+    X_ASSERT(path);
+#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
+
+#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
+
+    const int result = mkdir(path);
+    const bool ok = (result == 0);
+    X__ASSIGN_ERR(errno);
+
+#endif
+
+    return ok;
+}
+
+
+
 bool xfile_chdir(const char* path, int* err)
 {
+    X_ASSERT(path);
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     const FRESULT result = f_chdir(path);
@@ -485,6 +514,9 @@ bool xfile_chdir(const char* path, int* err)
 
 bool xfile_cwd(char* dst, size_t size, int* err)
 {
+    X_ASSERT(dst);
+    X_ASSERT(size > 0);
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     const FRESULT result = f_getcwd(dst, size);
@@ -504,28 +536,35 @@ bool xfile_cwd(char* dst, size_t size, int* err)
 
 bool xfile_remove(const char* path, int* err)
 {
+    X_ASSERT(path);
+    bool ok;
+    bool exists;
+    ok = xfile_exists(path, &exists, err);
+    if (ok && (!exists))
+        return true;
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     const FRESULT result = f_unlink(path);
-    const bool ok = (result == FR_OK);
+    ok = (result == FR_OK);
     X__ASSIGN_ERR(result);
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
     struct stat statbuf;
-    bool ok = false;
+    ok = false;
 
     do
     {
-        X__BREAK_IF(stat(path, &statbuf) != 0);
+        X_BREAK_IF(stat(path, &statbuf) != 0);
 
         if (S_ISDIR(statbuf.st_mode))
         {
-            X__BREAK_IF(rmdir(path) != 0);
+            X_BREAK_IF(rmdir(path) != 0);
         }
         else
         {
-            X__BREAK_IF(unlink(path) != 0);
+            X_BREAK_IF(unlink(path) != 0);
         }
 
         ok = true;
@@ -540,40 +579,64 @@ bool xfile_remove(const char* path, int* err)
 
 bool xfile_remove_all(const char* path, int* err)
 {
+    X_ASSERT(path);
+    X_ASSERT(strlen(path) <= XFILE_PATH_MAX);
+
+    bool ok;
+    bool exists;
+    ok = xfile_exists(path, &exists, err);
+    if (ok && (!exists))
+        return true;
+
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     X__DECLARE_FINFO(finfo);
-    char buf[XFILE_WORKING_BUF_SIZE];
+    char* buf = X_MALLOC(XFILE_PATH_MAX + 1);
+    if (! buf)
+    {
+        X__ASSIGN_ERR(FR_NOT_ENOUGH_CORE);
+        return false;
+    }
 
     strcpy(buf, path);
     const int tail = strlen(buf);
-    const FRESULT result = X__RemoveFiles(buf, sizeof(buf), tail, &finfo);
-    const bool ok = (result == FR_OK);
+    const FRESULT result = X__RemoveFiles(buf, XFILE_PATH_MAX + 1, tail, &finfo);
+    ok = (result == FR_OK);
     X__ASSIGN_ERR(result);
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
     struct stat statbuf;
-    char buf[XFILE_WORKING_BUF_SIZE];
+    char* buf = X_MALLOC(XFILE_PATH_MAX + 1);
+    if (! buf)
+    {
+        X__ASSIGN_ERR(ENOMEM);
+        return false;
+    }
 
     strcpy(buf, path);
     const int tail = strlen(buf);
 
-    const bool ok = X__RemoveFiles(buf, sizeof(buf), tail, &statbuf);
+    ok = X__RemoveFiles(buf, XFILE_PATH_MAX + 1, tail, &statbuf);
     X__ASSIGN_ERR(errno);
 
 #endif
+
+    if (buf)
+        X_FREE(buf);
 
     return ok;
 }
 
 
-bool xfile_read_line(XFile* fp, char* dst, char** result, size_t size, int* err)
+bool xfile_read_line(XFile* fp, char* dst, size_t size, char** result, bool* overflow, int* err)
 {
-    XFILE_ASSERT(fp);
-    XFILE_ASSERT(dst);
-    XFILE_ASSERT(result);
-    XFILE_ASSERT(size > 1);
+    X_ASSERT(fp);
+    X_ASSERT(dst);
+    X_ASSERT(result);
+    X_ASSERT(overflow);
+    X_ASSERT(size > 1);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
@@ -589,14 +652,16 @@ bool xfile_read_line(XFile* fp, char* dst, char** result, size_t size, int* err)
         char c;
 
         fres = f_read(fp, &c, 1, &nread);
-        X__BREAK_IF(fres != FR_OK);
-        X__BREAK_IF(nread != 1);
-        dst[total++] = c;
+        X_BREAK_IF(fres != FR_OK);
+        X_BREAK_IF(nread != 1);
 
-        X__BREAK_IF(c == '\n');
+        X_CONTINUE_IF(c == '\r');
+        X_BREAK_IF(c == '\n');
+        dst[total++] = c;
     }
     dst[total] = '\0';
     *result = (dst[0] != '\0') ? dst : NULL;
+    *overflow = ((c != '\n') && (!!f_eof(fp)));
 
     const bool ok = (fres == FR_OK);
     X__ASSIGN_ERR(fres);
@@ -609,59 +674,30 @@ bool xfile_read_line(XFile* fp, char* dst, char** result, size_t size, int* err)
 
     const bool ok = (ferror(fp) == 0);
 
-#endif
-
-    return ok;
-}
-
-#if 0
-bool xfile_read_line(XFile* fp, char* dst, char** result, size_t size, int* err)
-{
-    XFILE_ASSERT(fp);
-    XFILE_ASSERT(dst);
-    XFILE_ASSERT(result);
-    XFILE_ASSERT(size > 1);
-
-#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
-
-    FRESULT fres;
-    *result = NULL;
-    dst[0] = '\0';
-    const DWORD cur_pos = f_tell(fp);
-    do
+    /* 改行文字は取り除く。*/
+    if (result)
     {
-        size_t nread;
-        X__BREAK_IF(! xfile_read(fp, dst, size - 1, &nread, (int*)&fres));
-        X__BREAK_IF(nread == 0);
-
-        dst[nread] = '\0';
-        char* lf_pos = strchr(dst, '\n');
-
-        if (lf_pos != NULL)
+        bool has_crlf = false;
+        const size_t len = strlen(dst);
+        if ((len >= 2) && (dst[len - 2] == '\r'))
         {
-            X__BREAK_IF((fres = f_lseek(fp, cur_pos + (lf_pos - dst + 1))) != FR_OK);
-            *(lf_pos + 1) = '\0';
-            *result = dst;
+            if (dst[len - 1] == '\n')
+                has_crlf = true;
+            dst[len - 2] = '\0';
         }
-    } while (0);
+        else if ((len >= 1) && (dst[len - 1] == '\n'))
+        {
+            has_crlf = true;
+            dst[len - 1] = '\0';
+        }
 
-    const bool ok = (fres == FR_OK);
-    X__ASSIGN_ERR(fres);
-
-#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
-
-    clearerr(fp);
-    *result = fgets(dst, size, fp);
-    X__ASSIGN_ERR(errno);
-
-    const bool ok = (ferror(fp) == 0);
-
+        if (has_crlf)
+            *overflow = !!feof(fp);
+    }
 #endif
 
     return ok;
 }
-#endif
-
 
 const char* xfile_strerror(int err)
 {
@@ -686,32 +722,27 @@ const char* xfile_strerror(int err)
 }
 
 
-bool xfile_is_directory(const char* path, int* err)
+bool xfile_is_directory(const char* path, bool* is_dir, int* err)
 {
+    X_ASSERT(path);
+    X_ASSERT(is_dir);
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     X__DECLARE_FINFO(finfo);
-    FRESULT result = f_stat(path, &finfo);
-    X__ASSIGN_ERR(result);
-    bool ok = false;
+    const FRESULT result = f_stat(path, &finfo);
+    const bool ok = ((result == FR_OK) || (result == FR_NO_PATH));
+    *is_dir = (ok && (finfo.fattrib & AM_DIR));
 
-    if (result == FR_OK)
-    {
-        ok = ((finfo.fattrib & AM_DIR) != 0);
-    }
+    X__ASSIGN_ERR(result);
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
     struct stat statbuf;
-    bool ok = false;
-
     errno = 0;
-    do
-    {
-        X__BREAK_IF(stat(path, &statbuf) != 0);
-        X__BREAK_IF(! S_ISDIR(statbuf.st_mode));
-        ok = true;
-    } while (0);
+    const int result = stat(path, &statbuf);
+    const bool ok = ((result == 0) || (errno == ENOENT));
+    *is_dir = (ok && (S_ISDIR(statbuf.st_mode)));
 
     X__ASSIGN_ERR(errno);
 
@@ -735,25 +766,39 @@ bool xfile_printf(XFile* fp, size_t* nprint, int* err, const char* fmt, ...)
 
 bool xfile_vprintf(XFile* fp, size_t* nprint, int* err, const char* fmt, va_list arg)
 {
-    XFILE_ASSERT(fp);
-    XFILE_ASSERT(nprint);
+    X_ASSERT(fp);
+    X_ASSERT(fmt);
 
-    char buf[XFILE_WORKING_BUF_SIZE];
-    *nprint = 0;
+    char* buf = NULL;
+    X__ASSIGN_IF(nprint, 0);
     X__ASSIGN_ERR(0);
 
     bool ok = false;
     do
     {
-        const int vsret  = vsnprintf(buf, sizeof(buf), fmt, arg);
-        X__BREAK_IF(vsret < 0);
+        const int vsret  = vsnprintf(buf, 0, fmt, arg);
+        X_BREAK_IF(vsret < 0);
+
+        buf = X_MALLOC(vsret + 1);
+
+#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
+        X__ASSIGN_ERR(FR_NOT_ENOUGH_CORE);
+#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
+        X__ASSIGN_ERR(ENOMEM);
+#endif
+        X_BREAK_IF(! buf);
+
+        vsnprintf(buf, vsret + 1, fmt, arg);
 
         size_t nwritten;
-        X__BREAK_IF(! xfile_write(fp, buf, strlen(buf), &nwritten, err));
+        X_BREAK_IF(! xfile_write(fp, buf, vsret, &nwritten, err));
 
         *nprint = nwritten;
         ok = true;
     } while (0);
+
+    if (buf)
+        X_FREE(buf);
 
     return ok;
 }
@@ -761,6 +806,10 @@ bool xfile_vprintf(XFile* fp, size_t* nprint, int* err, const char* fmt, va_list
 
 char* xfile_path_name(char* dst, const char* path, size_t size)
 {
+    X_ASSERT(dst);
+    X_ASSERT(path);
+    X_ASSERT(size > 0);
+
     const char* p = strrchr(path, '/');
     const char* name = p ? p + 1 : path;
     strncpy(dst, name, size);
@@ -774,22 +823,22 @@ char* xfile_path_name(char* dst, const char* path, size_t size)
 
 static FRESULT X__RemoveFiles(char* path, int size, int tail, FILINFO* finfo)
 {
-    Dir dir;
+    XDir dir;
     FRESULT fret;
 
     do
     {
-        X__BREAK_IF((fret = f_stat(path, finfo)) != FR_OK);
+        X_BREAK_IF((fret = f_stat(path, finfo)) != FR_OK);
 
         if (finfo->fattrib & AM_DIR)
         {
-            X__BREAK_IF((fret = f_opendir(&dir, path)) != FR_OK);
+            X_BREAK_IF((fret = f_opendir(&dir, path)) != FR_OK);
             for (;;)
             {
-                X__BREAK_IF((fret = f_readdir(&dir, finfo)) != FR_OK);
+                X_BREAK_IF((fret = f_readdir(&dir, finfo)) != FR_OK);
 
                 /* ディレクトリ要素の終端 */
-                X__BREAK_IF(finfo->fname[0] == '\0');
+                X_BREAK_IF(finfo->fname[0] == '\0');
 
                 if (X__EQUAL_STR(".", finfo->fname) || X__EQUAL_STR("..", finfo->fname))
                     continue;
@@ -799,7 +848,7 @@ static FRESULT X__RemoveFiles(char* path, int size, int tail, FILINFO* finfo)
 #else
                 const int ret = snprintf(&path[tail], size - tail, "/%s", finfo->fname);
 #endif
-                X__BREAK_IF(ret == -1);
+                X_BREAK_IF(ret == -1);
 
                 if (ret > size - tail)
                 {
@@ -808,7 +857,7 @@ static FRESULT X__RemoveFiles(char* path, int size, int tail, FILINFO* finfo)
                 }
 
                 /* 再帰呼び出し */
-                X__BREAK_IF((fret = X__RemoveFiles(path, size, tail + ret, finfo)) != FR_OK);
+                X_BREAK_IF((fret = X__RemoveFiles(path, size, tail + ret, finfo)) != FR_OK);
             }
 
             if (fret != FR_OK)
@@ -818,14 +867,14 @@ static FRESULT X__RemoveFiles(char* path, int size, int tail, FILINFO* finfo)
             }
 
             fret = f_closedir(&dir);
-            X__BREAK_IF(fret != FR_OK);
+            X_BREAK_IF(fret != FR_OK);
 
             path[tail]  = '\0';
-            X__BREAK_IF((fret = f_unlink(path)) != FR_OK);
+            X_BREAK_IF((fret = f_unlink(path)) != FR_OK);
         }
         else
         {
-            X__BREAK_IF((fret = f_unlink(path)) != FR_OK);
+            X_BREAK_IF((fret = f_unlink(path)) != FR_OK);
         }
     } while (0);
 
@@ -892,11 +941,11 @@ static bool X__RemoveFiles(char* path, int size, int tail, struct stat* statbuf)
 
     do
     {
-        X__BREAK_IF(stat(path, statbuf) != 0);
+        X_BREAK_IF(stat(path, statbuf) != 0);
 
         if (S_ISDIR(statbuf->st_mode))
         {
-            X__BREAK_IF((dir = opendir(path)) == NULL);
+            X_BREAK_IF((dir = opendir(path)) == NULL);
 
             errno = 0;
             for (;;)
@@ -917,7 +966,7 @@ static bool X__RemoveFiles(char* path, int size, int tail, struct stat* statbuf)
 
                 ret = snprintf(&path[tail], size - tail, "/%s", ent->d_name);
 
-                X__BREAK_IF(ret == -1);
+                X_BREAK_IF(ret == -1);
 
                 /*
                  * snprintfはbufサイズに空きがなかった場合も、本来書き込めたであ
@@ -931,24 +980,24 @@ static bool X__RemoveFiles(char* path, int size, int tail, struct stat* statbuf)
                 }
 
                 /* 再帰呼び出し */
-                X__BREAK_IF(! X__RemoveFiles(path, size, tail + ret, statbuf));
+                X_BREAK_IF(! X__RemoveFiles(path, size, tail + ret, statbuf));
             }
 
             ret = closedir(dir);
-            X__BREAK_IF(! ok);
+            X_BREAK_IF(! ok);
 
             ok = false;
-            X__BREAK_IF(ret != 0);
+            X_BREAK_IF(ret != 0);
 
             path[tail] = '\0';
             ret = rmdir(path);
 
-            X__BREAK_IF(ret != 0);
+            X_BREAK_IF(ret != 0);
         }
         else
         {
             ret = unlink(path);
-            X__BREAK_IF(ret != 0);
+            X_BREAK_IF(ret != 0);
         }
 
         ok = true;

@@ -15,6 +15,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xstr);
     RUN_TEST_GROUP(xtokenizer);
     RUN_TEST_GROUP(xargparser);
+    RUN_TEST_GROUP(xfile);
 }
 
 
