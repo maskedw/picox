@@ -327,6 +327,7 @@ static uint8_t reverse_bits8(uint8_t x)
 }
 
 
+#if 0
 static uint16_t reverse_bits16(uint16_t x)
 {
     return (bit_reverse_table256[x & 0xFF] << 8) |
@@ -341,6 +342,7 @@ static uint32_t reverse_bits32(uint32_t x)
            (bit_reverse_table256[(x >> 16) & 0xff] << 8)    |
            (bit_reverse_table256[(x >> 24) & 0xff]);
 }
+#endif
 
 
 TEST(xutils, reverse_bits)
@@ -488,7 +490,7 @@ TEST(xutils, is_alignment)
 TEST(xutils, is_aligned)
 {
     int i;
-    uint32_t x = 4;
+    uintptr_t x = 4;
 
     for (i = 0; i < 100; i++)
     {
@@ -697,7 +699,7 @@ TEST(xutils, memreverse)
     int a[10];
     int b[10];
 
-    int i;
+    size_t i;
     for (i = 0; i < X_COUNT_OF(a); i++)
     {
         a[i] = i;

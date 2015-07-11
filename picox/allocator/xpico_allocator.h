@@ -1,5 +1,5 @@
 /**
- *       @file  xpalloc.h
+ *       @file  xpico_allocator.h
  *      @brief  Pico variable memory allocator
  *
  *    @details
@@ -51,8 +51,8 @@
  */
 
 
-#ifndef picox_xpalloc_h_
-#define picox_xpalloc_h_
+#ifndef picox_allocator_xpico_allocator_h_
+#define picox_allocator_xpico_allocator_h_
 
 
 #include <picox/core/xcore.h>
@@ -65,14 +65,14 @@ extern "C" {
 
 /** 可変長メモリアロケータ管理クラスです
  */
-typedef struct XPAlloc
+typedef struct XPicoAllocator
 {
 /// privatesection
     uint8_t*        heap;
     uint8_t*        top;
     size_t          capacity;
     size_t          reserve;
-} XPAlloc;
+} XPicoAllocator;
 
 
 /** メモリ確保時のアラインメントです
@@ -93,28 +93,28 @@ typedef struct XPAlloc
  *  heap領域はXPALLOC_ALIGNに切り上げられます。できればあらかじめアラインしてお
  *  く方がよいでしょう。
  */
-void xpalloc_init(XPAlloc* self, void* heap, size_t size);
+void xpalloc_init(XPicoAllocator* self, void* heap, size_t size);
 
 
 /** ヒープからsizeバイトのメモリを切り出して返します
  */
-void* xpalloc_allocate(XPAlloc* self, size_t size);
+void* xpalloc_allocate(XPicoAllocator* self, size_t size);
 
 
 /** ヒープにメモリを返却します
  */
-void xpalloc_deallocate(XPAlloc* self, void* ptr);
+void xpalloc_deallocate(XPicoAllocator* self, void* ptr);
 
 
 /** ヒープを初期状態に戻します
  */
-void xpalloc_clear(XPAlloc* self);
+void xpalloc_clear(XPicoAllocator* self);
 
 
 /** ヒープメモリを返します
  */
 static inline uint8_t*
-xpalloc_heap(const XPAlloc* self)
+xpalloc_heap(const XPicoAllocator* self)
 {
     X_ASSERT(self);
     return self->heap;
@@ -124,7 +124,7 @@ xpalloc_heap(const XPAlloc* self)
 /** 空きメモリバイト数を返します
  */
 static inline size_t
-xpalloc_reserve(const XPAlloc* self)
+xpalloc_reserve(const XPicoAllocator* self)
 {
     X_ASSERT(self);
     return self->reserve;
@@ -134,7 +134,7 @@ xpalloc_reserve(const XPAlloc* self)
 /** ヒープのサイズを返します
  */
 static inline size_t
-xpalloc_capacity(const XPAlloc* self)
+xpalloc_capacity(const XPicoAllocator* self)
 {
     X_ASSERT(self);
     return self->capacity;
@@ -143,7 +143,7 @@ xpalloc_capacity(const XPAlloc* self)
 
 /** nバイトのメモリ確保を行った場合に必要な余分なメモリサイズを返します。
  */
-size_t xpalloc_allocation_overhead(const XPAlloc* self, size_t n);
+size_t xpalloc_allocation_overhead(const XPicoAllocator* self, size_t n);
 
 
 /** ヒープの空きブロック走査用コールバック関数です
@@ -152,7 +152,7 @@ size_t xpalloc_allocation_overhead(const XPAlloc* self, size_t n);
  *  @param size     空きブロックのサイズ
  *  @param user     ユーザーデータポインタ
  */
-typedef void (*XPAllocWalker)(const uint8_t* chunk, size_t size, void* user);
+typedef void (*XPicoAllocatorWalker)(const uint8_t* chunk, size_t size, void* user);
 
 
 /** ヒープ内の空きブロックを走査し、ブロックごとにwalkerを呼び出します
@@ -162,7 +162,7 @@ typedef void (*XPAllocWalker)(const uint8_t* chunk, size_t size, void* user);
  *  @param walker   空きブロック検出毎に呼び出される関数
  *  @param user     walker呼び出し時に渡されるポインタ
  */
-void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user);
+void xpalloc_walk_heap(const XPicoAllocator* self, XPicoAllocatorWalker walker, void* user);
 
 
 #ifdef __cplusplus

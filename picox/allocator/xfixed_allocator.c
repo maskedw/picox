@@ -1,5 +1,5 @@
 /**
- *       @file  xfalloc.h
+ *       @file  xfixed_allocator.c
  *      @brief
  *
  *    @details
@@ -36,14 +36,14 @@
  * SOFTWARE.
  */
 
-#include <picox/allocator/xfalloc.h>
+#include <picox/allocator/xfixed_allocator.h>
 
 
-static void X__MakeBlocks(XFAlloc* self);
+static void X__MakeBlocks(XFixedAllocator* self);
 #define X__IS_VALID_RANGE(x) (x_is_within_ptr(x, self->top, self->top + 1 + (self->block_size * (self->num_blocks - 1))))
 
 
-void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size, size_t alignment)
+void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size, size_t alignment)
 {
     X_ASSERT(self);
     X_ASSERT(heap);
@@ -77,7 +77,7 @@ void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size
 }
 
 
-void xfalloc_clear(XFAlloc* self)
+void xfalloc_clear(XFixedAllocator* self)
 {
     X_ASSERT(self);
 
@@ -86,7 +86,7 @@ void xfalloc_clear(XFAlloc* self)
 }
 
 
-void* xfalloc_allocate(XFAlloc* self)
+void* xfalloc_allocate(XFixedAllocator* self)
 {
     X_ASSERT(self);
     X_ASSERT_MALLOC_NULL(self->next);
@@ -103,7 +103,7 @@ void* xfalloc_allocate(XFAlloc* self)
 }
 
 
-void xfalloc_deallocate(XFAlloc* self, void* ptr)
+void xfalloc_deallocate(XFixedAllocator* self, void* ptr)
 {
     X_ASSERT(self);
 
@@ -123,7 +123,7 @@ void xfalloc_deallocate(XFAlloc* self, void* ptr)
 }
 
 
-static void X__MakeBlocks(XFAlloc* self)
+static void X__MakeBlocks(XFixedAllocator* self)
 {
     self->next = self->top;
     self->remain_blocks = self->num_blocks;

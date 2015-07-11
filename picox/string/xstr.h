@@ -173,6 +173,10 @@ uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok);
 /** 文字列をfloatに変換して返します。
  *
  *  c99のstd::strtof()が使用できない場合はstd::strtod()の結果を返します。
+ *
+ *  @TODO
+ *  ライブラリの実装によって、不正な文字列を渡したときの振る舞いが曖昧なので、
+ *  [+-.0-9]以外の文字があったら不正ってことにしよか。
  */
 float xstr_to_float(const char* str, float def, bool* ok);
 

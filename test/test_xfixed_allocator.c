@@ -1,13 +1,11 @@
-#include <picox/allocator/xfalloc.h>
-#include <unity.h>
-#include <unity_fixture.h>
+#include <picox/allocator/xfixed_allocator.h>
 #include "testutils.h"
 
 
 TEST_GROUP(xfalloc);
 
 
-static XFAlloc* alloc;
+static XFixedAllocator* alloc;
 #define X__BLOCK_SIZE   (32)
 #define X__ALIGNMENT    (X_ALIGN_OF(XMaxAlign))
 #define X__HEAP_SIZE    (X_ROUNDUP_MULTIPLE(1024, X__ALIGNMENT))
@@ -16,7 +14,7 @@ static XFAlloc* alloc;
 
 TEST_SETUP(xfalloc)
 {
-    alloc = X_MALLOC(sizeof(XFAlloc));
+    alloc = X_MALLOC(sizeof(XFixedAllocator));
     TEST_ASSERT_NOT_NULL(alloc);
 
     void* buf = X_MALLOC(X__HEAP_SIZE);

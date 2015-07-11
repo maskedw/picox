@@ -79,7 +79,7 @@ int xstr_case_compare(const char *s1, const char *s2)
     while (tolower((int)*s1) == tolower((int)*s2++))
         if (*s1++ == '\0')
             return 0;
-    return (tolower(*s1) - tolower(*--s2));
+    return (tolower((int)*s1) - tolower((int)*--s2));
 }
 
 

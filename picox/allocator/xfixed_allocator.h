@@ -1,5 +1,5 @@
 /**
- *       @file  xfalloc.c
+ *       @file  xfixed_allocator.h
  *      @brief  Fixed memory allocator
  *
  *    @details
@@ -75,8 +75,8 @@
  */
 
 
-#ifndef picox_allocator_xfalloc_h_
-#define picox_allocator_xfalloc_h_
+#ifndef picox_allocator_xfixed_allocator_h_
+#define picox_allocator_xfixed_allocator_h_
 
 
 #include <picox/core/xcore.h>
@@ -87,9 +87,9 @@ extern "C" {
 #endif
 
 
-/** 固定メモリアロケータ管理クラスです
+/** 固定サイズメモリアロケータ管理クラスです
  */
-typedef struct XFAlloc
+typedef struct XFixedAllocator
 {
 /// privatesection
     uint8_t*    heap;
@@ -99,7 +99,7 @@ typedef struct XFAlloc
     size_t      num_blocks;
     size_t      remain_blocks;
     size_t      alignment;
-} XFAlloc;
+} XFixedAllocator;
 
 
 #define XFALLOC_MIN_ALIGNMENT   (X_ALIGN_OF(size_t))
@@ -125,30 +125,30 @@ typedef struct XFAlloc
  *  ラインメントを意識した引数を用意するか初期化後に、必要量を満たせているか確認
  *  した方がよいでしょう。
  */
-void xfalloc_init(XFAlloc* self, void* heap, size_t heap_size, size_t block_size, size_t alignment);
+void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size, size_t alignment);
 
 
 /** ヒープから1ブロックを取り出して返します
  */
-void* xfalloc_allocate(XFAlloc* self);
+void* xfalloc_allocate(XFixedAllocator* self);
 
 
 /** ヒープにブロックを返却します
  *
  *  ptrがNULLの時は何もしません。
  */
-void xfalloc_deallocate(XFAlloc* self, void* ptr);
+void xfalloc_deallocate(XFixedAllocator* self, void* ptr);
 
 
 /** ヒープを初期状態に戻します
  */
-void xfalloc_clear(XFAlloc* self);
+void xfalloc_clear(XFixedAllocator* self);
 
 
 /** ヒープメモリを返します
  */
 static inline void*
-xfalloc_heap(const XFAlloc* self)
+xfalloc_heap(const XFixedAllocator* self)
 {
     X_ASSERT(self);
     return self->heap;
@@ -158,7 +158,7 @@ xfalloc_heap(const XFAlloc* self)
 /** 1ブロックのサイズを返します
  */
 static inline size_t
-xfalloc_block_size(const XFAlloc* self)
+xfalloc_block_size(const XFixedAllocator* self)
 {
     X_ASSERT(self);
     return self->block_size;
@@ -168,7 +168,7 @@ xfalloc_block_size(const XFAlloc* self)
 /** heapの総ブロック数を返します
  */
 static inline size_t
-xfalloc_num_blocks(const XFAlloc* self)
+xfalloc_num_blocks(const XFixedAllocator* self)
 {
     X_ASSERT(self);
     return self->num_blocks;
@@ -178,7 +178,7 @@ xfalloc_num_blocks(const XFAlloc* self)
 /** heapの残りブロック数を返します
  */
 static inline size_t
-xfalloc_remain_blocks(const XFAlloc* self)
+xfalloc_remain_blocks(const XFixedAllocator* self)
 {
     X_ASSERT(self);
     return self->remain_blocks;
@@ -188,7 +188,7 @@ xfalloc_remain_blocks(const XFAlloc* self)
 /** ブロックのアラインメントを返します
  */
 static inline size_t
-xfalloc_alignment(const XFAlloc* self)
+xfalloc_alignment(const XFixedAllocator* self)
 {
     X_ASSERT(self);
     return self->alignment;
@@ -201,4 +201,4 @@ xfalloc_alignment(const XFAlloc* self)
 #endif
 
 
-#endif // picox_allocator_xfalloc_h_
+#endif // picox_allocator_xfixed_allocator_h_

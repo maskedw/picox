@@ -185,13 +185,13 @@ void x_hexdump(const void* src, size_t len, size_t cols)
 static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
     /*
-     * fileãŒãƒ•ãƒ«ãƒ‘ã‚¹ã§å‡ºåŠ›ã•ã‚Œã‚‹ã¨ç’°å¢ƒã«ã‚ˆã£ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ç’°å¢ƒã«ã‚ˆã£ã¦å‡ºåŠ›ãŒå¤‰
-     * ã‚ã£ã¦ã—ã¾ã„ã€é¢å€’ãªã®ã§ãƒ•ã‚¡ã‚¤ãƒ«åã ã‘ã‚’å–ã‚Šå‡ºã™ã€‚Windowså½¢å¼ã®ãƒ‘ã‚¹ã¨Unix
-     * å½¢å¼ã®ãƒ‘ã‚¹ã‚’æƒ³å®šã€‚
+     * file‚ªƒtƒ‹ƒpƒX‚Åo—Í‚³‚ê‚é‚ÆŠÂ‹«‚É‚æ‚Á‚ÄƒRƒ“ƒpƒCƒ‹ŠÂ‹«‚É‚æ‚Á‚Äo—Í‚ª•Ï
+     * ‚í‚Á‚Ä‚µ‚Ü‚¢A–Ê“|‚È‚Ì‚Åƒtƒ@ƒCƒ‹–¼‚¾‚¯‚ğæ‚èo‚·BWindowsŒ`®‚ÌƒpƒX‚ÆUnix
+     * Œ`®‚ÌƒpƒX‚ğ‘z’èB
      */
-    const char* win = strrchr(file, '\\');
-    const char* unix = strrchr(file, '/');
-    const char* p = win ? win : unix;
+    const char* win_style = strrchr(file, '\\');
+    const char* unix_style = strrchr(file, '/');
+    const char* p = win_style ? win_style : unix_style;
     file = p ? p + 1 : file;
     const char* none = "none";
 

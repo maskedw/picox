@@ -1,5 +1,5 @@
 /**
- *       @file  xsalloc.c
+ *       @file  xstack_allocator.c
  *      @brief
  *
  *    @details
@@ -37,18 +37,18 @@
  */
 
 
-#include <picox/allocator/xsalloc.h>
+#include <picox/allocator/xstack_allocator.h>
 
 
 static inline uint8_t*
-X__GetBeginOrigin(XSAlloc* self)
+X__GetBeginOrigin(XStackAllocator* self)
 {
     return X_ROUNDUP_ALIGNMENT_PTR(self->heap, self->alignment);
 }
 
 
 static inline bool
-X__IsValidRange(XSAlloc* self, const void* p)
+X__IsValidRange(XStackAllocator* self, const void* p)
 {
     const uint8_t* b = X__GetBeginOrigin(self);
     const uint8_t* e = b + self->capacity;
@@ -57,7 +57,7 @@ X__IsValidRange(XSAlloc* self, const void* p)
 }
 
 
-void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment)
+void xsalloc_init(XStackAllocator* self, void* heap, size_t size, size_t alignment)
 {
     X_ASSERT(self);
     X_ASSERT(heap);
@@ -74,7 +74,7 @@ void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment)
     X_ASSERT(size > (size_t)(self->begin - self->heap));
     size -= self->begin - self->heap;
 
-    self->end = (uint8_t*)(x_rounddown_alignment((uint32_t)self->begin + size, alignment));
+    self->end = x_rounddown_alignment_ptr(self->begin + size, alignment);
 
     /* 切り下げた結果heapサイズに不整合がでていないか？ */
     X_ASSERT(self->end - self->begin >= 1);
@@ -85,7 +85,7 @@ void xsalloc_init(XSAlloc* self, void* heap, size_t size, size_t alignment)
 }
 
 
-void* xsalloc_allocate(XSAlloc* self, size_t size)
+void* xsalloc_allocate(XStackAllocator* self, size_t size)
 {
     X_ASSERT(self);
     X_ASSERT(size > 0);
@@ -110,7 +110,7 @@ void* xsalloc_allocate(XSAlloc* self, size_t size)
 }
 
 
-void xsalloc_clear(XSAlloc* self)
+void xsalloc_clear(XStackAllocator* self)
 {
     X_ASSERT(self);
     self->begin = X__GetBeginOrigin(self);
@@ -119,7 +119,7 @@ void xsalloc_clear(XSAlloc* self)
 }
 
 
-void xsalloc_rewind(XSAlloc* self, void* begin, void* end)
+void xsalloc_rewind(XStackAllocator* self, void* begin, void* end)
 {
     X_ASSERT(self);
 

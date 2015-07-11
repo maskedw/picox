@@ -1,5 +1,5 @@
 /**
- *       @file  xpalloc.c
+ *       @file  xpico_allocator.c
  *      @brief
  *
  *    @details
@@ -37,7 +37,7 @@
  * SOFTWARE.
  */
 
-#include <picox/allocator/xpalloc.h>
+#include <picox/allocator/xpico_allocator.h>
 
 
 /** メモリチャンク
@@ -54,18 +54,18 @@ typedef struct X__Chunk
 } X__Chunk;
 
 
-static void* X__Allocate(XPAlloc* self, size_t size);
-static void X__Deallocate(XPAlloc* self, void* ptr, size_t size);
+static void* X__Allocate(XPicoAllocator* self, size_t size);
+static void X__Deallocate(XPicoAllocator* self, void* ptr, size_t size);
 #define X__ALIGN    (X_ALIGN_OF(XMaxAlign))
 
 
-void xpalloc_init(XPAlloc* self, void* heap, size_t size)
+void xpalloc_init(XPicoAllocator* self, void* heap, size_t size)
 {
     X_ASSERT(self);
     X_ASSERT(heap);
 
     self->heap = heap;
-    self->top = (uint8_t*)x_roundup_multiple((uintptr_t)heap, X__ALIGN);
+    self->top = x_roundup_multiple_ptr(heap, X__ALIGN);
 
     X_ASSERT(self->top - self->heap >= 0);
     X_ASSERT(size > (size_t)(self->top - self->heap));
@@ -78,7 +78,7 @@ void xpalloc_init(XPAlloc* self, void* heap, size_t size)
 }
 
 
-void* xpalloc_allocate(XPAlloc* self, size_t size)
+void* xpalloc_allocate(XPicoAllocator* self, size_t size)
 {
     X_ASSERT(self);
     X_ASSERT(size > 0);
@@ -103,7 +103,7 @@ void* xpalloc_allocate(XPAlloc* self, size_t size)
 }
 
 
-void xpalloc_deallocate(XPAlloc* self, void* ptr)
+void xpalloc_deallocate(XPicoAllocator* self, void* ptr)
 {
     X_ASSERT(self);
 
@@ -123,12 +123,12 @@ void xpalloc_deallocate(XPAlloc* self, void* ptr)
 }
 
 
-void xpalloc_clear(XPAlloc* self)
+void xpalloc_clear(XPicoAllocator* self)
 {
     X_ASSERT(self);
 
     self->reserve = self->capacity;
-    self->top = (uint8_t*)x_roundup_multiple((uintptr_t)self->heap, X__ALIGN);
+    self->top = x_roundup_multiple_ptr(self->heap, X__ALIGN);
 
     X__Chunk* chunk = (X__Chunk*)self->top;
     chunk->next = NULL;
@@ -136,7 +136,7 @@ void xpalloc_clear(XPAlloc* self)
 }
 
 
-size_t xpalloc_allocation_overhead(const XPAlloc* self, size_t n)
+size_t xpalloc_allocation_overhead(const XPicoAllocator* self, size_t n)
 {
     X_ASSERT(self);
     X_ASSERT(n > 0);
@@ -144,7 +144,7 @@ size_t xpalloc_allocation_overhead(const XPAlloc* self, size_t n)
 }
 
 
-void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user)
+void xpalloc_walk_heap(const XPicoAllocator* self, XPicoAllocatorWalker walker, void* user)
 {
     X_ASSERT(self);
     X_ASSERT(walker);
@@ -158,7 +158,7 @@ void xpalloc_walk_heap(const XPAlloc* self, XPAllocWalker walker, void* user)
 }
 
 
-static void* X__Allocate(XPAlloc* self, size_t size)
+static void* X__Allocate(XPicoAllocator* self, size_t size)
 {
     /* ここはかなりトリッキーなので解説しておく。
      * nextがX__Chunkの先頭メンバになっているのがミソだ。
@@ -206,7 +206,7 @@ static void* X__Allocate(XPAlloc* self, size_t size)
 }
 
 
-static void X__Deallocate(XPAlloc* self, void* ptr, size_t size)
+static void X__Deallocate(XPicoAllocator* self, void* ptr, size_t size)
 {
     X__Chunk* blk = ptr;
     X__Chunk* chunk = (X__Chunk*)self->top;

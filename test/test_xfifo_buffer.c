@@ -1,14 +1,11 @@
-#include <unity.h>
-#include <unity_fixture.h>
-#include <picox/container/xfifo.h>
-#include <stdio.h>
+#include <picox/container/xfifo_buffer.h>
 
 
 TEST_GROUP(xfifo);
 
 
-static XFifo fifo;
-static XFifo* const p = &fifo;
+static XFifoBuffer fifo;
+static XFifoBuffer* const p = &fifo;
 static uint8_t buf[128];
 
 
@@ -63,7 +60,7 @@ TEST(xfifo, size)
 
     /* 10ŒÂ—v‘f‚ð“ü‚ê‚½ */
     xfifo_pop(p);
-    int i;
+    size_t i;
     for (i = 0; i < 10; i++)
         xfifo_push(p, i);
     TEST_ASSERT_EQUAL(10, xfifo_size(p));
@@ -98,7 +95,7 @@ TEST(xfifo, size)
 TEST(xfifo, write)
 {
     uint8_t data[10];
-    int i;
+    size_t i;
 
     /* ‘‚«ž‚ñ‚¾—v‘f”‚ð•Ô‚· */
     for (i = 0; i < sizeof(data); i++)
@@ -130,7 +127,7 @@ TEST(xfifo, read)
 {
     uint8_t w[10];
     uint8_t r[10];
-    int i;
+    size_t i;
 
     for (i = 0; i < sizeof(w); i++)
         w[i] = i;

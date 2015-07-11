@@ -1,4 +1,4 @@
-#include <picox/allocator/xpalloc.h>
+#include <picox/allocator/xpico_allocator.h>
 #include <unity.h>
 #include <unity_fixture.h>
 #include "testutils.h"
@@ -16,7 +16,7 @@ typedef struct X__HeapWalker
 } X__HeapWalker;
 
 
-static XPAlloc alloc;
+static XPicoAllocator alloc;
 #define X__HEAP_SIZE    (1024)
 
 
@@ -171,7 +171,7 @@ TEST(xpalloc, heap)
 {
     X_TEST_ASSERTION_FAILED(xpalloc_heap(NULL));
 
-    XPAlloc alloc;
+    XPicoAllocator alloc;
     char buf[32];
 
     xpalloc_init(&alloc, buf, sizeof(buf));

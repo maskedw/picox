@@ -1,13 +1,11 @@
-#include <picox/allocator/xsalloc.h>
-#include <unity.h>
-#include <unity_fixture.h>
+#include <picox/allocator/xstack_allocator.h>
 #include "testutils.h"
 
 
 TEST_GROUP(xsalloc);
 
 
-static XSAlloc alloc;
+static XStackAllocator alloc;
 #define X__HEAP_SIZE    (1024)
 
 
@@ -187,7 +185,7 @@ TEST(xsalloc, heap)
 {
     X_TEST_ASSERTION_FAILED(xsalloc_heap(NULL));
 
-    XSAlloc alloc;
+    XStackAllocator alloc;
     char buf[10];
 
     xsalloc_init(&alloc, buf, sizeof(buf), X_ALIGN_OF(char));

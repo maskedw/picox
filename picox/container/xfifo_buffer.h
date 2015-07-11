@@ -1,5 +1,5 @@
 /**
- *       @file  xfifo.h
+ *       @file  xfifo_buffer.h
  *      @brief  First In First Out形式のバッファ
  *
  *    @details
@@ -40,9 +40,7 @@
 #define xfifo_h_
 
 
-#include <string.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus
@@ -50,32 +48,18 @@ extern "C" {
 #endif // __cplusplus
 
 
-#ifndef XFIFO_ASSERT
-
-    #define XFIFO_ASSERT(expr)   do { if (! expr) for(;;); } while (0)
-
-#endif
+typedef void(*XFifoBufferAtomicAssigner)(size_t* dst, size_t value);
 
 
-#ifndef XFIFO_SIZE_T
-    #define XFIFO_SIZE_T    uint_fast16_t
-#endif
-
-
-typedef XFIFO_SIZE_T    XFifoSize;
-typedef void(*XFifoAtomicAssigner)(XFifoSize* dst, XFifoSize value);
-
-
-
-typedef struct XFifo
+typedef struct XFifoBuffer
 {
 /// @privatesection
-    uint8_t*                data;
-    XFifoSize               first;
-    XFifoSize               last;
-    XFifoSize               capacity;
-    XFifoAtomicAssigner     assigner;
-} XFifo;
+    uint8_t*             data;
+    size_t               first;
+    size_t               last;
+    size_t               capacity;
+    XFifoBufferAtomicAssigner  assigner;
+} XFifoBuffer;
 
 
 /* 内部処理用のマクロ */
@@ -84,32 +68,56 @@ typedef struct XFifo
 #define XFIFO__IS_POWER_OF_TWO(x)    (((x) & -(x)) == (x))
 
 
-/* ===================================================================
- *  Public Functions
- * ===================================================================*/
-static inline void XFifoDefaultAtomitAssigner(XFifoSize* dst, XFifoSize value)
+static inline void
+XFifoBufferDefaultAtomicAssign(size_t* dst, size_t value)
 {
     *dst = value;
 }
+
 
 /** バッファを初期化します。
  *  @pre
  *  + (self != NULL) && (buffer != NULL)
  *  + bufferはsizeバイトの連続領域を指していること。
  *  + sizeは2のべき乗であること。
+ *
+ *  @note
+ *  [XFifoBufferAtomicAssignerについて]
+ *
+ *  xfifo_bufferは主にシリアル通信の送受信バッファに使用することを想定しており、
+ *  以下の条件の時、割り込み禁止区間なしでバッファへの書き込み、読み出しが可能で
+ *  す。
+ *
+ *  書き込み、読み出しのコンテキストが異なることが保証されていること。
+ *  ------------------------------------------------------------
+ *
+ *  [例]
+ *  + 通常時にバッファにデータを書き込み、UART送信完了割り込みで、バッファからデータを取り出す
+ *  + 通常時にバッファからデータを読み出し、UART受信完了割り込みで、バッファにデータを書き込む
+ *
+ *  size_t型の変数は分割なしで代入できること。
+ *  ------------------------------------------------------------
+ *
+ *  通常は16bitCPUで32bit変数に代入しようとすると、機械語レベルでは複数回の代入
+ *  命令を必要とします。その場合、xfifo_bufferのRWポインタの整合性が保証できなく
+ *  なります。
+ *
+ *  上記条件が保証できない場合は、XFifoBufferAtomicAssignerを指定し、その関数内で、割
+ *  り込みのロック、変数への代入、割り込みのアンロックを行ってください。
  */
-static inline void xfifo_init(XFifo* self, void* buffer, XFifoSize size, XFifoAtomicAssigner assigner)
+static inline void
+xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoBufferAtomicAssigner assigner)
 {
-    XFIFO_ASSERT(self && buffer);
-    XFIFO_ASSERT(XFIFO__IS_POWER_OF_TWO(size) && "Require Power of 2");
-    XFIFO_ASSERT(size > 0);
+    X_ASSERT(self && buffer);
+    X_ASSERT(XFIFO__IS_POWER_OF_TWO(size) && "Require Power of 2");
+    X_ASSERT(size > 0);
 
     self->data = buffer;
     self->first = self->last = 0;
     self->capacity = size - 1;
 
     if (! assigner)
-        self->assigner = XFifoDefaultAtomitAssigner;
+        self->assigner = XFifoBufferDefaultAtomicAssign;
     else
         self->assigner = assigner;
 }
@@ -117,7 +125,8 @@ static inline void xfifo_init(XFifo* self, void* buffer, XFifoSize size, XFifoAt
 
 /** バッファを空にします。
  */
-static inline void xfifo_clear(XFifo* self)
+static inline void
+xfifo_clear(XFifoBuffer* self)
 {
     self->last = self->first;
 }
@@ -125,7 +134,8 @@ static inline void xfifo_clear(XFifo* self)
 
 /** 格納要素数が0かどうかを返します。
  */
-static inline bool xfifo_empty(const XFifo* self)
+static inline bool
+xfifo_empty(const XFifoBuffer* self)
 {
     return self->last == self->first;
 }
@@ -133,14 +143,16 @@ static inline bool xfifo_empty(const XFifo* self)
 
 /** 最大格納要素数を返します。
  */
-static inline XFifoSize xfifo_capacity(const XFifo* self)
+static inline size_t
+xfifo_capacity(const XFifoBuffer* self)
 {
     return self->capacity;
 }
 
 /** 格納要素数を返します。
  */
-static inline XFifoSize xfifo_size(const XFifo* self)
+static inline size_t
+xfifo_size(const XFifoBuffer* self)
 {
     return (self->last - self->first) & self->capacity;
 }
@@ -148,7 +160,8 @@ static inline XFifoSize xfifo_size(const XFifo* self)
 
 /** 要素数が上限かどうかを返します。
  */
-static inline bool xfifo_full(const XFifo* self)
+static inline bool
+xfifo_full(const XFifoBuffer* self)
 {
     return xfifo_size(self) == xfifo_capacity(self);
 }
@@ -156,7 +169,8 @@ static inline bool xfifo_full(const XFifo* self)
 
 /** 空き要素数を返します。
  */
-static inline XFifoSize xfifo_reserve(const XFifo* self)
+static inline size_t
+xfifo_reserve(const XFifoBuffer* self)
 {
     return xfifo_capacity(self) - xfifo_size(self);
 }
@@ -164,7 +178,8 @@ static inline XFifoSize xfifo_reserve(const XFifo* self)
 
 /** 要素を格納するバッファを返します。
  */
-static inline void* xfifo_data(const XFifo* self)
+static inline void*
+xfifo_data(const XFifoBuffer* self)
 {
     return self->data;
 }
@@ -172,7 +187,8 @@ static inline void* xfifo_data(const XFifo* self)
 
 /** FIFO末尾に要素を追加します。
  */
-static inline void xfifo_push(XFifo* self, uint8_t data)
+static inline void
+xfifo_push(XFifoBuffer* self, uint8_t data)
 {
     self->data[self->last] = data;
     self->assigner(&self->last, XFIFO__ADD_LAST(1));
@@ -181,7 +197,8 @@ static inline void xfifo_push(XFifo* self, uint8_t data)
 
 /** FIFO先頭から要素を取り出します。
  */
-static inline uint8_t xfifo_pop(XFifo* self)
+static inline uint8_t
+xfifo_pop(XFifoBuffer* self)
 {
     const uint8_t data = self->data[self->first];
     self->assigner(&self->first, XFIFO__ADD_FIRST(1));
@@ -192,20 +209,21 @@ static inline uint8_t xfifo_pop(XFifo* self)
 
 /** FIFO末尾に要素を追加します。
  */
-static inline XFifoSize xfifo_write(XFifo* self, const void* src, XFifoSize ssize)
+static inline size_t
+xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
 {
-    const XFifoSize reserve = xfifo_reserve(self);
+    const size_t reserve = xfifo_reserve(self);
 
     if ((reserve <= 0) || (ssize <= 0) || (src == NULL))
         return 0;
 
     /* 書き込む(書き込める)要素数 */
-    XFifoSize to_write = (reserve >= ssize) ? ssize : reserve;
+    size_t to_write = (reserve >= ssize) ? ssize : reserve;
 
     /* to_writeは減算される可能性があるので保存しておく。*/
-    const XFifoSize    written      = to_write;
-    volatile XFifoSize wpos         = self->last;
-    const XFifoSize    until_tail   = xfifo_capacity(self) - wpos + 1;
+    const size_t    written      = to_write;
+    volatile size_t wpos         = self->last;
+    const size_t    until_tail   = xfifo_capacity(self) - wpos + 1;
 
     if (to_write > until_tail)
     {
@@ -223,20 +241,21 @@ static inline XFifoSize xfifo_write(XFifo* self, const void* src, XFifoSize ssiz
 
 /** FIFO先頭から要素を取り出します。
  */
-static inline XFifoSize xfifo_read(XFifo* self, void* dst, XFifoSize dsize)
+static inline size_t
+xfifo_read(XFifoBuffer* self, void* dst, size_t dsize)
 {
-    const XFifoSize size = xfifo_size(self);
+    const size_t size = xfifo_size(self);
 
     if ((size <= 0) || (dsize <= 0) || (dst == NULL))
         return 0;
 
     /* 読み込む(読み込める)要素数 */
-    XFifoSize to_read = (size >= dsize) ? dsize : size;
+    size_t to_read = (size >= dsize) ? dsize : size;
 
     /* to_readは減算される可能性があるので保存しておく。 */
-    const XFifoSize     read        = to_read;
-    volatile XFifoSize  rpos        = self->first;
-    const XFifoSize     until_tail  = xfifo_capacity(self) - rpos + 1;
+    const size_t     read        = to_read;
+    volatile size_t  rpos        = self->first;
+    const size_t     until_tail  = xfifo_capacity(self) - rpos + 1;
 
     if (to_read > until_tail)
     {

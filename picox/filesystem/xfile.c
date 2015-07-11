@@ -476,11 +476,22 @@ bool xfile_flush(XFile* fp, int* err)
 bool xfile_mkdir(const char* path, int* err)
 {
     X_ASSERT(path);
+
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
+
+    const FRESULT result = f_mkdir(path);
+    const bool ok = (result == FR_OK);
+    X__ASSIGN_ERR(result);
 
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
+/* http://mingw.5.n7.nabble.com/Problems-with-mkdir-td4081.html
+ */
+#ifdef _WIN32
     const int result = mkdir(path);
+#else
+    const int result = mkdir(path, 0777);
+#endif
     const bool ok = (result == 0);
     X__ASSIGN_ERR(errno);
 
@@ -496,7 +507,6 @@ bool xfile_chdir(const char* path, int* err)
     X_ASSERT(path);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
-
     const FRESULT result = f_chdir(path);
     const bool ok = (result == FR_OK);
     X__ASSIGN_ERR(result);
