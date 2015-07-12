@@ -44,7 +44,6 @@
 /* 共通で使用するヘッダをまとめてインクルードする。コンパイラがプリコンパイル機
  * 能を持っているなら使用するのがコンパイル時間短縮の為に望ましい。
  */
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -54,6 +53,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
+
+#define X_VERSION_MAJOR     (0)
+#define X_VERSION_MINOR     (1)
+#define X_VERSION_STRING    "picox ver 0.1"
+
 #include <picox/core/detail/compiler.h>
 #include <picox/xconfig.h>
 #include <picox/core/detail/preprocessor.h>

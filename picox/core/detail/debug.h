@@ -46,18 +46,9 @@ extern "C" {
 
 
 #ifdef X_CONF_VPRINTF
-    #define X_VPRINTF   X_CONF_VPRINTF
+    #define X_VPRINTF           X_CONF_VPRINTF
 #else
-    /* gccでは ## __VA_ARGS__とすることで、X_VPRINTF("text");とかけるが、他のコンパ
-        * イラでは、可変長引数部分は、引数が1つ以上あることが要求される。
-        * なので、全体を可変引数(X_VPRINTF(...))とすることで、最低1つの引数を保証させ
-        * る。
-        */
-    #ifdef __GNUC__
-        #define X_VPRINTF(fmt, ...)       vfprintf(stdout, fmt, ## __VA_ARGS__)
-    #else
-        #define X_VPRINTF(...)            vfprintf(stdout, __VA_ARGS__)
-    #endif
+    #define X_VPRINTF(...)      vprintf(__VA_ARGS__)
 #endif
 
 
@@ -88,7 +79,7 @@ extern XAssertionFailedFunc x_assertion_failed;
 #define X_ANSI_COLOR_RESET       "\x1b[0m"
 
 
-#ifdef X_CONF_HAS_ANSI_COLOR
+#ifdef X_CONF_USE_ANSI_COLOR_LOG
     #define X_COLOR_BLACK       X_ANSI_COLOR_BLACK
     #define X_COLOR_RED         X_ANSI_COLOR_RED
     #define X_COLOR_GREEN       X_ANSI_COLOR_GREEN
@@ -99,24 +90,16 @@ extern XAssertionFailedFunc x_assertion_failed;
     #define X_COLOR_WHITE       X_ANSI_COLOR_WHITE
     #define X_COLOR_RESET       X_ANSI_COLOR_RESET
 #else
-    #define X_COLOR_BLACK       ""
-    #define X_COLOR_RED         ""
-    #define X_COLOR_GREEN       ""
-    #define X_COLOR_YELLOW      ""
-    #define X_COLOR_BLUE        ""
-    #define X_COLOR_MAGENTA     ""
-    #define X_COLOR_CYAN        ""
-    #define X_COLOR_WHITE       ""
-    #ifdef X_CONF_COLOR_RESET
-        #define X_COLOR_RESET   X_CONF_COLOR_RESET
-    #else
-        #define X_COLOR_RESET   ""
-    #endif
+    #define X_COLOR_BLACK
+    #define X_COLOR_RED
+    #define X_COLOR_GREEN
+    #define X_COLOR_YELLOW
+    #define X_COLOR_BLUE
+    #define X_COLOR_MAGENTA
+    #define X_COLOR_CYAN
+    #define X_COLOR_WHITE
+    #define X_COLOR_RESET
 #endif
-
-
-void x_print_log(int level, const char* tag, const char* fmt, ...);
-void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
 
 
 #ifdef X_CONF_LOG_LEVEL
@@ -124,6 +107,10 @@ void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size
 #else
     #define X_LOG_LEVEL     X_LOG_LEVEL_INFO
 #endif
+
+
+void x_print_log(int level, const char* tag, const char* fmt, ...);
+void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
 
 
 #if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_VERB)
@@ -171,50 +158,21 @@ void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size
 #endif
 
 
-#ifdef X_CONF_VERB_COLOR
-    #define X_VERB_COLOR    X_CONF_VERB_COLOR
-#else
-    #define X_VERB_COLOR
-#endif
-
-
-#ifdef X_CONF_INFO_COLOR
-    #define X_INFO_COLOR    X_CONF_INFO_COLOR
-#else
-    #define X_INFO_COLOR    X_COLOR_GREEN
-#endif
-
-
-#ifdef X_CONF_NOTI_COLOR
-    #define X_NOTI_COLOR    X_CONF_NOTI_COLOR
-#else
-    #define X_NOTI_COLOR    X_COLOR_MAGENTA
-#endif
-
-
-#ifdef X_CONF_WARN_COLOR
-    #define X_WARN_COLOR    X_CONF_WARN_COLOR
-#else
-    #define X_WARN_COLOR    X_COLOR_YELLOW
-#endif
-
-
-#ifdef X_CONF_ERR_COLOR
-    #define X_ERR_COLOR    X_CONF_ERR_COLOR
-#else
-    #define X_ERR_COLOR    X_COLOR_RED
-#endif
-
+#define X_VERB_COLOR
+#define X_INFO_COLOR    X_COLOR_GREEN
+#define X_NOTI_COLOR    X_COLOR_MAGENTA
+#define X_WARN_COLOR    X_COLOR_YELLOW
+#define X_ERR_COLOR     X_COLOR_RED
 
 #ifdef X_CONF_VERB_HEADER
-    #define X_VERB_HEADER     X_VERB_COLOR X_CONF_VERB_HEADER X_COLOR_RESET
+    #define X_VERB_HEADER     X_CONF_VERB_HEADER
 #else
     #define X_VERB_HEADER     X_VERB_COLOR "[VERB]" X_COLOR_RESET
 #endif
 
 
 #ifdef X_CONF_INFO_HEADER
-    #define X_INFO_HEADER     X_INFO_COLOR X_CONF_INFO_HEADER X_COLOR_RESET
+    #define X_INFO_HEADER     X_CONF_INFO_HEADER
 #else
     #define X_INFO_HEADER     X_INFO_COLOR "[INFO]" X_COLOR_RESET
 #endif
@@ -255,12 +213,7 @@ void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size
         #define X_ASSERT(expr)          X_ASSERT_MSG(expr, NULL)
     #endif
 
-    #ifdef X_CONF_ABORT
-        #define X_ABORT(msg)            X_CONF_ABORT(msg)
-    #else
-        #define X_ABORT(msg)            x_assertion_failed("Program abort", msg, __func__, __FILE__, __LINE__)
-    #endif
-
+    #define X_ABORT(msg)                X_ASSERT_MSG(0, "abort")
     #define X_ABORT_DEFAULT             default: X_ABORT("Runtime error"); break
 #else
     #define X_ASSERT_MSG(expr, msg)     (void)0

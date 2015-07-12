@@ -256,10 +256,8 @@ xilist_back(const XIntrusiveList* self)
  *
  *  @code
  *  XIntrusiveNode* ite;
- *  xilist_foreach(&list, ite)
- *  {
- *      if (Predicate(ite))
- *      {
+ *  xilist_foreach(&list, ite) {
+ *      if (Predicate(ite)) {
  *          XIntrusiveNode* tmp = ite;
  *          // 次の要素でiteratorを上書きしてから除去する。
  *          ite = ite->next;

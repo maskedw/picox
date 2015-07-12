@@ -45,8 +45,6 @@ static void X__TestAlloc(bool growth_upward)
             TEST_ASSERT_NOT_NULL(ptr);
             TEST_ASSERT_TRUE(x_is_aligned(ptr, alignment));
         }
-        ptr = xsalloc_allocate(&alloc, alignment);
-        TEST_ASSERT_NULL(ptr);
         alignment = x_roundup_power_of_two(alignment + 1);
     }
 }
