@@ -1,63 +1,174 @@
-#include <unity.h>
-#include <unity_fixture.h>
-#include <setjmp.h>
-#include <string.h>
-
-static jmp_buf jmp;
-#define XMBUF_ASSERT(expr)          \
-    do {                            \
-        if (! (expr))               \
-            longjmp(jmp, 1);        \
-    } while (0);
-
-#define IS_ASSERTION(x)             \
-    ({                              \
-        bool ret = false;           \
-        if (setjmp(jmp) == 0)       \
-            x;                      \
-        else                        \
-            ret = true;             \
-        ret;                        \
-    })
-
 #include <picox/container/xmessage_buffer.h>
-#include <stdio.h>
+#include "testutils.h"
 
 
 TEST_GROUP(xmsgbuf);
 
 
-static XMessageBuffer mbuf;
-static XMessageBuffer* const p = &mbuf;
-static uint8_t mbuf_data[1024];
+#define X__BUF_SIZE     (256)
+static XMessageBuffer* mbuf;
 
 
 
 TEST_SETUP(xmsgbuf)
 {
-    xmsgbuf_init(p, mbuf_data, sizeof(mbuf_data));
-    memset(mbuf_data, 0x00, sizeof(mbuf_data));
+    void* buf = X_MALLOC(X__BUF_SIZE);
+    mbuf = X_MALLOC(sizeof(XMessageBuffer));
+
+    memset(buf, 0x00, X__BUF_SIZE);
+    xmsgbuf_init(mbuf, buf, X__BUF_SIZE);
 }
 
 
 TEST_TEAR_DOWN(xmsgbuf)
 {
+    X_FREE(xmsgbuf_data(mbuf));
+    X_FREE(mbuf);
 }
 
 
-#if 0
 TEST(xmsgbuf, init)
 {
-    // TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_init(p, NULL, sizeof(mbuf_data))));
-    // TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_init(p, mbuf_data, 0)));
-    // TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_init(p, mbuf_data, sizeof(XMessageHeader) - 1)));
-    // TEST_ASSERT_FALSE(IS_ASSERTION(xmsgbuf_init(p, mbuf_data, sizeof(mbuf_data))));
+    void* data = xmsgbuf_data(mbuf);
+    X_TEST_ASSERTION_FAILED(xmsgbuf_init(NULL, data, X__BUF_SIZE));
+    X_TEST_ASSERTION_FAILED(xmsgbuf_init(mbuf, NULL, X__BUF_SIZE));
+    X_TEST_ASSERTION_FAILED(xmsgbuf_init(mbuf, NULL, sizeof(XMessageBuffer) - 1));
+}
+
+
+TEST(xmsgbuf, data)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_data(NULL));
+}
+
+
+TEST(xmsgbuf, clear)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_clear(NULL));
+    int data;
+    xmsgbuf_push(mbuf, &data, sizeof(data));
+    TEST_ASSERT_FALSE(xmsgbuf_empty(mbuf));
+    xmsgbuf_clear(mbuf);
+    TEST_ASSERT_TRUE(xmsgbuf_empty(mbuf));
+}
+
+TEST(xmsgbuf, size)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_size(NULL));
+
+    int data;
+    xmsgbuf_push(mbuf, &data, sizeof(data));
+    TEST_ASSERT_EQUAL(sizeof(data) + sizeof(XMessageHeader), xmsgbuf_size(mbuf));
+}
+
+
+TEST(xmsgbuf, empty)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_empty(NULL));
+    int data;
+    TEST_ASSERT_TRUE(xmsgbuf_empty(mbuf));
+    xmsgbuf_push(mbuf, &data, sizeof(data));
+    TEST_ASSERT_FALSE(xmsgbuf_empty(mbuf));
+}
+
+
+TEST(xmsgbuf, capacity)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_capacity(NULL));
+    TEST_ASSERT_EQUAL(X__BUF_SIZE, xmsgbuf_capacity(mbuf));
+}
+
+
+TEST(xmsgbuf, reserve)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_reserve(NULL));
+
+    TEST_ASSERT_EQUAL(X__BUF_SIZE, xmsgbuf_reserve(mbuf));
+    int data;
+    xmsgbuf_push(mbuf, &data, sizeof(data));
+    TEST_ASSERT_EQUAL(X__BUF_SIZE - sizeof(data) - sizeof(XMessageHeader),
+                      xmsgbuf_reserve(mbuf));
+}
+
+
+TEST(xmsgbuf, full)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_full(NULL));
+
+    int data;
+    size_t i;
+    const size_t n = X__BUF_SIZE / (sizeof(data) + sizeof(XMessageHeader));
+
+    for (i = 0; i < n; i++)
+    {
+        TEST_ASSERT_FALSE(xmsgbuf_full(mbuf));
+        xmsgbuf_push(mbuf, &data, sizeof(data));
+    }
+    TEST_ASSERT_TRUE(xmsgbuf_full(mbuf));
+}
+
+
+TEST(xmsgbuf, num)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_num(NULL));
+
+    int data;
+    size_t i;
+    const size_t n = X__BUF_SIZE / (sizeof(data) + sizeof(XMessageHeader));
+
+    for (i = 0; i < n; i++)
+    {
+        xmsgbuf_push(mbuf, &data, sizeof(data));
+        TEST_ASSERT_EQUAL(i + 1, xmsgbuf_num(mbuf));
+    }
+}
+
+
+TEST(xmsgbuf, skip)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_skip(NULL));
+
+    int data;
+    size_t i;
+    const size_t n = X__BUF_SIZE / (sizeof(data) + sizeof(XMessageHeader));
+
+    for (i = 0; i < n; i++)
+    {
+        xmsgbuf_push(mbuf, &data, sizeof(data));
+    }
+
+    for (i = 0; i < n; i++)
+    {
+        xmsgbuf_skip(mbuf);
+        TEST_ASSERT_EQUAL(n - i - 1, xmsgbuf_num(mbuf));
+    }
+    TEST_ASSERT_TRUE(xmsgbuf_empty(mbuf));
+}
+
+
+TEST(xmsgbuf, msg_size)
+{
+    X_TEST_ASSERTION_FAILED(xmsgbuf_msg_size(NULL));
+
+    uint8_t u8;
+    uint16_t u16;
+    uint32_t u32;
+
+    xmsgbuf_push(mbuf, &u8, sizeof(u8));
+    xmsgbuf_push(mbuf, &u16, sizeof(u16));
+    xmsgbuf_push(mbuf, &u32, sizeof(u32));
+
+    TEST_ASSERT_EQUAL(sizeof(u8), xmsgbuf_msg_size(mbuf));
+    xmsgbuf_skip(mbuf);
+    TEST_ASSERT_EQUAL(sizeof(u16), xmsgbuf_msg_size(mbuf));
+    xmsgbuf_skip(mbuf);
+    TEST_ASSERT_EQUAL(sizeof(u32), xmsgbuf_msg_size(mbuf));
 }
 
 
 TEST(xmsgbuf, push)
 {
-    uint8_t w[sizeof(mbuf_data) / 2];
+    uint8_t w[X__BUF_SIZE - sizeof(XMessageHeader)];
     uint8_t r[sizeof(w)] = {0};
 
     size_t i;
@@ -65,45 +176,45 @@ TEST(xmsgbuf, push)
         w[i] = i;
 
     /* データがNULL */
-    TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_push(p, NULL, sizeof(w))));
+    X_TEST_ASSERTION_FAILED(xmsgbuf_push(mbuf, NULL, sizeof(w)));
 
     /* サイズ0は不正 */
-    TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_push(p, w, 0)));
+    X_TEST_ASSERTION_FAILED(xmsgbuf_push(mbuf, w, 0));
 
     /* ヘッダサイズ分の領域が余分に必要 */
-    TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_push(p, w, xmsgbuf_capacity(p))));
+    X_TEST_ASSERTION_FAILED(xmsgbuf_push(mbuf, w, xmsgbuf_capacity(mbuf)));
 
     /* 境界チェック */
-    TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_push(p, w, sizeof(mbuf_data) - sizeof(XMessageHeader) + 1)));
-    TEST_ASSERT_FALSE(IS_ASSERTION(xmsgbuf_push(p, w, sizeof(mbuf_data) - sizeof(XMessageHeader))));
-    xmsgbuf_clear(p);
-    TEST_ASSERT_FALSE(IS_ASSERTION(xmsgbuf_push(p, w, sizeof(mbuf_data) - sizeof(XMessageHeader) - 1)));
-    xmsgbuf_clear(p);
+    X_TEST_ASSERTION_FAILED(xmsgbuf_push(mbuf, w, X__BUF_SIZE - sizeof(XMessageHeader) + 1));
+    X_TEST_ASSERTION_SUCCESS(xmsgbuf_push(mbuf, w, X__BUF_SIZE - sizeof(XMessageHeader)));
+    xmsgbuf_clear(mbuf);
+    X_TEST_ASSERTION_SUCCESS(xmsgbuf_push(mbuf, w, X__BUF_SIZE - sizeof(XMessageHeader) - 1));
+    xmsgbuf_clear(mbuf);
 
     /* ちゃんと書けてる？ */
-    xmsgbuf_push(p, w, sizeof(w));
-    TEST_ASSERT_EQUAL(sizeof(w), xmsgbuf_msg_size(p));
-    xmsgbuf_pull(p, r);
+    xmsgbuf_push(mbuf, w, sizeof(w));
+    TEST_ASSERT_EQUAL(sizeof(w), xmsgbuf_msg_size(mbuf));
+    xmsgbuf_pull(mbuf, r);
     TEST_ASSERT_EQUAL_MEMORY(w, r, sizeof(w));
 
     /* 空きがないと書けないよ */
-    xmsgbuf_clear(p);
-    xmsgbuf_push(p, mbuf_data, sizeof(mbuf_data) - sizeof(XMessageHeader));
-    TEST_ASSERT_TRUE(xmsgbuf_reserve(p) == 0);
-    TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_push(p, mbuf_data, 1)));
+    xmsgbuf_clear(mbuf);
+    xmsgbuf_push(mbuf, w, X__BUF_SIZE - sizeof(XMessageHeader));
+    TEST_ASSERT_TRUE(xmsgbuf_reserve(mbuf) == 0);
+    X_TEST_ASSERTION_FAILED(xmsgbuf_push(mbuf, w, 1));
 
     /* 1バイトのデータの格納には sizeof(XMessageHeader) + 1の空きが必要 */
-    xmsgbuf_clear(p);
-    xmsgbuf_push(p, mbuf_data, sizeof(mbuf_data) - sizeof(XMessageHeader) * 2 - 1);
-    TEST_ASSERT_FALSE(IS_ASSERTION(xmsgbuf_push(p, mbuf_data, 1)));
-    TEST_ASSERT_TRUE(xmsgbuf_reserve(p) == 0);
+    xmsgbuf_clear(mbuf);
+    xmsgbuf_push(mbuf, w, X__BUF_SIZE - sizeof(XMessageHeader) * 2 - 1);
+    X_TEST_ASSERTION_SUCCESS(xmsgbuf_push(mbuf, w, 1));
+    TEST_ASSERT_TRUE(xmsgbuf_reserve(mbuf) == 0);
 }
 
 
 TEST(xmsgbuf, pull)
 {
     /* データがNULL */
-    TEST_ASSERT_TRUE(IS_ASSERTION(xmsgbuf_pull(p, NULL)));
+    X_TEST_ASSERTION_FAILED(xmsgbuf_pull(mbuf, NULL));
 
     const char* msg[] = {
         "Sunday", "Monday", "Tuesyday", "Wednesday", "Thursday", "Friday", "Saturday",
@@ -112,11 +223,11 @@ TEST(xmsgbuf, pull)
 
     size_t i;
     for (i = 0; i < nmsgs; i++)
-        xmsgbuf_push(p, msg[i], strlen(msg[i]));
+        xmsgbuf_push(mbuf, msg[i], strlen(msg[i]));
 
     char buf[128];
     for (i = 0; i < nmsgs; i++) {
-        xmsgbuf_pull(p, buf);
+        xmsgbuf_pull(mbuf, buf);
         buf[strlen(msg[i])] = '\0';
         TEST_ASSERT_EQUAL_STRING(msg[i], buf);
     }
@@ -126,62 +237,36 @@ TEST(xmsgbuf, pull)
 TEST(xmsgbuf, boundary)
 {
     const uint32_t v = 0xDEADBEEF;
-    char buf[sizeof(mbuf_data)];
+    char buf[X__BUF_SIZE];
 
     /* リングバッファの境界をまたがってデータが配置されるように調整 */
-    xmsgbuf_push(p, mbuf_data, 10);
-    xmsgbuf_push(p, mbuf_data, xmsgbuf_reserve(p) - sizeof(XMessageHeader) - sizeof(XMessageHeader) / 2);
-    xmsgbuf_pull(p, buf);
-    xmsgbuf_push(p, &v, sizeof(v));
+    xmsgbuf_push(mbuf, buf, 10);
+    xmsgbuf_push(mbuf, buf, xmsgbuf_reserve(mbuf) - sizeof(XMessageHeader) - sizeof(XMessageHeader) / 2);
+    xmsgbuf_pull(mbuf, buf);
+    xmsgbuf_push(mbuf, &v, sizeof(v));
 
     /* OKすか？ */
-    xmsgbuf_pull(p, buf);
-    TEST_ASSERT_EQUAL(sizeof(v), xmsgbuf_msg_size(p));
-    xmsgbuf_pull(p, buf);
+    xmsgbuf_pull(mbuf, buf);
+    TEST_ASSERT_EQUAL(sizeof(v), xmsgbuf_msg_size(mbuf));
+    xmsgbuf_pull(mbuf, buf);
     TEST_ASSERT_EQUAL_MEMORY(&v, buf, sizeof(v));
 }
 
 
-TEST(xmsgbuf, size)
-{
-    /* 初期値 */
-    TEST_ASSERT_EQUAL(0, xmsgbuf_size(p));
-    TEST_ASSERT_TRUE(xmsgbuf_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data), xmsgbuf_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data), xmsgbuf_reserve(p));
-    TEST_ASSERT_FALSE(xmsgbuf_full(p));
-
-    /* 適当なデータを入れる */
-    const uint32_t v = 0xDEADBEEF;
-    xmsgbuf_push(p, &v, sizeof(v));
-    TEST_ASSERT_FALSE(xmsgbuf_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data), xmsgbuf_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data) - sizeof(v) - sizeof(XMessageHeader), xmsgbuf_reserve(p));
-    TEST_ASSERT_FALSE(xmsgbuf_full(p));
-
-    /* クリアしたら初期値に戻る */
-    xmsgbuf_clear(p);
-    TEST_ASSERT_EQUAL(0, xmsgbuf_size(p));
-    TEST_ASSERT_TRUE(xmsgbuf_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data), xmsgbuf_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data), xmsgbuf_reserve(p));
-    TEST_ASSERT_FALSE(xmsgbuf_full(p));
-
-    /* 満タンにする */
-    xmsgbuf_push(p, mbuf_data, xmsgbuf_reserve(p) - sizeof(XMessageHeader));
-    TEST_ASSERT_FALSE(xmsgbuf_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(mbuf_data), xmsgbuf_capacity(p));
-    TEST_ASSERT_EQUAL(0, xmsgbuf_reserve(p));
-    TEST_ASSERT_TRUE(xmsgbuf_full(p));
-}
-#endif
-
-
 TEST_GROUP_RUNNER(xmsgbuf)
 {
-    // RUN_TEST_CASE(xmsgbuf, init);
-    // RUN_TEST_CASE(xmsgbuf, push);
-    // RUN_TEST_CASE(xmsgbuf, pull);
-    // RUN_TEST_CASE(xmsgbuf, boundary);
-    // RUN_TEST_CASE(xmsgbuf, size);
+    RUN_TEST_CASE(xmsgbuf, init);
+    RUN_TEST_CASE(xmsgbuf, data);
+    RUN_TEST_CASE(xmsgbuf, clear);
+    RUN_TEST_CASE(xmsgbuf, size);
+    RUN_TEST_CASE(xmsgbuf, empty);
+    RUN_TEST_CASE(xmsgbuf, capacity);
+    RUN_TEST_CASE(xmsgbuf, reserve);
+    RUN_TEST_CASE(xmsgbuf, full);
+    RUN_TEST_CASE(xmsgbuf, num);
+    RUN_TEST_CASE(xmsgbuf, skip);
+    RUN_TEST_CASE(xmsgbuf, msg_size);
+    RUN_TEST_CASE(xmsgbuf, push);
+    RUN_TEST_CASE(xmsgbuf, pull);
+    RUN_TEST_CASE(xmsgbuf, boundary);
 }

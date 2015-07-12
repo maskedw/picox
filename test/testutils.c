@@ -10,15 +10,17 @@ void x_escape_assertion_failed(const char* expr, const char* msg, const char* fu
     X_UNUSED(file);
     X_UNUSED(line);
 
-#if 0
-    const char* none = "none";
-    printf("Assertion failed\n");
-    printf("[MSG ] %s\n", msg ? msg : none);
-    printf("[EXPR] %s\n", expr ? expr : none);
-    printf("[FUNC] %s\n", func ? func : none);
-    printf("[FILE] %s\n", file ? file : none);
-    printf("[LINE] %d\n", line);
-    printf("************************\n");
-#endif
     longjmp(g_xjmp, 1);
+}
+
+
+static void X__PostAssertionFailed(void)
+{
+    exit(1);
+}
+
+
+void x_init_test(void)
+{
+    x_post_assertion_failed = (void*)X__PostAssertionFailed;
 }

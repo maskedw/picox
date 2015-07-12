@@ -1,4 +1,5 @@
-#include <unity.h>
+#include "testutils.h"
+
 
 static void run_all_tests(void)
 {
@@ -19,5 +20,6 @@ static void run_all_tests(void)
 
 int main(int argc, const char* argv[])
 {
+    x_init_test();
     return UnityMain(argc, argv, run_all_tests);
 }

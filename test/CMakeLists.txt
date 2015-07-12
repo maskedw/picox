@@ -16,6 +16,7 @@ include_directories(${unity_dir})
 include_directories(${unity_ex_dir})
 
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -include unity.h -include unity_fixture.h")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wchar-subscripts")
 
 add_executable(alltests
     alltests.c
@@ -44,5 +45,5 @@ add_executable(alltests
     ${unity_dir}/unity.c
     ${unity_ex_dir}/unity_fixture.c)
 
-
-add_custom_command(TARGET alltests POST_BUILD COMMAND ./alltests.exe)
+add_custom_target(run_tests ALL DEPENDS alltests)
+add_custom_command(TARGET run_tests POST_BUILD COMMAND ./alltests.exe)

@@ -48,7 +48,7 @@ extern "C" {
 #endif // __cplusplus
 
 
-typedef void(*XFifoBufferAtomicAssigner)(size_t* dst, size_t value);
+typedef void(*XFifoAtomicAssigner)(size_t* dst, size_t value);
 
 
 typedef struct XFifoBuffer
@@ -58,58 +58,65 @@ typedef struct XFifoBuffer
     size_t               first;
     size_t               last;
     size_t               capacity;
-    XFifoBufferAtomicAssigner  assigner;
+    XFifoAtomicAssigner  assigner;
 } XFifoBuffer;
 
 
 /* 内部処理用のマクロ */
 #define XFIFO__ADD_FIRST(x)          ((self->first + x) & self->capacity)
 #define XFIFO__ADD_LAST(x)           ((self->last  + x) & self->capacity)
-#define XFIFO__IS_POWER_OF_TWO(x)    (((x) & -(x)) == (x))
 
 
 static inline void
-XFifoBufferDefaultAtomicAssign(size_t* dst, size_t value)
+XFifoDefaultAtomicAssign(size_t* dst, size_t value)
 {
     *dst = value;
 }
 
 
 /** バッファを初期化します。
+ *
+ *  @param buffer   データ格納先
+ *  @param size     bufferのバイト数
+ *  @param assigner 内部RWポインタ書き換え関数
+ *
  *  @pre
- *  + (self != NULL) && (buffer != NULL)
- *  + bufferはsizeバイトの連続領域を指していること。
+ *  + buffer != NULL
  *  + sizeは2のべき乗であること。
  *
- *  @note
- *  [XFifoBufferAtomicAssignerについて]
+ *  @details
+ *  assignerがNULLの場合はXFifoDefaultAtomicAssign()が使用されます。
+ *  bufferはこのオブジェクトが不要になるまで、ユーザー側が保持しておく必要があり
+ *  ます。
  *
- *  xfifo_bufferは主にシリアル通信の送受信バッファに使用することを想定しており、
- *  以下の条件の時、割り込み禁止区間なしでバッファへの書き込み、読み出しが可能で
+ *  @note
+ *  [XFifoAtomicAssignerについて]
+ *
+ *  xfifo_bufferは主にデバイスドライバのバッファに使用することを想定しており、以
+ *  下の条件の時、割り込み禁止区間なしでバッファへの書き込み、読み出しが可能で
  *  す。
  *
- *  書き込み、読み出しのコンテキストが異なることが保証されていること。
- *  ------------------------------------------------------------
+ *  **書き込み、読み出しのコンテキストが異なることが保証されていること**
  *
  *  [例]
  *  + 通常時にバッファにデータを書き込み、UART送信完了割り込みで、バッファからデータを取り出す
  *  + 通常時にバッファからデータを読み出し、UART受信完了割り込みで、バッファにデータを書き込む
  *
- *  size_t型の変数は分割なしで代入できること。
- *  ------------------------------------------------------------
+ *  **size_t型の変数は分割なしで代入できること**
  *
  *  通常は16bitCPUで32bit変数に代入しようとすると、機械語レベルでは複数回の代入
- *  命令を必要とします。その場合、xfifo_bufferのRWポインタの整合性が保証できなく
- *  なります。
+ *  命令を必要とします。その場合、割り込みが絡むとxfifo_bufferのRWポインタの整合
+ *  性が保証できなくなります。
  *
- *  上記条件が保証できない場合は、XFifoBufferAtomicAssignerを指定し、その関数内で、割
+ *  上記条件が保証できない場合は、XFifoAtomicAssignerを指定し、その関数内で、割
  *  り込みのロック、変数への代入、割り込みのアンロックを行ってください。
  */
 static inline void
-xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoBufferAtomicAssigner assigner)
+xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner assigner)
 {
-    X_ASSERT(self && buffer);
-    X_ASSERT(XFIFO__IS_POWER_OF_TWO(size) && "Require Power of 2");
+    X_ASSERT(self);
+    X_ASSERT(buffer);
+    X_ASSERT(x_is_power_of_two(size));
     X_ASSERT(size > 0);
 
     self->data = buffer;
@@ -117,7 +124,7 @@ xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoBufferAtomicAssign
     self->capacity = size - 1;
 
     if (! assigner)
-        self->assigner = XFifoBufferDefaultAtomicAssign;
+        self->assigner = XFifoDefaultAtomicAssign;
     else
         self->assigner = assigner;
 }
@@ -128,6 +135,7 @@ xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoBufferAtomicAssign
 static inline void
 xfifo_clear(XFifoBuffer* self)
 {
+    X_ASSERT(self);
     self->last = self->first;
 }
 
@@ -137,6 +145,7 @@ xfifo_clear(XFifoBuffer* self)
 static inline bool
 xfifo_empty(const XFifoBuffer* self)
 {
+    X_ASSERT(self);
     return self->last == self->first;
 }
 
@@ -146,6 +155,7 @@ xfifo_empty(const XFifoBuffer* self)
 static inline size_t
 xfifo_capacity(const XFifoBuffer* self)
 {
+    X_ASSERT(self);
     return self->capacity;
 }
 
@@ -154,6 +164,7 @@ xfifo_capacity(const XFifoBuffer* self)
 static inline size_t
 xfifo_size(const XFifoBuffer* self)
 {
+    X_ASSERT(self);
     return (self->last - self->first) & self->capacity;
 }
 
@@ -163,6 +174,7 @@ xfifo_size(const XFifoBuffer* self)
 static inline bool
 xfifo_full(const XFifoBuffer* self)
 {
+    X_ASSERT(self);
     return xfifo_size(self) == xfifo_capacity(self);
 }
 
@@ -172,6 +184,7 @@ xfifo_full(const XFifoBuffer* self)
 static inline size_t
 xfifo_reserve(const XFifoBuffer* self)
 {
+    X_ASSERT(self);
     return xfifo_capacity(self) - xfifo_size(self);
 }
 
@@ -181,6 +194,7 @@ xfifo_reserve(const XFifoBuffer* self)
 static inline void*
 xfifo_data(const XFifoBuffer* self)
 {
+    X_ASSERT(self);
     return self->data;
 }
 
@@ -190,6 +204,7 @@ xfifo_data(const XFifoBuffer* self)
 static inline void
 xfifo_push(XFifoBuffer* self, uint8_t data)
 {
+    X_ASSERT(self);
     self->data[self->last] = data;
     self->assigner(&self->last, XFIFO__ADD_LAST(1));
 }
@@ -200,6 +215,7 @@ xfifo_push(XFifoBuffer* self, uint8_t data)
 static inline uint8_t
 xfifo_pop(XFifoBuffer* self)
 {
+    X_ASSERT(self);
     const uint8_t data = self->data[self->first];
     self->assigner(&self->first, XFIFO__ADD_FIRST(1));
 
@@ -207,11 +223,21 @@ xfifo_pop(XFifoBuffer* self)
 }
 
 
-/** FIFO末尾に要素を追加します。
+/** FIFO末尾に指定サイズのデータの書き込みを試みます。
+ *
+ *  @param src      書き込むデータ
+ *  @param ssize    srcから取り出すバイト数
+ *  @return         書き込めたバイト数
+ *
+ *  @details
+ *  空き容量がssize以下だった場合は、空き容量分だけ書き込みます。
  */
 static inline size_t
 xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
 {
+    X_ASSERT(self);
+    X_ASSERT(src);
+
     const size_t reserve = xfifo_reserve(self);
 
     if ((reserve <= 0) || (ssize <= 0) || (src == NULL))
@@ -239,11 +265,21 @@ xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
 }
 
 
-/** FIFO先頭から要素を取り出します。
+/** FIFO先頭から指定サイズのデータを読み込みを試みます。
+ *
+ *  @param dst      読み込み先
+ *  @param dsize    dstに読み込むバイト数
+ *  @return         読み込めたバイト数
+ *
+ *  @details
+ *  格納要素数がdsize以下だった場合は、格納要素数分だけ書き込みます。
  */
 static inline size_t
 xfifo_read(XFifoBuffer* self, void* dst, size_t dsize)
 {
+    X_ASSERT(self);
+    X_ASSERT(dst);
+
     const size_t size = xfifo_size(self);
 
     if ((size <= 0) || (dsize <= 0) || (dst == NULL))

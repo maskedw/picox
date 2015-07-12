@@ -81,19 +81,21 @@ typedef struct XMessageBuffer
 /** バッファを初期化します。
  *
  *  @pre
- *  + (buf != NULL) && (size > sizeof(XMessageHeader))
+ *  + buffer != NULL
+ *  + size > sizeof(XMessageHeader)
  *
- *  @attention
- *  XMessageBufferの使用中はbufが指す領域を破棄しないこと。
+ *  @details
+ *  bufferはこのオブジェクトが不要になるまで、ユーザー側が保持しておく必要があり
+ *  ます。
  */
 static inline void
-xmsgbuf_init(XMessageBuffer* self, void* buf, size_t size)
+xmsgbuf_init(XMessageBuffer* self, void* buffer, size_t size)
 {
     X_ASSERT(self);
-    X_ASSERT(buf);
+    X_ASSERT(buffer);
     X_ASSERT(size > sizeof(XMessageHeader));
 
-    self->data = buf;
+    self->data = buffer;
     self->first = self->last = self->size = 0;
     self->capacity = size;
 }
@@ -120,6 +122,8 @@ xmsgbuf_clear(XMessageBuffer* self)
 
 
 /** バッファに格納されているバイト数を返します。
+ *
+ *  サイズにはメッセージヘッダのバイト数も含まれます。
  */
 static inline size_t
 xmsgbuf_size(const XMessageBuffer* self)
@@ -184,7 +188,8 @@ xmsgbuf_msg_size(const XMessageBuffer* self)
     XMessageHeader header;
     size_t rpos = self->first;
     int i;
-    for (i = 0; i < (int)sizeof(XMessageHeader); i++) {
+    for (i = 0; i < (int)sizeof(XMessageHeader); i++)
+    {
         header.bytes[i] = self->data[rpos++];
         if (rpos == self->capacity)
             rpos = 0;
@@ -194,10 +199,67 @@ xmsgbuf_msg_size(const XMessageBuffer* self)
 }
 
 
+/** 格納メッセージ数を返します。
+ */
+static inline size_t
+xmsgbuf_num(const XMessageBuffer* self)
+{
+    X_ASSERT(self);
+
+    size_t n = 0;
+    XMessageHeader hdr;
+    size_t first = self->first;
+    size_t size = self->size;
+    int i;
+
+    while (size)
+    {
+        for (i = 0; i < (int)sizeof(XMessageHeader); i++)
+        {
+            hdr.bytes[i] = self->data[first++];
+            if (first == self->capacity)
+                first = 0;
+        }
+        size -= (sizeof(XMessageHeader) + hdr.size);
+        first = (first + hdr.size) % self->capacity;
+        n++;
+    }
+
+    return n;
+}
+
+
+/** 先頭メッセージを読み飛ばします。
+ */
+static inline void
+xmsgbuf_skip(XMessageBuffer* self)
+{
+    X_ASSERT(self);
+
+    if (xmsgbuf_empty(self))
+        return;
+
+    XMessageHeader hdr;
+    size_t first = self->first;
+    int i;
+
+    for (i = 0; i < (int)sizeof(XMessageHeader); i++)
+    {
+        hdr.bytes[i] = self->data[first++];
+        if (first == self->capacity)
+            first = 0;
+    }
+    first = (first + hdr.size) % self->capacity;
+    self->size -= sizeof(XMessageHeader) + hdr.size;
+    self->first = first;
+}
+
+
 /** バッファ末尾にメッセージを追加します。
  *
  *  @pre
- *  + (src != NULL) && (size > 0)
+ *  + src != NULL
+ *  + size > 0
  *  + xmsgbuf_reserve() >= size + sizeof(XMessageHeader)
  */
 static inline void
@@ -225,7 +287,8 @@ xmsgbuf_push(XMessageBuffer* self, const void* src, size_t size)
     const uint8_t* from = src;
     uint8_t* to;
 
-    if (pos + size > self->capacity) {
+    if (pos + size > self->capacity)
+    {
         const size_t until_tail = self->capacity - pos;
         to = self->data + pos;
         memcpy(to, from, until_tail);
@@ -248,7 +311,7 @@ xmsgbuf_push(XMessageBuffer* self, const void* src, size_t size)
 /** バッファ先頭からメッセージを取り出し、メッセージサイズを返します。
  *
  *  @pre
- *  + (dst != NULL)
+ *  + dst != NULL
  *  + dstが指す領域のバイト数 >= xmsgbuf_msg_size()
  */
 static inline size_t
@@ -256,7 +319,6 @@ xmsgbuf_pull(XMessageBuffer* self, void* dst)
 {
     X_ASSERT(self);
     X_ASSERT(dst);
-
 
     if (xmsgbuf_empty(self))
         return 0;
@@ -274,7 +336,8 @@ xmsgbuf_pull(XMessageBuffer* self, void* dst)
     const uint8_t* from;
     size_t to_read = header.size;
 
-    if (pos + to_read > self->capacity) {
+    if (pos + to_read > self->capacity)
+    {
         const size_t until_tail = self->capacity - pos;
         from = self->data + pos;
         memcpy(to, from, until_tail);

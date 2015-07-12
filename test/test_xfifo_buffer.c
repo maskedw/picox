@@ -1,94 +1,132 @@
 #include <picox/container/xfifo_buffer.h>
+#include "testutils.h"
 
 
 TEST_GROUP(xfifo);
 
 
-static XFifoBuffer fifo;
-static XFifoBuffer* const p = &fifo;
-static uint8_t buf[128];
+static XFifoBuffer* fifo;
+#define X__BUF_SIZE 128
 
 
 TEST_SETUP(xfifo)
 {
-    xfifo_init(p, buf, sizeof(buf), NULL);
-    memset(buf, 0x00, sizeof(buf));
+    void* buf = X_MALLOC(X__BUF_SIZE);
+    fifo = X_MALLOC(sizeof(XFifoBuffer));
+
+    memset(buf, 0x00, X__BUF_SIZE);
+    xfifo_init(fifo, buf, X__BUF_SIZE, NULL);
 }
 
 
 TEST_TEAR_DOWN(xfifo)
 {
+    X_FREE(xfifo_data(fifo));
+    X_FREE(fifo);
 }
 
 
-TEST(xfifo, push_pop)
+TEST(xfifo, init)
 {
-    const uint8_t val = 0xAA;
-    xfifo_push(p, val);
-    TEST_ASSERT_EQUAL(1, xfifo_size(p));
-    TEST_ASSERT_EQUAL(val, xfifo_pop(p));
+    void* data = xfifo_data(fifo);
+    X_TEST_ASSERTION_FAILED(xfifo_init(NULL, data, X__BUF_SIZE, NULL));
+    X_TEST_ASSERTION_FAILED(xfifo_init(fifo, NULL, X__BUF_SIZE, NULL));
+    X_TEST_ASSERTION_FAILED(xfifo_init(fifo, data, 0, NULL));
+    X_TEST_ASSERTION_FAILED(xfifo_init(fifo, data, 3, NULL));
+}
 
-    /* 10ŒÂ“ü‚ê‚½‚çƒTƒCƒY‚Í10 */
-    uint8_t i;
-    for (i = 0; i < 10; i++)
-        xfifo_push(p, i);
-    TEST_ASSERT_EQUAL(10, xfifo_size(p));
 
-    /* 10ŒÂŽæ‚èo‚µ‚½‚çƒTƒCƒY‚Í0 */
-    for (i = 0; i < 10; i++)
-        TEST_ASSERT_EQUAL(i, xfifo_pop(p));
-    TEST_ASSERT_EQUAL(0, xfifo_size(p));
+TEST(xfifo, clear)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_clear(NULL));
+    xfifo_push(fifo, 10);
+    TEST_ASSERT_EQUAL(1, xfifo_size(fifo));
+    xfifo_clear(fifo);
+    TEST_ASSERT_EQUAL(0, xfifo_size(fifo));
+}
+
+
+TEST(xfifo, empty)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_empty(NULL));
+    xfifo_push(fifo, 10);
+    TEST_ASSERT_EQUAL(1, xfifo_size(fifo));
+    TEST_ASSERT_FALSE(xfifo_empty(fifo));
+}
+
+
+TEST(xfifo, capacity)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_capacity(NULL));
+    TEST_ASSERT_EQUAL(X__BUF_SIZE - 1, xfifo_capacity(fifo));
+}
+
+
+TEST(xfifo, full)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_full(NULL));
+    size_t i;
+    for (i = 0; i < xfifo_capacity(fifo); i++)
+    {
+        TEST_ASSERT_FALSE(xfifo_full(fifo));
+        xfifo_push(fifo, 10);
+    }
+    TEST_ASSERT_TRUE(xfifo_full(fifo));
+}
+
+
+TEST(xfifo, reserve)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_reserve(NULL));
+    size_t i;
+    for (i = 0; i < xfifo_capacity(fifo); i++)
+    {
+        TEST_ASSERT_EQUAL(xfifo_capacity(fifo) - i, xfifo_reserve(fifo));
+        xfifo_push(fifo, 10);
+    }
+    TEST_ASSERT_EQUAL(0, xfifo_reserve(fifo));
+}
+
+
+TEST(xfifo, data)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_data(NULL));
 }
 
 
 TEST(xfifo, size)
 {
-    /* ‰Šú’l */
-    TEST_ASSERT_EQUAL(0, xfifo_size(p));
-    TEST_ASSERT_TRUE(xfifo_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_reserve(p));
-    TEST_ASSERT_FALSE(xfifo_full(p));
-
-    /* 1ŒÂ—v‘f‚ð“ü‚ê‚½ */
-    xfifo_push(p, 0xAA);
-    TEST_ASSERT_EQUAL(1, xfifo_size(p));
-    TEST_ASSERT_FALSE(xfifo_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1 - 1, xfifo_reserve(p));
-    TEST_ASSERT_FALSE(xfifo_full(p));
-
-    /* 10ŒÂ—v‘f‚ð“ü‚ê‚½ */
-    xfifo_pop(p);
+    X_TEST_ASSERTION_FAILED(xfifo_size(NULL));
     size_t i;
-    for (i = 0; i < 10; i++)
-        xfifo_push(p, i);
-    TEST_ASSERT_EQUAL(10, xfifo_size(p));
-    TEST_ASSERT_FALSE(xfifo_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1 - 10, xfifo_reserve(p));
-    TEST_ASSERT_FALSE(xfifo_full(p));
-
-
-    /* ‹ó‚É‚µ‚½ */
-    xfifo_clear(p);
-    TEST_ASSERT_EQUAL(0, xfifo_size(p));
-    TEST_ASSERT_TRUE(xfifo_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_capacity(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_reserve(p));
-    TEST_ASSERT_FALSE(xfifo_full(p));
-
-
-    /* –žƒ^ƒ“‚É‚µ‚½ */
-    for (i = 0; i < sizeof(buf) - 1; i++) {
-        TEST_ASSERT_FALSE(xfifo_full(p));
-        xfifo_push(p, i);
+    for (i = 0; i < xfifo_capacity(fifo); i++)
+    {
+        TEST_ASSERT_EQUAL(i, xfifo_size(fifo));
+        xfifo_push(fifo, 10);
     }
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_size(p));
-    TEST_ASSERT_FALSE(xfifo_empty(p));
-    TEST_ASSERT_EQUAL(sizeof(buf) - 1, xfifo_capacity(p));
-    TEST_ASSERT_EQUAL(0, xfifo_reserve(p));
-    TEST_ASSERT_TRUE(xfifo_full(p));
+    TEST_ASSERT_EQUAL(xfifo_capacity(fifo), xfifo_size(fifo));
+}
+
+
+TEST(xfifo, push_pop)
+{
+    X_TEST_ASSERTION_FAILED(xfifo_push(NULL, 10));
+    X_TEST_ASSERTION_FAILED(xfifo_pop(NULL));
+
+    const uint8_t val = 0xAA;
+    xfifo_push(fifo, val);
+    TEST_ASSERT_EQUAL(1, xfifo_size(fifo));
+    TEST_ASSERT_EQUAL(val, xfifo_pop(fifo));
+
+    /* 10å€‹å…¥ã‚ŒãŸã‚‰ã‚µã‚¤ã‚ºã¯10 */
+    uint8_t i;
+    for (i = 0; i < 10; i++)
+        xfifo_push(fifo, i);
+    TEST_ASSERT_EQUAL(10, xfifo_size(fifo));
+
+    /* 10å€‹å–ã‚Šå‡ºã—ãŸã‚‰ã‚µã‚¤ã‚ºã¯0 */
+    for (i = 0; i < 10; i++)
+        TEST_ASSERT_EQUAL(i, xfifo_pop(fifo));
+    TEST_ASSERT_EQUAL(0, xfifo_size(fifo));
 }
 
 
@@ -97,29 +135,32 @@ TEST(xfifo, write)
     uint8_t data[10];
     size_t i;
 
-    /* ‘‚«ž‚ñ‚¾—v‘f”‚ð•Ô‚· */
+    X_TEST_ASSERTION_FAILED(xfifo_write(NULL, data, sizeof(data)));
+    X_TEST_ASSERTION_FAILED(xfifo_write(fifo, NULL, sizeof(data)));
+
+    /* æ›¸ãè¾¼ã‚“ã è¦ç´ æ•°ã‚’è¿”ã™ */
     for (i = 0; i < sizeof(data); i++)
         data[i] = i;
-    TEST_ASSERT_EQUAL(sizeof(data), xfifo_write(p, data, sizeof(data)));
+    TEST_ASSERT_EQUAL(sizeof(data), xfifo_write(fifo, data, sizeof(data)));
 
-    /* ‚¿‚á‚ñ‚Æ‘‚«ž‚ß‚Ä‚éH */
+    /* ã¡ã‚ƒã‚“ã¨æ›¸ãè¾¼ã‚ã¦ã‚‹ï¼Ÿ */
     i = 0;
-    while (! xfifo_empty(p)) {
-        uint8_t popped = xfifo_pop(p);
+    while (! xfifo_empty(fifo)) {
+        uint8_t popped = xfifo_pop(fifo);
         TEST_ASSERT_TRUE((popped < sizeof(data)));
         TEST_ASSERT_TRUE(popped == i);
         i++;
     }
 
-    /* –žƒ^ƒ“‚¾‚Æ‘‚«ž‚ß‚È‚¢‚æ‚Ë */
-    while (! xfifo_full(p))
-         xfifo_push(p, 0xFF);
-    TEST_ASSERT_EQUAL(0, xfifo_write(p, data, sizeof(data)));
+    /* æº€ã‚¿ãƒ³ã ã¨æ›¸ãè¾¼ã‚ãªã„ã‚ˆã­ */
+    while (! xfifo_full(fifo))
+         xfifo_push(fifo, 0xFF);
+    TEST_ASSERT_EQUAL(0, xfifo_write(fifo, data, sizeof(data)));
 
-    /* ‹ó‚«—v‘f”‚ª‘«‚è‚È‚­‚Ä‚à‘‚¯‚é•ª‚¾‚¯‘‚­ */
-    while (xfifo_reserve(p) < (sizeof(data) / 2))
-        xfifo_pop(p);
-    TEST_ASSERT_EQUAL(sizeof(data) / 2, xfifo_write(p, data, sizeof(data)));
+    /* ç©ºãè¦ç´ æ•°ãŒè¶³ã‚Šãªãã¦ã‚‚æ›¸ã‘ã‚‹åˆ†ã ã‘æ›¸ã */
+    while (xfifo_reserve(fifo) < (sizeof(data) / 2))
+        xfifo_pop(fifo);
+    TEST_ASSERT_EQUAL(sizeof(data) / 2, xfifo_write(fifo, data, sizeof(data)));
 }
 
 
@@ -129,35 +170,45 @@ TEST(xfifo, read)
     uint8_t r[10];
     size_t i;
 
+    X_TEST_ASSERTION_FAILED(xfifo_read(NULL, r, sizeof(r)));
+    X_TEST_ASSERTION_FAILED(xfifo_read(fifo, NULL, sizeof(r)));
+
     for (i = 0; i < sizeof(w); i++)
         w[i] = i;
-    xfifo_write(p, w, sizeof(w));
+    xfifo_write(fifo, w, sizeof(w));
 
-    /* “Ç‚Ýž‚ñ‚¾—v‘f”‚ð•Ô‚· */
-    TEST_ASSERT_EQUAL(sizeof(w), xfifo_read(p, r, sizeof(r)));
+    /* èª­ã¿è¾¼ã‚“ã è¦ç´ æ•°ã‚’è¿”ã™ */
+    TEST_ASSERT_EQUAL(sizeof(w), xfifo_read(fifo, r, sizeof(r)));
 
-    /* ‚¿‚á‚ñ‚Æ“Ç‚ß‚Ä‚éH */
+    /* ã¡ã‚ƒã‚“ã¨èª­ã‚ã¦ã‚‹ï¼Ÿ */
     TEST_ASSERT_TRUE(memcmp(w, r, sizeof(w)) == 0);
 
-    /* “Ç‚ß‚é•ª‚¾‚¯“Ç‚Þ */
+    /* èª­ã‚ã‚‹åˆ†ã ã‘èª­ã‚€ */
     memset(r, 0xFF, sizeof(r));
     memset(w, 0xAA, sizeof(w));
-    xfifo_write(p, w, sizeof(w) / 2);
-    TEST_ASSERT_EQUAL(sizeof(w) / 2, xfifo_read(p, r, sizeof(r)));
+    xfifo_write(fifo, w, sizeof(w) / 2);
+    TEST_ASSERT_EQUAL(sizeof(w) / 2, xfifo_read(fifo, r, sizeof(r)));
     TEST_ASSERT_TRUE(memcmp(w, r, sizeof(w) / 2) == 0);
     TEST_ASSERT_TRUE(memcmp(w + sizeof(w) / 2, r + sizeof(w) / 2,
                             sizeof(w) / 2) != 0);
 
-    /* —v‘f‚ª‚È‚©‚Á‚½‚ç“Ç‚ß‚ñ‚æ */
-    TEST_ASSERT_TRUE(xfifo_empty(p));
-    TEST_ASSERT_EQUAL(0, xfifo_read(p, r, sizeof(r)));
+    /* è¦ç´ ãŒãªã‹ã£ãŸã‚‰èª­ã‚ã‚“ã‚ˆ */
+    TEST_ASSERT_TRUE(xfifo_empty(fifo));
+    TEST_ASSERT_EQUAL(0, xfifo_read(fifo, r, sizeof(r)));
 }
 
 
 TEST_GROUP_RUNNER(xfifo)
 {
-    RUN_TEST_CASE(xfifo, push_pop);
+    RUN_TEST_CASE(xfifo, init);
+    RUN_TEST_CASE(xfifo, clear);
+    RUN_TEST_CASE(xfifo, empty);
+    RUN_TEST_CASE(xfifo, capacity);
     RUN_TEST_CASE(xfifo, size);
+    RUN_TEST_CASE(xfifo, full);
+    RUN_TEST_CASE(xfifo, reserve);
+    RUN_TEST_CASE(xfifo, data);
+    RUN_TEST_CASE(xfifo, push_pop);
     RUN_TEST_CASE(xfifo, write);
     RUN_TEST_CASE(xfifo, read);
 }
