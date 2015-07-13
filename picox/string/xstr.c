@@ -261,8 +261,7 @@ float xstr_to_float(const char* str, float def, bool* ok)
 {
 #ifndef X_CONF_HAS_C99_MATH
     return xstr_to_double(str, def, ok);
-#endif
-
+#else
     X_ASSERT(str);
 
     bool sub;
@@ -274,6 +273,8 @@ float xstr_to_float(const char* str, float def, bool* ok)
     const float ret = *ok ? v : def;
 
     return ret;
+#endif
+
 }
 
 
