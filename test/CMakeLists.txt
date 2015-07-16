@@ -5,13 +5,13 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_C_COMPILER gcc)
 set(picox_dir "../picox")
-set(picox_ex_dir ${picox_dir}/external)
-set(unity_dir ${picox_ex_dir}/Unity/src)
-set(unity_ex_dir ${picox_ex_dir}/Unity/extras/fixture/src)
+set(external_dir "../external")
+set(unity_dir ${external_dir}/Unity/src)
+set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
 
 
 include_directories("../")
-include_directories(${picox_ex_dir}/sds)
+include_directories(${external_dir}/sds)
 include_directories(${unity_dir})
 include_directories(${unity_ex_dir})
 
@@ -41,7 +41,7 @@ add_executable(alltests
     ${picox_dir}/string/xstr.c
     ${picox_dir}/misc/xtokenizer.c
     ${picox_dir}/misc/xargparser.c
-    ${picox_ex_dir}/sds/sds.c
+    ${external_dir}/sds/sds.c
     ${unity_dir}/unity.c
     ${unity_ex_dir}/unity_fixture.c)
 
