@@ -1062,8 +1062,8 @@ x_memblt(void* dst, const void* src,
          size_t linesize, size_t height,
          size_t dstride,  size_t sstride)
 {
-    char* cdst = dst;
-    const char* csrc = src;
+    char* cdst = (char*)dst;
+    const char* csrc = (const char*)src;
 
     size_t y;
     for (y = 0; y < height; ++y)
