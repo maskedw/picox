@@ -472,8 +472,6 @@ TEST(xfile, is_directory)
     /* 存在しないパスを指定した場合は戻り値trueだが、is_dirはfalseとなる。*/
     TEST_ASSERT_TRUE(xfile_is_directory("tmp-tmp", &is_dir, &err));
     TEST_ASSERT_FALSE(is_dir);
-
-    xfile_close(fp, NULL);
 }
 
 
