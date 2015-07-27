@@ -786,7 +786,12 @@ bool xfile_vprintf(XFile* fp, size_t* nprint, int* err, const char* fmt, va_list
     bool ok = false;
     do
     {
-        const int vsret  = vsnprintf(buf, 0, fmt, arg);
+        va_list copy;
+
+        va_copy(copy, arg);
+        const int vsret  = vsnprintf(buf, 0, fmt, copy);
+        va_end(copy);
+
         X_BREAK_IF(vsret < 0);
 
         buf = X_MALLOC(vsret + 1);
