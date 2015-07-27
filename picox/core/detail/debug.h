@@ -213,7 +213,7 @@ void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size
         #define X_ASSERT(expr)          X_ASSERT_MSG(expr, NULL)
     #endif
 
-    #define X_ABORT(msg)                X_ASSERT_MSG(0, "abort")
+    #define X_ABORT(msg)                X_ASSERT_MSG(0, msg)
     #define X_ABORT_DEFAULT             default: X_ABORT("Runtime error"); break
 #else
     #define X_ASSERT_MSG(expr, msg)     (void)0
