@@ -109,52 +109,70 @@ extern XAssertionFailedFunc x_assertion_failed;
 #endif
 
 
-void x_print_log(int level, const char* tag, const char* fmt, ...);
-void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_verb_printlog(const char* tag, const char* fmt, ...);
+void x_info_printlog(const char* tag, const char* fmt, ...);
+void x_noti_printlog(const char* tag, const char* fmt, ...);
+void x_warn_printlog(const char* tag, const char* fmt, ...);
+void x_err_printlog(const char* tag, const char* fmt, ...);
+void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_info_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_noti_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_warn_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
 
 
+/* X_LOG_XXX()は、printfライクなformat引数を受け付けますが、
+ * X_LOG_XXX((tag, "i = %d",i));という風に、引数を2重で()する必要があります。
+ * C99の可変長引数マクロを使えばこんな変な書き方をしないですむのですが、
+ * このライブラリの対象にはC++03も含めており、C++03では可変長引数マクロは標準で
+ * はありません。
+ *
+ * たいていのコンパイラでは、標準ではなくとも可変長引数マクロを使用できますが、
+ * 規格に厳格なコンパイラでは使用できません。(例 Renesas C++ compiler)
+ * そのため、非常に面倒ですが、C++と共用の部分では可変長引数マクロは使用しません
+ */
 #if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_VERB)
-    #define X_LOG_VERB(...)         x_print_log(X_LOG_LEVEL_VERB, __VA_ARGS__)
-    #define X_LOG_HEXDUMP_VERB(...) x_log_hexdump(X_LOG_LEVEL_VERB, __VA_ARGS__)
+    #define X_LOG_VERB(args)         x_verb_printlog args
+    #define X_LOG_HEXDUMP_VERB(args) x_verb_hexdump  args
 #else
-    #define X_LOG_VERB(...)         (void)0
-    #define X_LOG_HEXDUMP_VERB(...) (void)0
+    #define X_LOG_VERB(args)         (void)0
+    #define X_LOG_HEXDUMP_VERB(args) (void)0
 #endif
 
 
 #if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_INFO)
-    #define X_LOG_INFO(...)         x_print_log(X_LOG_LEVEL_INFO, __VA_ARGS__)
-    #define X_LOG_HEXDUMP_INFO(...) x_log_hexdump(X_LOG_LEVEL_INFO, __VA_ARGS__)
+    #define X_LOG_INFO(args)         x_info_printlog args
+    #define X_LOG_HEXDUMP_INFO(args) x_info_hexdump  args
 #else
-    #define X_LOG_INFO(...)         (void)0
-    #define X_LOG_HEXDUMP_INFO(...) (void)0
+    #define X_LOG_INFO(args)         (void)0
+    #define X_LOG_HEXDUMP_INFO(args) (void)0
 #endif
 
 
 #if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_NOTI)
-    #define X_LOG_NOTI(...)         x_print_log(X_LOG_LEVEL_NOTI, __VA_ARGS__)
-    #define X_LOG_HEXDUMP_NOTI(...) x_log_hexdump(X_LOG_LEVEL_NOTI, __VA_ARGS__)
+    #define X_LOG_NOTI(args)         x_noti_printlog args
+    #define X_LOG_HEXDUMP_NOTI(args) x_noti_hexdump  args
 #else
-    #define X_LOG_NOTI(...)         (void)0
-    #define X_LOG_HEXDUMP_NOTI(...) (void)0
+    #define X_LOG_NOTI(args)         (void)0
+    #define X_LOG_HEXDUMP_NOTI(args) (void)0
 #endif
 
 
 #if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_WARN)
-    #define X_LOG_WARN(...)         x_print_log(X_LOG_LEVEL_WARN, __VA_ARGS__)
-    #define X_LOG_HEXDUMP_WARN(...) x_log_hexdump(X_LOG_LEVEL_WARN, __VA_ARGS__)
+    #define X_LOG_WARN(args)         x_warn_printlog args
+    #define X_LOG_HEXDUMP_WARN(args) x_warn_hexdump  args
 #else
-    #define X_LOG_WARN(...)         (void)0
-    #define X_LOG_HEXDUMP_WARN(...) (void)0
+    #define X_LOG_WARN(args)         (void)0
+    #define X_LOG_HEXDUMP_WARN(args) (void)0
 #endif
 
 
 #if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_ERR)
-    #define X_LOG_ERR(...)          x_print_log(X_LOG_LEVEL_ERR, __VA_ARGS__)
-    #define X_LOG_HEXDUMP_ERR(...)  x_log_hexdump(X_LOG_LEVEL_ERR, __VA_ARGS__)
+    #define X_LOG_ERR(args)          x_err_printlog args
+    #define X_LOG_HEXDUMP_ERR(args)  x_err_hexdump  args
 #else
-    #define X_LOG_ERR(...)          (void)0
-    #define X_LOG_HEXDUMP_ERR(...)  (void)0
+    #define X_LOG_ERR(args)          (void)0
+    #define X_LOG_HEXDUMP_ERR(args)  (void)0
 #endif
 
 

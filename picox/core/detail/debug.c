@@ -45,6 +45,7 @@ typedef struct X__Debug
 } X__Debug;
 
 static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list args);
+static void X__VHexdump(int level, const char* tag, const char* src, size_t len, size_t cols, const char* fmt, va_list args);
 static const char* X__GetHeader(int level);
 static void X__PreAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
 static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
@@ -117,12 +118,52 @@ void x_printf(const char* fmt, ...)
 }
 
 
-void x_print_log(int level, const char* tag, const char* fmt, ...)
+void x_verb_printlog(const char* tag, const char* fmt, ...)
 {
     va_list args;
 
     va_start(args, fmt);
-    X__VPrintLog(level, tag, fmt, args);
+    X__VPrintLog(X_LOG_LEVEL_VERB, tag, fmt, args);
+    va_end(args);
+}
+
+
+void x_info_printlog(const char* tag, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VPrintLog(X_LOG_LEVEL_INFO, tag, fmt, args);
+    va_end(args);
+}
+
+
+void x_noti_printlog(const char* tag, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VPrintLog(X_LOG_LEVEL_NOTI, tag, fmt, args);
+    va_end(args);
+}
+
+
+void x_warn_printlog(const char* tag, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VPrintLog(X_LOG_LEVEL_WARN, tag, fmt, args);
+    va_end(args);
+}
+
+
+void x_err_printlog(const char* tag, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VPrintLog(X_LOG_LEVEL_ERR, tag, fmt, args);
     va_end(args);
 }
 
@@ -138,6 +179,56 @@ void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size
         va_end(args);
         x_hexdump(src, len, cols);
     }
+}
+
+
+void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VHexdump(X_LOG_LEVEL_VERB, tag, src, len, cols, fmt, args);
+    va_end(args);
+}
+
+
+void x_info_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VHexdump(X_LOG_LEVEL_INFO, tag, src, len, cols, fmt, args);
+    va_end(args);
+}
+
+
+void x_noti_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VHexdump(X_LOG_LEVEL_NOTI, tag, src, len, cols, fmt, args);
+    va_end(args);
+}
+
+
+void x_warn_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VHexdump(X_LOG_LEVEL_WARN, tag, src, len, cols, fmt, args);
+    va_end(args);
+}
+
+
+void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    X__VHexdump(X_LOG_LEVEL_ERR, tag, src, len, cols, fmt, args);
+    va_end(args);
 }
 
 
@@ -222,6 +313,16 @@ static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list ar
 #endif
         x_vprintf(fmt, args);
         x_putc('\n');
+    }
+}
+
+
+static void X__VHexdump(int level, const char* tag, const char* src, size_t len, size_t cols, const char* fmt, va_list args)
+{
+    if (level <= priv->level)
+    {
+        X__VPrintLog(level, tag, fmt, args);
+        x_hexdump(src, len, cols);
     }
 }
 
