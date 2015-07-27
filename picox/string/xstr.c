@@ -326,6 +326,143 @@ bool xstr_to_bool(const char* str, bool def, bool* ok)
 }
 
 
+char* xstr_pbrk(const char* str, const char* accept)
+{
+    X_ASSERT(str);
+    X_ASSERT(accept);
+
+    return strpbrk(str, accept);
+}
+
+
+char* xstr_rpbrk(const char* str, const char* accept)
+{
+    X_ASSERT(str);
+    X_ASSERT(accept);
+
+    if (str[0] == '\0')
+        return NULL;
+
+    const char* top = str;
+    const char* p = str + strlen(str) - 1;
+    const char* c;
+
+    for (;;)
+    {
+        for (c = accept; *c; c++)
+        {
+            if (*p == *c)
+                break;
+        }
+        if (*c)
+            break;
+        if (p == top)
+            break;
+
+        p--;
+    }
+
+    if (*c == '\0')
+        p = NULL;
+
+    return (char*)p;
+}
+
+
+char* xstr_case_pbrk(const char* str, const char* accept)
+{
+    X_ASSERT(str);
+    X_ASSERT(accept);
+
+
+    if (str[0] == '\0')
+        return NULL;
+
+    const char* c;
+    while (*str)
+    {
+        for (c = accept; *c; c++)
+        {
+            if (toupper((int)*str) == toupper((int)*c))
+                break;
+        }
+
+        if (*c)
+            break;
+        str++;
+    }
+
+    if (*c == '\0')
+        str = NULL;
+
+    return (char*)str;
+}
+
+
+char* xstr_case_rpbrk(const char* str, const char* accept)
+{
+    X_ASSERT(str);
+    X_ASSERT(accept);
+
+    if (str[0] == '\0')
+        return NULL;
+
+    const char* top = str;
+    const char* p = str + strlen(str) - 1;
+    const char* c;
+
+    for (;;)
+    {
+        for (c = accept; *c; c++)
+        {
+            if (toupper((int)*p) == toupper((int)*c))
+                break;
+        }
+        if (*c)
+            break;
+        if (p == top)
+            break;
+
+        p--;
+    }
+
+    if (*c == '\0')
+        p = NULL;
+
+    return (char*)p;
+}
+
+
+char* xstr_to_lower(char* str)
+{
+    X_ASSERT(str);
+
+    char* p = str;
+    while (*p)
+    {
+        *p = tolower((int)*p);
+        p++;
+    }
+
+    return str;
+}
+
+
+char* xstr_to_upper(char* str)
+{
+    X_ASSERT(str);
+
+    char* p = str;
+    while (*p)
+    {
+        *p = toupper((int)*p);
+        p++;
+    }
+
+    return str;
+}
+
+
 static bool X__IsSkip(char c, const char* skip_chars)
 {
     for (;;)

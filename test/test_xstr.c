@@ -426,6 +426,76 @@ TEST(xstr, to_bool)
 }
 
 
+TEST(xstr, pbrk)
+{
+    X_TEST_ASSERTION_FAILED(xstr_pbrk("ABC", NULL));
+    X_TEST_ASSERTION_FAILED(xstr_pbrk(NULL, "ABC"));
+
+    TEST_ASSERT_NULL(xstr_pbrk("ABC", "DE"));
+    TEST_ASSERT_EQUAL_STRING("BCBC", xstr_pbrk("ABCBC", "B"));
+    TEST_ASSERT_EQUAL_STRING("CBC", xstr_pbrk("ABCBC",  "C"));
+    TEST_ASSERT_EQUAL_STRING("BCBC", xstr_pbrk("ABCBC",  "CB"));
+    TEST_ASSERT_EQUAL_STRING("D", xstr_pbrk("ABCD",  "D"));
+}
+
+
+TEST(xstr, rpbrk)
+{
+    X_TEST_ASSERTION_FAILED(xstr_rpbrk("ABC", NULL));
+    X_TEST_ASSERTION_FAILED(xstr_rpbrk(NULL, "ABC"));
+
+    TEST_ASSERT_NULL(xstr_rpbrk("ABC", "DE"));
+    TEST_ASSERT_EQUAL_STRING("BC", xstr_rpbrk("ABCBC", "B"));
+    TEST_ASSERT_EQUAL_STRING("C", xstr_rpbrk("ABCBC",  "C"));
+    TEST_ASSERT_EQUAL_STRING("C", xstr_rpbrk("ABCBC",  "CB"));
+    TEST_ASSERT_EQUAL_STRING("ABCBC", xstr_rpbrk("AAABCBC",  "A"));
+}
+
+
+TEST(xstr, case_pbrk)
+{
+    X_TEST_ASSERTION_FAILED(xstr_case_pbrk("ABC", NULL));
+    X_TEST_ASSERTION_FAILED(xstr_case_pbrk(NULL, "ABC"));
+
+    TEST_ASSERT_NULL(xstr_case_pbrk("ABC", "DE"));
+    TEST_ASSERT_EQUAL_STRING("bcBc", xstr_case_pbrk("AbcBc", "B"));
+    TEST_ASSERT_EQUAL_STRING("CBC", xstr_case_pbrk("ABCBC",  "c"));
+    TEST_ASSERT_EQUAL_STRING("BCBC", xstr_case_pbrk("ABCBC",  "cB"));
+    TEST_ASSERT_EQUAL_STRING("D", xstr_case_pbrk("ABCD",  "d"));
+}
+
+
+TEST(xstr, case_rpbrk)
+{
+    X_TEST_ASSERTION_FAILED(xstr_case_rpbrk("ABC", NULL));
+    X_TEST_ASSERTION_FAILED(xstr_case_rpbrk(NULL, "ABC"));
+
+    TEST_ASSERT_NULL(xstr_case_rpbrk("ABC", "DE"));
+    TEST_ASSERT_EQUAL_STRING("BC", xstr_case_rpbrk("ABCBC", "b"));
+    TEST_ASSERT_EQUAL_STRING("c", xstr_case_rpbrk("ABCBc",  "C"));
+    TEST_ASSERT_EQUAL_STRING("c", xstr_case_rpbrk("ABCBc",  "cb"));
+    TEST_ASSERT_EQUAL_STRING("aBCBC", xstr_case_rpbrk("AAaBCBC",  "a"));
+}
+
+
+TEST(xstr, to_lower)
+{
+    char str[] = "Hello world";
+    X_TEST_ASSERTION_FAILED(xstr_to_lower(NULL));
+
+    TEST_ASSERT_EQUAL_STRING("hello world", xstr_to_lower(str));
+}
+
+
+TEST(xstr, to_upper)
+{
+    char str[] = "Hello world";
+    X_TEST_ASSERTION_FAILED(xstr_to_upper(NULL));
+
+    TEST_ASSERT_EQUAL_STRING("HELLO WORLD", xstr_to_upper(str));
+}
+
+
 TEST_GROUP_RUNNER(xstr)
 {
     RUN_TEST_CASE(xstr, equal);
@@ -448,4 +518,10 @@ TEST_GROUP_RUNNER(xstr)
     RUN_TEST_CASE(xstr, to_float);
     RUN_TEST_CASE(xstr, to_double);
     RUN_TEST_CASE(xstr, to_bool);
+    RUN_TEST_CASE(xstr, pbrk);
+    RUN_TEST_CASE(xstr, rpbrk);
+    RUN_TEST_CASE(xstr, case_pbrk);
+    RUN_TEST_CASE(xstr, case_rpbrk);
+    RUN_TEST_CASE(xstr, to_lower);
+    RUN_TEST_CASE(xstr, to_upper);
 }

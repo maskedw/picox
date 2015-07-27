@@ -196,6 +196,40 @@ double xstr_to_double(const char* str, double def, bool* ok);
 bool xstr_to_bool(const char* str, bool def, bool* ok);
 
 
+/** strpbrk()のラッパーです。
+ */
+char* xstr_pbrk(const char* str, const char* accept);
+
+
+/** strpbrk()の逆走査版です。
+ */
+char* xstr_rpbrk(const char* str, const char* accept);
+
+
+/** 大文字小文字の違いを無視したxstr_pbrk()です。
+ */
+char* xstr_case_pbrk(const char* str, const char* accept);
+
+
+/** 大文字小文字の違いを無視したxstr_rpbrk()です。
+ */
+char* xstr_case_rpbrk(const char* str, const char* accept);
+
+
+/** strに含まれるアルファベットを全て小文字に変換して返します
+ *
+ *  + str自身が破壊されることに注意してください。
+ */
+char* xstr_to_lower(char* str);
+
+
+/** strに含まれるアルファベットを全て大文字に変換して返します
+ *
+ *  + str自身が破壊されることに注意してください。
+ */
+char* xstr_to_upper(char* str);
+
+
 #ifdef __cplusplus
 }
 #endif
