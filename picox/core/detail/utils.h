@@ -799,6 +799,14 @@ static inline bool x_is_uwithin(uint32_t x, uint32_t begin, uint32_t end)
 }
 
 
+/** (begin <= x) && (x < end)を判定します。
+ */
+static inline bool x_is_within_uptr(uintptr_t x, uintptr_t begin, uintptr_t end)
+{
+    return ((begin <= x) && (x < end));
+}
+
+
 /** ptrが指すアドレスがbegin とendの範囲内かどうかをBool値で返します。
  */
 static inline bool x_is_within_ptr(const void* ptr, const void* begin, const void* end)
