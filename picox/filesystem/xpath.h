@@ -40,6 +40,11 @@
 #define picox_xpath_h_
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** パスの末尾の文字列を返します
  *
  * foo/bar.bin => bar.bin
@@ -77,6 +82,11 @@ char* xpath_parent(char* path);
  * pathに対して破壊的変更が行われます。
  */
 char* xpath_stem(char* path);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif // picox_xpath_h_
