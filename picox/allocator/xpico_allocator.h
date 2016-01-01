@@ -100,11 +100,19 @@ void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignmen
 
 
 /** ヒープからsizeバイトのメモリを切り出して返します
+ *
+ *  @pre
+ *  + size > 0
  */
 void* xpalloc_allocate(XPicoAllocator* self, size_t size);
 
 
 /** ヒープにメモリを返却します
+ *
+ *  @pre
+ *  + xpallloc_is_owner(self, ptr) == true
+ *  @note
+ *  ptr == NULLの時は何もしません。
  */
 void xpalloc_deallocate(XPicoAllocator* self, void* ptr);
 
@@ -114,7 +122,7 @@ void xpalloc_deallocate(XPicoAllocator* self, void* ptr);
 void xpalloc_clear(XPicoAllocator* self);
 
 
-/** ヒープメモリを返します
+/** ヒープメモリ自身を返します
  */
 static inline uint8_t*
 xpalloc_heap(const XPicoAllocator* self)
