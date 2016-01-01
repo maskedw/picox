@@ -72,12 +72,8 @@ typedef struct XPicoAllocator
     uint8_t*        top;
     size_t          capacity;
     size_t          reserve;
+    size_t          alignment;
 } XPicoAllocator;
-
-
-/** メモリ確保時のアラインメントです
- */
-#define XPALLOC_ALIGNMENT   (X_ALIGN_OF(XMaxAlign))
 
 
 /** メモリブロックを初期化します
@@ -89,11 +85,17 @@ typedef struct XPicoAllocator
  *  + heap != NULL
  *  + size  > 0
  *
- *  @attention
- *  heap領域はXPALLOC_ALIGNに切り上げられます。できればあらかじめアラインしてお
- *  く方がよいでしょう。
+ *  @note
+ *  heapが指すアドレスはalignmentに切り上げられます。そのため、可能であればheap
+ *  をあらかじめalignmentに合わせておくと無駄がありません。
+ *  また、alocation時にもalignmentに応じた切り上げが行われるので、sizeで指定した
+ *  バイト数を余すことなく動的メモリとして使用することはできないことに注意してく
+ *  ださい。
+ *
+ *  alignmentには特殊なアラインメントが必要な時以外はX_ALIGN_OF(XMaxAlign)を指定
+ *  しておくのが無難です。
  */
-void xpalloc_init(XPicoAllocator* self, void* heap, size_t size);
+void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment);
 
 
 /** ヒープからsizeバイトのメモリを切り出して返します
