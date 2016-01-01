@@ -2,6 +2,7 @@
 set(picox_src
    picox/core/detail/debug.c
    picox/filesystem/xfile.c
+   picox/filesystem/xpath.c
    picox/allocator/xstack_allocator.c
    picox/allocator/xfixed_allocator.c
    picox/allocator/xpico_allocator.c
