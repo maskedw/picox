@@ -36,35 +36,21 @@
  * SOFTWARE.
  */
 
-
-#ifndef picox_xcore_h_
-#define picox_xcore_h_
-
-
-#define X_VERSION_MAJOR     (0)
-#define X_VERSION_MINOR     (1)
-#define X_VERSION_STRING    "picox ver 0.1"
+#ifndef picox_core_detail_types_h_
+#define picox_core_detail_types_h_
 
 
-/* ‹¤’Ê‚Åg—p‚·‚éƒwƒbƒ_‚ğ‚Ü‚Æ‚ß‚ÄƒCƒ“ƒNƒ‹[ƒh‚·‚éBƒRƒ“ƒpƒCƒ‰‚ªƒvƒŠƒRƒ“ƒpƒCƒ‹‹@
- * ”\‚ğ‚Á‚Ä‚¢‚é‚È‚çg—p‚·‚é‚Ì‚ªƒRƒ“ƒpƒCƒ‹ŠÔ’Zk‚Ìˆ×‚É–]‚Ü‚µ‚¢B
+/** ãƒ•ã‚¡ã‚¤ãƒ«ã‚µã‚¤ã‚ºã‚’è¡¨ç¾ã™ã‚‹ãŸã‚ã«ååˆ†ãªã‚µã‚¤ã‚ºã‚’å‚™ãˆãŸç¬¦å·ãªã—æ•´æ•°å‹ã§ã™ */
+typedef uint32_t    XFileSize;
+
+
+/** çµ„è¾¼ã¿å‹ã®æœ€å¤§ã‚¢ãƒ©ã‚¤ãƒ¡ãƒ³ãƒˆå‹ã§ã™ã€‚
  */
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <limits.h>
-#include <picox/xconfig.h>
-#include <picox/core/detail/types.h>
-#include <picox/core/detail/compiler.h>
-#include <picox/core/detail/preprocessor.h>
-#include <picox/core/detail/debug.h>
-#include <picox/core/detail/memory.h>
-#include <picox/core/detail/utils.h>
+typedef union XMaxAlign
+{
+    char c; int i; long l; long long ll; void* p;
+    float f; double d; long double ld; void(*fp)(void);
+} XMaxAlign;
 
 
-#endif // picox_xcore_h_
+#endif /* picox_core_detail_types_h_ */

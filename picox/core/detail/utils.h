@@ -61,13 +61,6 @@ extern "C" {
 
 
 
-/** 組込み型の最大アライメント型です。
- */
-typedef union XMaxAlign
-{
-    char c; int i; long l; long long ll; void* p;
-    float f; double d; long double ld; void(*fp)(void);
-} XMaxAlign;
 
 
 /** 最大サイズのアライメントでsizeバイト以上の領域を持つ変数nameを定義します。
