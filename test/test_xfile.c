@@ -278,7 +278,7 @@ TEST(xfile, read_plus)
 
     if (! xfile_write(fp, src, len, &nwritten, &err))
     {
-        X_LOG_ERR("TAG", "write err => %s", xfile_strerror(err));
+        X_LOG_ERR(("TAG", "write err => %s", xfile_strerror(err)));
     }
 
 
@@ -432,7 +432,6 @@ TEST(xfile, read_line)
     X_TEST_ASSERTION_FAILED(xfile_read_line(fp, NULL, sizeof(dst), &line, &overflow, &err));
     X_TEST_ASSERTION_FAILED(xfile_read_line(fp, dst, 0, &line, &overflow, &err));
     X_TEST_ASSERTION_FAILED(xfile_read_line(fp, dst, sizeof(dst), NULL, &overflow, &err));
-    X_TEST_ASSERTION_FAILED(xfile_read_line(fp, dst, sizeof(dst), &line, NULL, &err));
 
     TEST_ASSERT_TRUE(xfile_read_line(fp, dst, sizeof(dst), &line, &overflow, &err));
     TEST_ASSERT_FALSE(overflow);

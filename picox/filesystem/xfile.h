@@ -79,9 +79,6 @@
 #include <picox/core/xcore.h>
 
 
-typedef uint32_t    XFileSize;
-
-
 #ifdef XFILE_CONF_PATH_MAX
     #define XFILE_PATH_MAX      XFILE_CONF_PATH_MAX
 #else
@@ -343,7 +340,6 @@ bool xfile_remove_all(const char* path, int* err);
  *  @pre
  *  + fp        != NULL
  *  + dst       != NULL
- *  + overflow  != NULL
  *  + size       > 1
  *
  *  @note
@@ -412,6 +408,16 @@ bool xfile_vprintf(XFile* fp, size_t* nprint, int* err, const char* fmt, va_list
  * foo              => foo<br>
  */
 char* xfile_path_name(char* dst, const char* path, size_t size);
+
+
+/** ファイルポインタが終端に達しているかどうかを返します
+ */
+bool xfile_is_eof(XFile* fp);
+
+
+/** ファイルにエラーが発生しているかどうかを返します
+ */
+bool xfile_is_error(XFile* fp);
 
 
 /** エラーコードの文字列表現を返します。

@@ -85,7 +85,7 @@ char* xpath_stem(char* path)
     if (ret != NULL)
         *ret++ = '\0';
 
-    char* p = strchr(ret, '.');
+    char* p = strchr(path, '.');
     if (p != NULL)
         *p = '\0';
 

@@ -46,4 +46,4 @@ add_executable(alltests
     ${unity_ex_dir}/unity_fixture.c)
 
 add_custom_target(run_tests ALL DEPENDS alltests)
-add_custom_command(TARGET run_tests POST_BUILD COMMAND ./alltests.exe)
+add_custom_command(TARGET run_tests POST_BUILD COMMAND ./alltests)

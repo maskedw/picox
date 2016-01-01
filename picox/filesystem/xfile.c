@@ -645,8 +645,11 @@ bool xfile_read_line(XFile* fp, char* dst, size_t size, char** result, bool* ove
     X_ASSERT(fp);
     X_ASSERT(dst);
     X_ASSERT(result);
-    X_ASSERT(overflow);
     X_ASSERT(size > 1);
+
+    bool dammy_overflow;
+    if (! overflow)
+        overflow = &dammy_overflow;
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
@@ -742,7 +745,7 @@ bool xfile_is_directory(const char* path, bool* is_dir, int* err)
     X__DECLARE_FINFO(finfo);
     const FRESULT result = f_stat(path, &finfo);
     const bool ok = ((result == FR_OK) || (result == FR_NO_PATH));
-    *is_dir = (ok && (finfo.fattrib & AM_DIR));
+    *is_dir = ((result == FR_OK) && (finfo.fattrib & AM_DIR));
 
     X__ASSIGN_ERR(result);
 
@@ -752,7 +755,7 @@ bool xfile_is_directory(const char* path, bool* is_dir, int* err)
     errno = 0;
     const int result = stat(path, &statbuf);
     const bool ok = ((result == 0) || (errno == ENOENT));
-    *is_dir = (ok && (S_ISDIR(statbuf.st_mode)));
+    *is_dir = ((result == 0) && (S_ISDIR(statbuf.st_mode)));
 
     X__ASSIGN_ERR(errno);
 
@@ -830,6 +833,28 @@ char* xfile_path_name(char* dst, const char* path, size_t size)
     strncpy(dst, name, size);
 
     return dst;
+}
+
+
+bool xfile_is_eof(XFile* fp)
+{
+#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
+    const bool ret = f_eof(fp) != 0;
+#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
+    const bool ret = feof(fp) != 0;
+#endif
+    return ret;
+}
+
+
+bool xfile_is_error(XFile* fp)
+{
+#if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
+    const bool ret = f_error(fp) != 0;
+#elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
+    const bool ret = ferror(fp) != 0;
+#endif
+    return ret;
 }
 
 
