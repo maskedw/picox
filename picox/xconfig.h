@@ -41,6 +41,21 @@
 #define picox_xconfig_h_
 
 
+/* X_CONF_XXXの値を置き換えるたいときはこのファイルを直接編集してもいいですが、
+ * ソースコードに変更を加えたくない場合は以下の手順を行ってください。
+ *
+ * + picox_config.hというファイルを作成し、必要な設定値を記述する。
+ * + #include <picox_config.h>でincludeできるようにインクルードパスを通す。
+ * + X_CONF_USE_USER_CONFIG=1をコンパイラのプリデファインオプションで設定する。
+ */
+#ifndef X_CONF_USE_USER_CONFIG
+    #define X_CONF_USE_USER_CONFIG  (0)
+#endif
+#if X_CONF_USE_USER_CONFIG != 0
+    #include <picox_config.h>
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,67 +64,76 @@ extern "C" {
 /** @def X_CONF_NDEBUG
  *  アサートによる実行時チェックルーチンをコンパイル時に除去します。
  */
-// #define X_CONF_NDEBUG
+#ifndef X_CONF_NDEBUG
+#define X_CONF_NDEBUG   (0)
+#endif
 
 
 /** @def X_CONF_VPRINTF
  *  ログ出力に使用するvprintf相当の関数を設定します。
  *
- *  @details
- *  指定なし時はvprintf()が使用されます。
- *
  *  @attention
  *  時期リリース(v0.2)ではputc()相当に緩和され、この設定はなくなる予定です。
  */
-// #define X_CONF_VPRINTF
+#ifndef X_CONF_VPRINTF
+#define X_CONF_VPRINTF      vprintf
+#endif
 
 
 /** @def X_CONF_ASSERT
  *  X_ASSERT()を置き換えるルーチンを設定します。
- *
- *  @see
- *  X_ASSERT()
  */
-// #define X_CONF_ASSERT        do { if (!(expr)) { for (;;) ; }} while (0)
+#ifndef X_CONF_ASSERT
+#define X_CONF_ASSERT(expr)     X_DEFAULT_ASSERT(expr)
+#endif
 
 
 /** @def X_CONF_ASSERT_MSG
  *  X_ASSERT_MSG()を置き換えるルーチンを設定します。
- *
- *  @see
- *  X_ASSERT_MSG()
  */
-// #define X_CONF_ASSERT_MSG
+#ifndef X_CONF_ASSERT
+#define X_CONF_ASSERT_MSG(expr, msg)    X_DEFAULT_ASSERT_MSG(expr, msg)
+#endif
 
 
 /** @def X_CONF_MALLOC
  *  動的メモリ確保関数を設定します。未指定時はmalloc()が使用されます。
  */
-// #define X_CONF_MALLOC
+#ifndef X_CONF_MALLOC
+#define X_CONF_MALLOC(size)       malloc(size)
+#endif
 
 
-/** @def X_CONF_MALLOC
+/** @def X_CONF_FREE
  *  メモリ解放関数を設定します。未指定時はfree()が使用されます。
  */
-// #define X_CONF_FREE
+#ifndef X_CONF_FREE
+#define X_CONF_FREE(ptr)         free(ptr)
+#endif
 
 
 /** @def X_CONF_USE_DETECT_MALLOC_NULL
  *  picoxライブラリで何らかの動的メモリ確保失敗をX_ASSERT()で検出します。
  */
-// #define X_CONF_USE_DETECT_MALLOC_NULL
+#ifndef X_CONF_USE_DETECT_MALLOC_NULL
+#define X_CONF_USE_DETECT_MALLOC_NULL   (0)
+#endif
 
 
 /** @def X_CONF_BYTE_ORDER
  *  CPUのバイトオーダーを指定します。
  *
  *  @details
- *  以下の値が指定可能です。指定していると、一部関数の実行効率が上がります。
+ *  以下の値が指定可能です。CPUのバイトオーダーを指定していると、一部関数の実行
+ *  効率が上がります。
  *
  *  + X_BYTE_ORDER_LITTLE   (リトルエンディアン)
  *  + X_BYTE_ORDER_BIG      (ビッグエンディアン)
+ *  + X_BYTE_ORDER_UNKNOWN  (不明)
  */
-// #define X_CONF_BYTE_ORDER
+#ifndef X_CONF_BYTE_ORDER
+#define X_CONF_BYTE_ORDER   X_BYTE_ORDER_UNKNOWN
+#endif
 
 
 /** @def X_CONF_USE_ANSI_COLOR_LOG
@@ -122,7 +146,9 @@ extern "C" {
  *  @see
  *  https://en.wikipedia.org/wiki/ANSI_escape_code
  */
-#define X_CONF_USE_ANSI_COLOR_LOG
+#ifndef X_CONF_USE_ANSI_COLOR_LOG
+#define X_CONF_USE_ANSI_COLOR_LOG   (1)
+#endif
 
 
 /** @def X_CONF_USE_LOG_TIMESTAMP
@@ -135,7 +161,9 @@ extern "C" {
  *  void x_port_stimestamp(char* dst, size_t size)
  *  @endcode
  */
-// #define X_CONF_USE_LOG_TIMESTAMP
+#ifndef X_CONF_USE_LOG_TIMESTAMP
+#define X_CONF_USE_LOG_TIMESTAMP    (0)
+#endif
 
 
 /** @def X_CONF_LOG_TIMESTAMP_BUF_SIZE
@@ -147,7 +175,9 @@ extern "C" {
  *  @see
  *  X_CONF_USE_LOG_TIMESTAMP
  */
-// #define X_CONF_LOG_TIMESTAMP_BUF_SIZE    (32)
+#ifndef X_CONF_LOG_TIMESTAMP_BUF_SIZE
+#define X_CONF_LOG_TIMESTAMP_BUF_SIZE    (32)
+#endif
 
 
 /** @def X_CONF_LOG_LEVEL
@@ -165,7 +195,9 @@ extern "C" {
  *  指定優先度未満のログは、X_CONF_USE_DYNAMIC_LOG_SUPPRESSが未定義であれば、コ
  *  ンパイル時に除去されます。
  */
-// #define X_CONF_LOG_LEVEL
+#ifndef X_CONF_LOG_LEVEL
+#define X_CONF_LOG_LEVEL    X_LOG_LEVEL_INFO
+#endif
 
 
 /** @def X_CONF_USE_DYNAMIC_LOG_SUPPRESS
@@ -175,46 +207,57 @@ extern "C" {
  *  x_set_log_level()でログレベルを指定し、指定レベル未満のログは、出力されませ
  *  ん。
  */
-// #define X_CONF_USE_DYNAMIC_LOG_SUPPRESS
+#ifndef X_CONF_USE_DYNAMIC_LOG_SUPPRESS
+#define X_CONF_USE_DYNAMIC_LOG_SUPPRESS     (0)
+#endif
 
 
 /** @def X_CONF_VERB_HEADER
  *  VERBOSEレベルのログヘッダ文字列を指定します。
  */
-// #define X_CONF_VERB_HEADER
+#ifndef X_CONF_VERB_HEADER
+#define X_CONF_VERB_HEADER  "[VERB]"
+#endif
 
 
 /** @def X_CONF_INFO_HEADER
  *  INFOMATONレベルのログヘッダ文字列を指定します。
  */
-// #define X_CONF_INFO_HEADER
+#ifndef X_CONF_INFO_HEADER
+#define X_CONF_INFO_HEADER  "[INFO]"
+#endif
 
 
 /** @def X_CONF_NOTI_HEADER
  *  NOTICEレベルのログヘッダ文字列を指定します。
  */
-// #define X_CONF_NOTI_HEADER
+#ifndef X_CONF_NOTI_HEADER
+#define X_CONF_NOTI_HEADER  "[NOTI]"
+#endif
 
 
 /** @def X_CONF_WARN_HEADER
  *  WARNINGレベルのログヘッダ文字列を指定します。
  */
-// #define X_CONF_WARN_HEADER
+#ifndef X_CONF_WARN_HEADER
+#define X_CONF_WARN_HEADER  "[WARN]"
+#endif
 
 
 /** @def X_CONF_ERR_HEADER
  *  ERRORレベルのログヘッダ文字列を指定します。
  */
-// #define X_CONF_ERR_HEADER
+#ifndef X_CONF_ERR_HEADER
+#define X_CONF_ERR_HEADER   "[ERR ]"
+#endif
 
 
 /** @def X_CONF_HAS_C99_MATH
  *  strtof()等のC99で追加されたfloat版の標準関数を使用します。
- *
- *  @details
- *  未定義時はdouble版で代替します。
  */
-#define X_CONF_HAS_C99_MATH
+#ifndef X_CONF_HAS_C99_MATH
+#define X_CONF_HAS_C99_MATH (0)
+#endif
 
 
 #ifdef __cplusplus
