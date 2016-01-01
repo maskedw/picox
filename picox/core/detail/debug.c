@@ -52,13 +52,7 @@ static void X__PostAssertionFailed(const char* expr, const char* msg, const char
 static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
 
 
-#ifdef X_CONF_USE_LOG_TIMESTAMP
-
-#ifdef X_CONF_LOG_TIMESTAMP_BUF_SIZE
-    #define X_LOG_TIMESTAMP_BUF_SIZE    X_CONF_LOG_TIMESTAMP_BUF_SIZE
-#else
-    #define X_LOG_TIMESTAMP_BUF_SIZE    32
-#endif
+#if X_CONF_USE_LOG_TIMESTAMP != 0
 
 void x_port_stimestamp(char* dst, size_t size);
 
@@ -168,20 +162,6 @@ void x_err_printlog(const char* tag, const char* fmt, ...)
 }
 
 
-void x_log_hexdump(int level, const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
-{
-    va_list args;
-
-    if (level <= priv->level) {
-
-        va_start(args, fmt);
-        X__VPrintLog(level, tag, fmt, args);
-        va_end(args);
-        x_hexdump(src, len, cols);
-    }
-}
-
-
 void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
@@ -276,9 +256,9 @@ void x_hexdump(const void* src, size_t len, size_t cols)
 static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
     /*
-     * file‚ªƒtƒ‹ƒpƒX‚Åo—Í‚³‚ê‚é‚ÆŠÂ‹«‚É‚æ‚Á‚ÄƒRƒ“ƒpƒCƒ‹ŠÂ‹«‚É‚æ‚Á‚Äo—Í‚ª•Ï
-     * ‚í‚Á‚Ä‚µ‚Ü‚¢A–Ê“|‚È‚Ì‚Åƒtƒ@ƒCƒ‹–¼‚¾‚¯‚ğæ‚èo‚·BWindowsŒ`®‚ÌƒpƒX‚ÆUnix
-     * Œ`®‚ÌƒpƒX‚ğ‘z’èB
+     * fileãŒãƒ•ãƒ«ãƒ‘ã‚¹ã§å‡ºåŠ›ã•ã‚Œã‚‹ã¨ç’°å¢ƒã«ã‚ˆã£ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ç’°å¢ƒã«ã‚ˆã£ã¦å‡ºåŠ›ãŒå¤‰
+     * ã‚ã£ã¦ã—ã¾ã„ã€é¢å€’ãªã®ã§ãƒ•ã‚¡ã‚¤ãƒ«åã ã‘ã‚’å–ã‚Šå‡ºã™ã€‚Windowså½¢å¼ã®ãƒ‘ã‚¹ã¨Unix
+     * å½¢å¼ã®ãƒ‘ã‚¹ã‚’æƒ³å®šã€‚
      */
     const char* win_style = strrchr(file, '\\');
     const char* unix_style = strrchr(file, '/');
@@ -304,7 +284,7 @@ static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list ar
 {
     if (level <= priv->level)
     {
-#ifdef X_CONF_USE_LOG_TIMESTAMP
+#if X_CONF_USE_LOG_TIMESTAMP != 0
         char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
         x_port_stimestamp(buf, sizeof(tstamp));
         x_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);

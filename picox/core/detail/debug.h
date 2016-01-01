@@ -45,13 +45,6 @@ extern "C" {
 #endif
 
 
-#ifdef X_CONF_VPRINTF
-    #define X_VPRINTF           X_CONF_VPRINTF
-#else
-    #define X_VPRINTF(...)      vprintf(__VA_ARGS__)
-#endif
-
-
 typedef void(*XAssertionFailedFunc)(const char* expr, const char* msg, const char* func, const char* file, int line);
 extern XAssertionFailedFunc x_pre_assertion_failed;
 extern XAssertionFailedFunc x_post_assertion_failed;
@@ -65,7 +58,7 @@ extern XAssertionFailedFunc x_assertion_failed;
 #define X_LOG_LEVEL_VERB   (5)  /* verbose    */
 
 
-/* ANSIƒJƒ‰[‚É‚Â‚¢‚Ä’m‚è‚½‚¢l‚ÍˆÈ‰ºƒŠƒ“ƒN‚ðŽQÆ‚¹‚æI
+/* ANSIã‚«ãƒ©ãƒ¼ã«ã¤ã„ã¦çŸ¥ã‚ŠãŸã„äººã¯ä»¥ä¸‹ãƒªãƒ³ã‚¯ã‚’å‚ç…§ã›ã‚ˆï¼
  * https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
  */
 #define X_ANSI_COLOR_BLACK       "\x1b[1;30m"
@@ -79,7 +72,7 @@ extern XAssertionFailedFunc x_assertion_failed;
 #define X_ANSI_COLOR_RESET       "\x1b[0m"
 
 
-#ifdef X_CONF_USE_ANSI_COLOR_LOG
+#if X_CONF_USE_ANSI_COLOR_LOG != 0
     #define X_COLOR_BLACK       X_ANSI_COLOR_BLACK
     #define X_COLOR_RED         X_ANSI_COLOR_RED
     #define X_COLOR_GREEN       X_ANSI_COLOR_GREEN
@@ -102,11 +95,7 @@ extern XAssertionFailedFunc x_assertion_failed;
 #endif
 
 
-#ifdef X_CONF_LOG_LEVEL
-    #define X_LOG_LEVEL     X_CONF_LOG_LEVEL
-#else
-    #define X_LOG_LEVEL     X_LOG_LEVEL_INFO
-#endif
+#define X_LOG_LEVEL     X_CONF_LOG_LEVEL
 
 
 void x_verb_printlog(const char* tag, const char* fmt, ...);
@@ -121,17 +110,17 @@ void x_warn_hexdump(const char* tag, const void* src, size_t len, size_t cols, c
 void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
 
 
-/* X_LOG_XXX()‚ÍAprintfƒ‰ƒCƒN‚Èformatˆø”‚ðŽó‚¯•t‚¯‚Ü‚·‚ªA
- * X_LOG_XXX((tag, "i = %d",i));‚Æ‚¢‚¤•—‚ÉAˆø”‚ð2d‚Å()‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
- * C99‚Ì‰Â•Ï’·ˆø”ƒ}ƒNƒ‚ðŽg‚¦‚Î‚±‚ñ‚È•Ï‚È‘‚«•û‚ð‚µ‚È‚¢‚Å‚·‚Þ‚Ì‚Å‚·‚ªA
- * ‚±‚Ìƒ‰ƒCƒuƒ‰ƒŠ‚Ì‘ÎÛ‚É‚ÍC++03‚àŠÜ‚ß‚Ä‚¨‚èAC++03‚Å‚Í‰Â•Ï’·ˆø”ƒ}ƒNƒ‚Í•W€‚Å
- * ‚Í‚ ‚è‚Ü‚¹‚ñB
+/* X_LOG_XXX()ã¯ã€printfãƒ©ã‚¤ã‚¯ãªformatå¼•æ•°ã‚’å—ã‘ä»˜ã‘ã¾ã™ãŒã€
+ * X_LOG_XXX((tag, "i = %d",i));ã¨ã„ã†é¢¨ã«ã€å¼•æ•°ã‚’2é‡ã§()ã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚
+ * C99ã®å¯å¤‰é•·å¼•æ•°ãƒžã‚¯ãƒ­ã‚’ä½¿ãˆã°ã“ã‚“ãªå¤‰ãªæ›¸ãæ–¹ã‚’ã—ãªã„ã§ã™ã‚€ã®ã§ã™ãŒã€
+ * ã“ã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®å¯¾è±¡ã«ã¯C++03ã‚‚å«ã‚ã¦ãŠã‚Šã€C++03ã§ã¯å¯å¤‰é•·å¼•æ•°ãƒžã‚¯ãƒ­ã¯æ¨™æº–ã§
+ * ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
  *
- * ‚½‚¢‚Ä‚¢‚ÌƒRƒ“ƒpƒCƒ‰‚Å‚ÍA•W€‚Å‚Í‚È‚­‚Æ‚à‰Â•Ï’·ˆø”ƒ}ƒNƒ‚ðŽg—p‚Å‚«‚Ü‚·‚ªA
- * ‹KŠi‚ÉŒµŠi‚ÈƒRƒ“ƒpƒCƒ‰‚Å‚ÍŽg—p‚Å‚«‚Ü‚¹‚ñB(—á Renesas C++ compiler)
- * ‚»‚Ì‚½‚ßA”ñí‚É–Ê“|‚Å‚·‚ªAC++‚Æ‹¤—p‚Ì•”•ª‚Å‚Í‰Â•Ï’·ˆø”ƒ}ƒNƒ‚ÍŽg—p‚µ‚Ü‚¹‚ñ
+ * ãŸã„ã¦ã„ã®ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã§ã¯ã€æ¨™æº–ã§ã¯ãªãã¨ã‚‚å¯å¤‰é•·å¼•æ•°ãƒžã‚¯ãƒ­ã‚’ä½¿ç”¨ã§ãã¾ã™ãŒã€
+ * è¦æ ¼ã«åŽ³æ ¼ãªã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã§ã¯ä½¿ç”¨ã§ãã¾ã›ã‚“ã€‚(ä¾‹ Renesas C++ compiler)
+ * ãã®ãŸã‚ã€éžå¸¸ã«é¢å€’ã§ã™ãŒã€C++ã¨å…±ç”¨ã®éƒ¨åˆ†ã§ã¯å¯å¤‰é•·å¼•æ•°ãƒžã‚¯ãƒ­ã¯ä½¿ç”¨ã—ã¾ã›ã‚“
  */
-#if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_VERB)
+#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_VERB)
     #define X_LOG_VERB(args)         x_verb_printlog args
     #define X_LOG_HEXDUMP_VERB(args) x_verb_hexdump  args
 #else
@@ -140,7 +129,7 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #endif
 
 
-#if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_INFO)
+#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_INFO)
     #define X_LOG_INFO(args)         x_info_printlog args
     #define X_LOG_HEXDUMP_INFO(args) x_info_hexdump  args
 #else
@@ -149,7 +138,7 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #endif
 
 
-#if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_NOTI)
+#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_NOTI)
     #define X_LOG_NOTI(args)         x_noti_printlog args
     #define X_LOG_HEXDUMP_NOTI(args) x_noti_hexdump  args
 #else
@@ -158,7 +147,7 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #endif
 
 
-#if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_WARN)
+#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_WARN)
     #define X_LOG_WARN(args)         x_warn_printlog args
     #define X_LOG_HEXDUMP_WARN(args) x_warn_hexdump  args
 #else
@@ -167,7 +156,7 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #endif
 
 
-#if (! defined(X_CONF_USE_DYNAMIC_LOG_SUPPRESS)) && (X_LOG_LEVEL >= X_LOG_LEVEL_ERR)
+#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_ERR)
     #define X_LOG_ERR(args)          x_err_printlog args
     #define X_LOG_HEXDUMP_ERR(args)  x_err_hexdump  args
 #else
@@ -176,72 +165,36 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #endif
 
 
-#define X_VERB_COLOR
+#define X_VERB_COLOR    ""
 #define X_INFO_COLOR    X_COLOR_GREEN
 #define X_NOTI_COLOR    X_COLOR_MAGENTA
 #define X_WARN_COLOR    X_COLOR_YELLOW
 #define X_ERR_COLOR     X_COLOR_RED
 
-#ifdef X_CONF_VERB_HEADER
-    #define X_VERB_HEADER     X_CONF_VERB_HEADER
-#else
-    #define X_VERB_HEADER     X_VERB_COLOR "[VERB]" X_COLOR_RESET
-#endif
+#define X_VERB_HEADER     X_VERB_COLOR X_CONF_VERB_HEADER X_COLOR_RESET
+#define X_INFO_HEADER     X_INFO_COLOR X_CONF_INFO_HEADER X_COLOR_RESET
+#define X_NOTI_HEADER     X_NOTI_COLOR X_CONF_NOTI_HEADER X_COLOR_RESET
+#define X_WARN_HEADER     X_WARN_COLOR X_CONF_WARN_HEADER X_COLOR_RESET
+#define X_ERR_HEADER      X_ERR_COLOR  X_CONF_ERR_HEADER  X_COLOR_RESET
 
 
-#ifdef X_CONF_INFO_HEADER
-    #define X_INFO_HEADER     X_CONF_INFO_HEADER
-#else
-    #define X_INFO_HEADER     X_INFO_COLOR "[INFO]" X_COLOR_RESET
-#endif
+#define X_DEFAULT_ASSERT(expr)              X_DEFAULT_ASSERT_MSG(expr, NULL)
+#define X_DEFAULT_ASSERT_MSG(expr, msg)     ((expr) ? (void)0 : x_assertion_failed(#expr, msg, __func__, __FILE__, __LINE__))
 
-
-#ifdef X_CONF_NOTI_HEADER
-    #define X_NOTI_HEADER     X_NOTI_COLOR X_CONF_NOTI_HEADER X_COLOR_RESET
-#else
-    #define X_NOTI_HEADER     X_NOTI_COLOR "[NOTI]" X_COLOR_RESET
-#endif
-
-
-#ifdef X_CONF_WARN_HEADER
-    #define X_WARN_HEADER     X_WARN_COLOR X_CONF_WARN_HEADER X_COLOR_RESET
-#else
-    #define X_WARN_HEADER     X_WARN_COLOR "[WARN]" X_COLOR_RESET
-#endif
-
-
-#ifdef X_CONF_ERR_HEADER
-    #define X_ERR_HEADER      X_ERR_COLOR X_CONF_ERR_HEADER X_COLOR_RESET
-#else
-    #define X_ERR_HEADER      X_ERR_COLOR "[ERR ]" X_COLOR_RESET
-#endif
-
-
-#ifndef X_CONF_NDEBUG
-
-    #ifdef X_CONF_ASSERT_MSG
-        #define X_ASSERT_MSG(expr, msg) X_CONF_ASSERT_MSG(expr, msg)
-    #else
-        #define X_ASSERT_MSG(expr, msg) ((expr) ? (void)0 : x_assertion_failed(#expr, msg, __func__, __FILE__, __LINE__))
-    #endif
-
-    #ifdef X_CONF_ASSERT
-        #define X_ASSERT(expr)          X_CONF_ASSERT(expr)
-    #else
-        #define X_ASSERT(expr)          X_ASSERT_MSG(expr, NULL)
-    #endif
-
-    #define X_ABORT(msg)                X_ASSERT_MSG(0, msg)
-    #define X_ABORT_DEFAULT             default: X_ABORT("Runtime error"); break
-#else
-    #define X_ASSERT_MSG(expr, msg)     (void)0
+#if (X_CONF_NDEBUG != 0)
     #define X_ASSERT(expr)              (void)0
+    #define X_ASSERT_MSG(expr, msg)     (void)0
     #define X_ABORT(msg)                (void)0
     #define X_ABORT_DEFAULT             default: break
+#else
+    #define X_ASSERT(expr)              X_DEFAULT_ASSERT(expr)
+    #define X_ASSERT_MSG(expr, msg)     X_DEFAULT_ASSERT_MSG(expr, msg)
+    #define X_ABORT(msg)                X_ASSERT_MSG(0, msg)
+    #define X_ABORT_DEFAULT             default: X_ABORT("Runtime error"); break
 #endif
 
 
-#define x_vprintf   X_VPRINTF
+#define x_vprintf   X_CONF_VPRINTF
 int x_set_log_level(int level);
 void x_printf(const char* fmt, ...);
 void x_putc(int c);
