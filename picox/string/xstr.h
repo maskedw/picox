@@ -88,7 +88,7 @@ char* xstr_case_search_substring(const char* s1, const char* s2);
 
 /** strdup相当の処理を行います。
  *
- *  不要になった文字列はX_FREE()でメモリを解放してください。
+ *  不要になった文字列はx_free()でメモリを解放してください。
  */
 char* xstr_duplicate(const char* str);
 
@@ -103,7 +103,7 @@ char* xstr_duplicate2(const char* str, void* (*malloc_func)(size_t));
 
 /** strndup相当の処理を行います。
  *
- *  不要になった文字列はX_FREE()でメモリを解放してください。
+ *  不要になった文字列はx_free()でメモリを解放してください。
  */
 char* xstr_nduplicate(const char* str, size_t n);
 

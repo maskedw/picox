@@ -65,7 +65,7 @@ bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens
         }
 
         X_BREAK_IF(ntokens > max_tokens);
-        X_BREAK_IF(!(tmp_tokens = X_MALLOC(sizeof(char*) * ntokens)));
+        X_BREAK_IF(!(tmp_tokens = x_malloc(sizeof(char*) * ntokens)));
 
         p1 = tmp_row;
         tmp_tokens[0] = p1 = xstr_strip(p1, NULL);
@@ -88,8 +88,8 @@ bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens
 
     if (! ok)
     {
-        X_FREE(tmp_row);
-        X_FREE(tmp_tokens);
+        x_free(tmp_row);
+        x_free(tmp_tokens);
     }
 
     return ok;

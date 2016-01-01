@@ -11,8 +11,8 @@ static XFifoBuffer* fifo;
 
 TEST_SETUP(xfifo)
 {
-    void* buf = X_MALLOC(X__BUF_SIZE);
-    fifo = X_MALLOC(sizeof(XFifoBuffer));
+    void* buf = x_malloc(X__BUF_SIZE);
+    fifo = x_malloc(sizeof(XFifoBuffer));
 
     memset(buf, 0x00, X__BUF_SIZE);
     xfifo_init(fifo, buf, X__BUF_SIZE, NULL);
@@ -21,8 +21,8 @@ TEST_SETUP(xfifo)
 
 TEST_TEAR_DOWN(xfifo)
 {
-    X_FREE(xfifo_data(fifo));
-    X_FREE(fifo);
+    x_free(xfifo_data(fifo));
+    x_free(fifo);
 }
 
 

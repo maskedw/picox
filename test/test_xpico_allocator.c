@@ -18,20 +18,21 @@ typedef struct X__HeapWalker
 
 static XPicoAllocator alloc;
 #define X__HEAP_SIZE    (1024)
+#define X__ALIGNMENT    X_ALIGN_OF(XMaxAlign)
 
 
 TEST_SETUP(xpalloc)
 {
-    void* buf = X_MALLOC(X__HEAP_SIZE);
+    void* buf = x_malloc(X__HEAP_SIZE);
     TEST_ASSERT_NOT_NULL(buf);
     memset(buf, 0x00, X__HEAP_SIZE);
-    xpalloc_init(&alloc, buf, X__HEAP_SIZE);
+    xpalloc_init(&alloc, buf, X__HEAP_SIZE, X__ALIGNMENT);
 }
 
 
 TEST_TEAR_DOWN(xpalloc)
 {
-    X_FREE(xpalloc_heap(&alloc));
+    x_free(xpalloc_heap(&alloc));
 }
 
 
@@ -82,7 +83,7 @@ static uint32_t X__RandomAllocates(void** ptrs)
             bits |= bit;
             void* ptr = xpalloc_allocate(&alloc, (rand() % (X__HEAP_SIZE / 48)) + 1);
             TEST_ASSERT_NOT_NULL(ptr);
-            TEST_ASSERT_TRUE(x_is_aligned(ptr, XPALLOC_ALIGNMENT));
+            TEST_ASSERT_TRUE(x_is_aligned(ptr, X__ALIGNMENT));
             ptrs[pos] = ptr;
         }
     }
@@ -93,10 +94,10 @@ static uint32_t X__RandomAllocates(void** ptrs)
 TEST(xpalloc, init)
 {
     uint8_t* heap = xpalloc_heap(&alloc);
-    X_TEST_ASSERTION_FAILED(xpalloc_init(NULL, heap, X__HEAP_SIZE));
-    X_TEST_ASSERTION_FAILED(xpalloc_init(&alloc, NULL, X__HEAP_SIZE));
-    X_TEST_ASSERTION_FAILED(xpalloc_init(&alloc, heap, 0));
-    X_TEST_ASSERTION_SUCCESS(xpalloc_init(&alloc, heap, X__HEAP_SIZE));
+    X_TEST_ASSERTION_FAILED(xpalloc_init(NULL, heap, X__HEAP_SIZE, X__ALIGNMENT));
+    X_TEST_ASSERTION_FAILED(xpalloc_init(&alloc, NULL, X__HEAP_SIZE, X__ALIGNMENT));
+    X_TEST_ASSERTION_FAILED(xpalloc_init(&alloc, heap, 0, X__ALIGNMENT));
+    X_TEST_ASSERTION_SUCCESS(xpalloc_init(&alloc, heap, X__HEAP_SIZE, X__ALIGNMENT));
 }
 
 
@@ -174,7 +175,7 @@ TEST(xpalloc, heap)
     XPicoAllocator alloc;
     char buf[32];
 
-    xpalloc_init(&alloc, buf, sizeof(buf));
+    xpalloc_init(&alloc, buf, sizeof(buf), X__ALIGNMENT);
     TEST_ASSERT_EQUAL_PTR(buf, xpalloc_heap(&alloc));
 }
 
@@ -184,13 +185,13 @@ TEST(xpalloc, reserve)
     X_TEST_ASSERTION_FAILED(xpalloc_reserve(NULL));
 
     uint8_t* heap = xpalloc_heap(&alloc);
-    uint8_t* aligned = x_roundup_alignment_ptr(heap, XPALLOC_ALIGNMENT);
+    uint8_t* aligned = x_roundup_alignment_ptr(heap, X__ALIGNMENT);
     size_t reserve = X__HEAP_SIZE - (aligned - heap);
 
-    xpalloc_init(&alloc, aligned, reserve);
+    xpalloc_init(&alloc, aligned, reserve, X__ALIGNMENT);
     TEST_ASSERT_EQUAL(reserve, xpalloc_reserve(&alloc));
 
-    xpalloc_init(&alloc, heap, X__HEAP_SIZE);
+    xpalloc_init(&alloc, heap, X__HEAP_SIZE, X__ALIGNMENT);
 }
 
 
@@ -199,13 +200,13 @@ TEST(xpalloc, capacity)
     X_TEST_ASSERTION_FAILED(xpalloc_capacity(NULL));
 
     uint8_t* heap = xpalloc_heap(&alloc);
-    uint8_t* aligned = x_roundup_alignment_ptr(heap, XPALLOC_ALIGNMENT);
+    uint8_t* aligned = x_roundup_alignment_ptr(heap, X__ALIGNMENT);
     size_t capacity = X__HEAP_SIZE - (aligned - heap);
 
-    xpalloc_init(&alloc, aligned, capacity);
+    xpalloc_init(&alloc, aligned, capacity, X__ALIGNMENT);
     TEST_ASSERT_EQUAL(capacity, xpalloc_capacity(&alloc));
 
-    xpalloc_init(&alloc, heap, X__HEAP_SIZE);
+    xpalloc_init(&alloc, heap, X__HEAP_SIZE, X__ALIGNMENT);
 }
 
 

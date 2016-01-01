@@ -17,13 +17,13 @@ TEST_TEAR_DOWN(xstr)
 
 static void* X__GetMem(size_t size)
 {
-    return X_MALLOC(size);
+    return x_malloc(size);
 }
 
 
 static void X__FreeMem(void* ptr)
 {
-    X_FREE(ptr);
+    x_free(ptr);
 }
 
 
@@ -174,7 +174,7 @@ TEST(xstr, duplicate)
 
     dup = xstr_duplicate(str);
     TEST_ASSERT_EQUAL_STRING(str, dup);
-    X_FREE(dup);
+    x_free(dup);
 }
 
 
@@ -202,11 +202,11 @@ TEST(xstr, nduplicate)
 
     dup = xstr_nduplicate(str, 5);
     TEST_ASSERT_EQUAL_STRING("Hello", dup);
-    X_FREE(dup);
+    x_free(dup);
 
     dup = xstr_nduplicate(str, 0);
     TEST_ASSERT_EQUAL_STRING("", dup);
-    X_FREE(dup);
+    x_free(dup);
 }
 
 

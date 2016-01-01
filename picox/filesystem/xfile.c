@@ -163,7 +163,7 @@ XFile* xfile_open(const char* path, const char* mode, int* err)
         }
 
         X__ASSIGN_ERR(FR_NOT_ENOUGH_CORE);
-        fp = X_MALLOC(sizeof(FIL));
+        fp = x_malloc(sizeof(FIL));
         X_BREAK_IF(! fp);
 
         FRESULT result = f_open(fp, path, fsmode);
@@ -186,7 +186,7 @@ XFile* xfile_open(const char* path, const char* mode, int* err)
 
     if (! ok)
     {
-        X_FREE(fp);
+        x_free(fp);
         fp = NULL;
     }
 
@@ -209,7 +209,7 @@ bool xfile_close(XFile* fp, int* err)
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     const FRESULT result = f_close(fp);
-    X_FREE(fp);
+    x_free(fp);
     const bool ok = (result == FR_OK);
     X__ASSIGN_ERR(result);
 
@@ -602,7 +602,7 @@ bool xfile_remove_all(const char* path, int* err)
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
 
     X__DECLARE_FINFO(finfo);
-    char* buf = X_MALLOC(XFILE_PATH_MAX + 1);
+    char* buf = x_malloc(XFILE_PATH_MAX + 1);
     if (! buf)
     {
         X__ASSIGN_ERR(FR_NOT_ENOUGH_CORE);
@@ -618,7 +618,7 @@ bool xfile_remove_all(const char* path, int* err)
 #elif XFILE_ENGINE_TYPE == XFILE_ENGINE_POSIX
 
     struct stat statbuf;
-    char* buf = X_MALLOC(XFILE_PATH_MAX + 1);
+    char* buf = x_malloc(XFILE_PATH_MAX + 1);
     if (! buf)
     {
         X__ASSIGN_ERR(ENOMEM);
@@ -634,7 +634,7 @@ bool xfile_remove_all(const char* path, int* err)
 #endif
 
     if (buf)
-        X_FREE(buf);
+        x_free(buf);
 
     return ok;
 }
@@ -794,7 +794,7 @@ bool xfile_vprintf(XFile* fp, size_t* nprint, int* err, const char* fmt, va_list
 
         X_BREAK_IF(vsret < 0);
 
-        buf = X_MALLOC(vsret + 1);
+        buf = x_malloc(vsret + 1);
 
 #if XFILE_ENGINE_TYPE == XFILE_ENGINE_FATFS
         X__ASSIGN_ERR(FR_NOT_ENOUGH_CORE);
@@ -813,7 +813,7 @@ bool xfile_vprintf(XFile* fp, size_t* nprint, int* err, const char* fmt, va_list
     } while (0);
 
     if (buf)
-        X_FREE(buf);
+        x_free(buf);
 
     return ok;
 }

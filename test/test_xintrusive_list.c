@@ -18,14 +18,14 @@ static XIntrusiveList* list;
 
 TEST_SETUP(xilist)
 {
-    list = X_MALLOC(sizeof(XIntrusiveList));
+    list = x_malloc(sizeof(XIntrusiveList));
     xilist_init(list);
 }
 
 
 TEST_TEAR_DOWN(xilist)
 {
-    X_FREE(list);
+    x_free(list);
 }
 
 

@@ -14,10 +14,10 @@ static XFixedAllocator* alloc;
 
 TEST_SETUP(xfalloc)
 {
-    alloc = X_MALLOC(sizeof(XFixedAllocator));
+    alloc = x_malloc(sizeof(XFixedAllocator));
     TEST_ASSERT_NOT_NULL(alloc);
 
-    void* buf = X_MALLOC(X__HEAP_SIZE);
+    void* buf = x_malloc(X__HEAP_SIZE);
     TEST_ASSERT_NOT_NULL(buf);
     memset(buf, 0x00, X__HEAP_SIZE);
     xfalloc_init(alloc, buf, X__HEAP_SIZE, X__BLOCK_SIZE, X__ALIGNMENT);
@@ -26,8 +26,8 @@ TEST_SETUP(xfalloc)
 
 TEST_TEAR_DOWN(xfalloc)
 {
-    X_FREE(xfalloc_heap(alloc));
-    X_FREE(alloc);
+    x_free(xfalloc_heap(alloc));
+    x_free(alloc);
 }
 
 

@@ -143,7 +143,7 @@ char* xstr_case_search_substring(const char* s1, const char* s2)
 
 char* xstr_duplicate(const char* str)
 {
-    return xstr_duplicate2(str, X_MALLOC);
+    return xstr_duplicate2(str, x_malloc);
 }
 
 
@@ -155,7 +155,7 @@ char* xstr_duplicate2(const char* str, void* (*malloc_func)(size_t))
 
 char* xstr_nduplicate(const char* str, size_t n)
 {
-    return xstr_nduplicate2(str, n, X_MALLOC);
+    return xstr_nduplicate2(str, n, x_malloc);
 }
 
 
@@ -259,7 +259,7 @@ uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok)
 
 float xstr_to_float(const char* str, float def, bool* ok)
 {
-#ifndef X_CONF_HAS_C99_MATH
+#if X_CONF_HAS_C99_MATH != 0
     return xstr_to_double(str, def, ok);
 #else
     X_ASSERT(str);
@@ -564,8 +564,7 @@ static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
         sign = true;
         c = *s++;
     }
-    else if (c == '+')
-    {
+    else if (c == '+') {
         sign = true;
         c = *s++;
     }

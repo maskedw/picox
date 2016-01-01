@@ -57,7 +57,7 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, int max_argc
     X_ASSERT(argv);
     X_ASSERT(max_argc > 0);
 
-    token = X_MALLOC(strlen(str) + 1);
+    token = x_malloc(strlen(str) + 1);
     if (! token)
         return X_ARG_PARSER_ERR_MEMORY;
 
@@ -207,7 +207,7 @@ XArgParserErr xargparser_to_argv(char* str, int* argc, char** argv, int max_argc
 
 X__ERROR_EXIT:
 
-    X_FREE(token);
+    x_free(token);
 
     return err;
 }

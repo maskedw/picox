@@ -12,8 +12,8 @@ static XMessageBuffer* mbuf;
 
 TEST_SETUP(xmsgbuf)
 {
-    void* buf = X_MALLOC(X__BUF_SIZE);
-    mbuf = X_MALLOC(sizeof(XMessageBuffer));
+    void* buf = x_malloc(X__BUF_SIZE);
+    mbuf = x_malloc(sizeof(XMessageBuffer));
 
     memset(buf, 0x00, X__BUF_SIZE);
     xmsgbuf_init(mbuf, buf, X__BUF_SIZE);
@@ -22,8 +22,8 @@ TEST_SETUP(xmsgbuf)
 
 TEST_TEAR_DOWN(xmsgbuf)
 {
-    X_FREE(xmsgbuf_data(mbuf));
-    X_FREE(mbuf);
+    x_free(xmsgbuf_data(mbuf));
+    x_free(mbuf);
 }
 
 

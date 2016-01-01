@@ -46,28 +46,29 @@ extern "C" {
 #endif
 
 
-#ifdef X_CONF_MALLOC
-    #define X_MALLOC    X_CONF_MALLOC
-#else
-    #define X_MALLOC    malloc
-#endif
-
-
-#ifdef X_CONF_FREE
-    #define X_FREE      X_CONF_FREE
-#else
-    #define X_FREE      free
-#endif
-
-
-#ifdef  X_CONF_USE_DETECT_MALLOC_NULL
+#if X_CONF_USE_DETECT_MALLOC_NULL != 0
     #define X_ASSERT_MALLOC_NULL(expr)    X_ASSERT(expr)
 #else
     #define X_ASSERT_MALLOC_NULL(expr)    do { if (!(expr)) return NULL; } while (0)
 #endif
 
 
-#define X_SAFE_FREE(ptr)  (X_FREE((ptr)), (ptr) = NULL)
+static inline void* x_malloc(size_t size)
+{
+    return X_CONF_MALLOC(size);
+}
+
+
+static inline void x_free(void* ptr)
+{
+    /* freeにNULLを渡してもOKなはずなのだが、実装によっては微妙にグレーだったり
+     * するからここでもNULLチェックしておく */
+    if (ptr)
+        X_CONF_FREE(ptr);
+}
+
+
+#define X_SAFE_FREE(ptr)  (x_free((ptr)), (ptr) = NULL)
 
 
 #ifdef __cplusplus

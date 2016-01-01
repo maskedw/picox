@@ -11,7 +11,7 @@ static XStackAllocator alloc;
 
 TEST_SETUP(xsalloc)
 {
-    void* buf = X_MALLOC(X__HEAP_SIZE);
+    void* buf = x_malloc(X__HEAP_SIZE);
     TEST_ASSERT_NOT_NULL(buf);
     memset(buf, 0x00, X__HEAP_SIZE);
     xsalloc_init(&alloc, buf, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign));
@@ -20,7 +20,7 @@ TEST_SETUP(xsalloc)
 
 TEST_TEAR_DOWN(xsalloc)
 {
-    X_FREE(xsalloc_heap(&alloc));
+    x_free(xsalloc_heap(&alloc));
 }
 
 
