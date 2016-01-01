@@ -168,6 +168,12 @@ void xpalloc_walk_heap(const XPicoAllocator* self, XPicoAllocatorWalker walker, 
 }
 
 
+bool xpalloc_is_owner(const XPicoAllocator* self, const void* ptr)
+{
+    return x_is_within_ptr(ptr, self->heap, self->heap + self->capacity);
+}
+
+
 static void* X__Allocate(XPicoAllocator* self, size_t size)
 {
     /* ここはかなりトリッキーなので解説しておく。
@@ -222,7 +228,7 @@ static void X__Deallocate(XPicoAllocator* self, void* ptr, size_t size)
     X__Chunk* chunk = (X__Chunk*)self->top;
     X__Chunk* next_chunk;
 
-    X_ASSERT(x_is_within_ptr(ptr, self->heap, self->heap + self->capacity));
+    X_ASSERT(xpalloc_is_owner(self, ptr));
     X_ASSERT((uint8_t*)ptr + size <= self->heap + self->capacity);
 
     for(;;)

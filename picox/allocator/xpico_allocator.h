@@ -177,6 +177,11 @@ typedef void (*XPicoAllocatorWalker)(const uint8_t* chunk, size_t size, void* us
 void xpalloc_walk_heap(const XPicoAllocator* self, XPicoAllocatorWalker walker, void* user);
 
 
+/** ポインタがヒープ領域の範囲内かどうかを返します。
+ */
+bool xpalloc_is_owner(const XPicoAllocator* self, const void* ptr);
+
+
 #ifdef __cplusplus
 }
 #endif
