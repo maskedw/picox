@@ -73,6 +73,7 @@ typedef struct XPicoAllocator
     size_t          capacity;
     size_t          reserve;
     size_t          alignment;
+    size_t          max_used;
 } XPicoAllocator;
 
 
@@ -140,6 +141,15 @@ xpalloc_capacity(const XPicoAllocator* self)
 {
     X_ASSERT(self);
     return self->capacity;
+}
+
+/** ヒープの最大使用バイト数を返します
+ */
+static inline size_t
+xpalloc_max_used(const XPicoAllocator* self)
+{
+    X_ASSERT(self);
+    return self->max_used;
 }
 
 

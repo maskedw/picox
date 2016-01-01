@@ -75,6 +75,7 @@ void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignmen
     X_ASSERT(size > (size_t)(self->top - self->heap));
     self->capacity = size - (self->top - self->heap);
     self->reserve = self->capacity;
+    self->max_used = 0;
 
     X__Chunk* chunk = (X__Chunk*)self->top;
     chunk->next = NULL;
@@ -101,6 +102,10 @@ void* xpalloc_allocate(XPicoAllocator* self, size_t size)
         *(size_t*)(ptr) = size;
         ptr += X__ALIGN;
         self->reserve -= size;
+
+        const size_t used = self->capacity - self->reserve;
+        if (used > self->max_used)
+            self->max_used = used;
     }
 
     return ptr;
@@ -133,6 +138,7 @@ void xpalloc_clear(XPicoAllocator* self)
 
     self->reserve = self->capacity;
     self->top = x_roundup_multiple_ptr(self->heap, X__ALIGN);
+    self->max_used = 0;
 
     X__Chunk* chunk = (X__Chunk*)self->top;
     chunk->next = NULL;
