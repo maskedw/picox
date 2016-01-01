@@ -50,17 +50,14 @@ extern "C" {
 #define X_BYTE_ORDER_UNKNOWN   (2)
 
 
-#ifdef X_CONF_BYTE_ORDER
-    #define X_BYTE_ORDER    X_CONF_BYTE_ORDER
-    #if (X_BYTE_ORDER != X_BYTE_ORDER_LITTLE) && (X_BYTE_ORDER != X_BYTE_ORDER_BIG)
-        #error Invalid byte order
-    #endif
-#else
-    #define X_BYTE_ORDER    X_BYTE_ORDER_UNKNOWN
+#if (X_CONFIG_BYTE_ORDER != X_BYTE_ORDER_LITTLE) && \
+    (X_CONFIG_BYTE_ORDER != X_BYTE_ORDER_BIG)    && \
+    (X_CONFIG_BYTE_ORDER != X_BYTE_ORDER_UNKNOWN)
+
+    #error Invalid byte order
+
 #endif
-
-
-
+#define X_BYTE_ORDER X_CONFIG_BYTE_ORDER
 
 
 /** 最大サイズのアライメントでsizeバイト以上の領域を持つ変数nameを定義します。
@@ -137,6 +134,11 @@ extern "C" {
 /** bit xを返します。
  */
 #define X_BIT(x)       (1UL << (x))
+
+
+/** n bit未満のbitを切り捨てるマスクを返します
+ */
+#define X_BIT_MASK(n) ((1UL << (n)) - 1)
 
 
 /** 型Tの変数として、x, yを交換します。
@@ -1215,9 +1217,82 @@ static inline uint32_t x_host_to_little32(uint32_t x)
 }
 
 
+/** @defgroup X_SIZEOF_XXX
+ *
+ *  プリプロセスで使用するためのsizeof定義です。プリプロセスでsizeof()は使用でき
+ *  ないのでlimits.hのXXX_MAXの定義から型サイズを推測しています。
+ *
+ *  @note
+ *  Cの規格上はintのビット幅が8 or 16 or 32 or 64といった保証はないので本当は
+ *  0xXXと比較してサイズを推測するのは問題がある。
+ *  しかしこのライブラリは特殊なビット幅のプロセッサは対象としていないのでこれで
+ *  よしとする。
+ *  @{
+ */
+#define X_SIZEOF_CHAR       (1)
+#define X_SIZEOF_SHORT      (2)
+
+#if UINT_MAX == 0xFF
+    #define X_SIZEOF_INT    (1)
+#elif UINT_MAX == 0xFFFF
+    #define X_SIZEOF_INT    (2)
+#elif UINT_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_INT    (4)
+#elif UINT_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_INT    (8)
+#else
+    #error unspported platform
+#endif
+
+#if ULONG_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_LONG   (4)
+#elif ULONG_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_LONG   (8)
+#else
+    #error unspported platform
+#endif
+
+#if UINTPTR_MAX == 0xFFFF
+    #define X_SIZEOF_UINTPTR    (2)
+#elif UINTPTR_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_UINTPTR    (4)
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_UINTPTR    (8)
+#else
+    #error unspported platform
+#endif
+
+/** @}*/
+
+
+/** @defgroup X_XXX_C
+ *
+ *  定数サフィックスを補完するためのマクロです。
+ *
+ *  @{
+ */
+#if X_SIZEOF_INT < 4
+    #define X_INT32_C(c)    c ## L
+    #define X_UINT32_C(c)   c ## UL
+#else
+    #define X_INT32_C(c)    c
+    #define X_UINT32_C(c)   c
+#endif
+
+#if X_SIZEOF_LONG < 8
+    #define X_INT64_C(c)    c ## LL
+    #define X_UINT64_C(c)   c ## ULL
+#else
+    #define X_INT64_C(c)    c ## L
+    #define X_UINT64_C(c)   c ## UL
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif
+
+/** @}*/
 
 
 #endif // picox_core_utils_h_
