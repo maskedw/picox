@@ -5,7 +5,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_C_COMPILER gcc)
 set(picox_dir "../picox")
-set(external_dir "../external")
+set(external_dir "../picox/external")
 set(unity_dir ${external_dir}/Unity/src)
 set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
 

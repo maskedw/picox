@@ -41,7 +41,10 @@
 
 
 /** ファイルサイズを表現するために十分なサイズを備えた符号なし整数型です */
-typedef uint32_t    XFileSize;
+typedef uint32_t XFileSize;
+
+/** qsort()互換の比較関数ポインタ型です */
+typedef int (*XCompareFunc)(const void* a, const void* b);
 
 
 /** 組込み型の最大アライメント型です。
