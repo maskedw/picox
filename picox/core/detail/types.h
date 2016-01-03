@@ -40,6 +40,11 @@
 #define picox_core_detail_types_h_
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 /** ファイルサイズを表現するために十分なサイズを備えた符号なし整数型です */
 typedef uint32_t XFileSize;
 
@@ -54,6 +59,11 @@ typedef union XMaxAlign
     char c; int i; long l; long long ll; void* p;
     float f; double d; long double ld; void(*fp)(void);
 } XMaxAlign;
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 
 #endif /* picox_core_detail_types_h_ */
