@@ -1308,6 +1308,14 @@ static inline uint32_t x_host_to_little32(uint32_t x)
 #endif
 
 
+/** 真偽値に対応する"true" or "false"の文字列を返します
+ */
+static inline const char* x_to_bool_string(bool cond)
+{
+    return cond ? "true" : "false";
+}
+
+
 #ifdef __cplusplus
 }
 #endif
