@@ -81,7 +81,8 @@ static uint32_t X__RandomAllocates(void** ptrs)
         else
         {
             bits |= bit;
-            void* ptr = xpalloc_allocate(&alloc, (rand() % (X__HEAP_SIZE / 48)) + 1);
+            const size_t size = (rand() % (X__HEAP_SIZE / 64)) + 1;
+            void* ptr = xpalloc_allocate(&alloc, size);
             TEST_ASSERT_NOT_NULL(ptr);
             TEST_ASSERT_TRUE(x_is_aligned(ptr, X__ALIGNMENT));
             ptrs[pos] = ptr;
