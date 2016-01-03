@@ -35,6 +35,7 @@ add_executable(alltests
     test_xintrusive_list.c
     test_xutils.c
     test_xprintf.c
+    test_xdynamic_string.c
     ${picox_dir}/core/detail/debug.c
     ${picox_dir}/core/detail/printf.c
     ${picox_dir}/filesystem/xfile.c
@@ -42,6 +43,7 @@ add_executable(alltests
     ${picox_dir}/allocator/xfixed_allocator.c
     ${picox_dir}/allocator/xpico_allocator.c
     ${picox_dir}/string/xstr.c
+    ${picox_dir}/string/xdynamic_string.c
     ${picox_dir}/misc/xtokenizer.c
     ${picox_dir}/misc/xargparser.c
     ${external_dir}/sds/sds.c
