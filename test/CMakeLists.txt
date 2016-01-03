@@ -10,12 +10,13 @@ set(unity_dir ${external_dir}/Unity/src)
 set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
 
 
+include_directories("./")
 include_directories("../")
 include_directories(${external_dir}/sds)
 include_directories(${unity_dir})
 include_directories(${unity_ex_dir})
 
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -include unity.h -include unity_fixture.h")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wchar-subscripts")
 
 add_executable(alltests
@@ -33,7 +34,9 @@ add_executable(alltests
     test_xmessage_buffer.c
     test_xintrusive_list.c
     test_xutils.c
+    test_xprintf.c
     ${picox_dir}/core/detail/debug.c
+    ${picox_dir}/core/detail/printf.c
     ${picox_dir}/filesystem/xfile.c
     ${picox_dir}/allocator/xstack_allocator.c
     ${picox_dir}/allocator/xfixed_allocator.c

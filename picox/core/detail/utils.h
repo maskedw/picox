@@ -134,6 +134,7 @@ extern "C" {
 /** bit xを返します。
  */
 #define X_BIT(x)       (1UL << (x))
+#define X_BIT64(x)     (1ULL << (x))
 
 
 /** n bit未満のbitを切り捨てるマスクを返します
@@ -1253,14 +1254,33 @@ static inline uint32_t x_host_to_little32(uint32_t x)
 #endif
 
 #if UINTPTR_MAX == 0xFFFF
-    #define X_SIZEOF_UINTPTR    (2)
+    #define X_SIZEOF_INTPTR    (2)
 #elif UINTPTR_MAX == 0xFFFFFFFF
-    #define X_SIZEOF_UINTPTR    (4)
+    #define X_SIZEOF_INTPTR    (4)
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
-    #define X_SIZEOF_UINTPTR    (8)
+    #define X_SIZEOF_INTPTR    (8)
 #else
     #error unspported platform
 #endif
+
+#if SIZE_MAX == 0xFFFF
+    #define X_SIZEOF_SIZE    (2)
+#elif SIZE_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_SIZE    (4)
+#elif SIZE_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_SIZE    (8)
+#else
+    #error unspported platform
+#endif
+
+
+#define X_CHAR_MSB     (X_BIT(CHAR_BIT))
+#define X_SHORT_MSB    (USHORT_MAX  & (~(USHORT_MAX  >> 1)))
+#define X_INT_MSB      (UINT_MAX    & (~(UINT_MAX    >> 1)))
+#define X_LONG_MSB     (ULONG_MAX   & (~(ULONG_MAX   >> 1)))
+#define X_INTPTR_MSB   (UINTPTR_MAX & (~(UINTPTR_MAX >> 1)))
+#define X_SIZE_MSB     (SIZE_MAX    & (~(SIZE_MAX    >> 1)))
+
 
 /** @}*/
 

@@ -1,6 +1,7 @@
 
 set(picox_src
    picox/core/detail/debug.c
+   picox/core/detail/printf.c
    picox/filesystem/xfile.c
    picox/filesystem/xpath.c
    picox/allocator/xstack_allocator.c

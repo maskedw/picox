@@ -69,17 +69,6 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_VPRINTF
- *  ログ出力に使用するvprintf相当の関数を設定します。
- *
- *  @attention
- *  時期リリース(v0.2)ではputc()相当に緩和され、この設定はなくなる予定です。
- */
-#ifndef X_CONF_VPRINTF
-#define X_CONF_VPRINTF      vprintf
-#endif
-
-
 /** @def X_CONF_ASSERT
  *  X_ASSERT()を置き換えるルーチンを設定します。
  */
@@ -257,6 +246,14 @@ extern "C" {
  */
 #ifndef X_CONF_HAS_C99_MATH
 #define X_CONF_HAS_C99_MATH (0)
+#endif
+
+
+/** @def X_CONFIG_USE_FLOATING_POINT_PRINTF
+ *  x_printf系統の関数で%fによる浮動小数点出力を使用可能にします。
+ */
+#ifndef X_CONFIG_USE_FLOATING_POINT_PRINTF
+#define X_CONFIG_USE_FLOATING_POINT_PRINTF (0)
 #endif
 
 

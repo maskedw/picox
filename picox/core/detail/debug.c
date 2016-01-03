@@ -102,16 +102,6 @@ int x_set_log_level(int level)
 }
 
 
-void x_printf(const char* fmt, ...)
-{
-    va_list args;
-
-    va_start(args, fmt);
-    x_vprintf(fmt, args);
-    va_end(args);
-}
-
-
 void x_verb_printlog(const char* tag, const char* fmt, ...)
 {
     va_list args;
@@ -304,12 +294,6 @@ static void X__VHexdump(int level, const char* tag, const char* src, size_t len,
         X__VPrintLog(level, tag, fmt, args);
         x_hexdump(src, len, cols);
     }
-}
-
-
-void x_putc(int c)
-{
-    x_printf("%c", c);
 }
 
 

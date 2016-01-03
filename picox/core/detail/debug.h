@@ -194,10 +194,7 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #endif
 
 
-#define x_vprintf   X_CONF_VPRINTF
 int x_set_log_level(int level);
-void x_printf(const char* fmt, ...);
-void x_putc(int c);
 void x_hexdump(const void* src, size_t len, size_t cols);
 
 

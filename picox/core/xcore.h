@@ -65,6 +65,7 @@
 #include <picox/core/detail/debug.h>
 #include <picox/core/detail/memory.h>
 #include <picox/core/detail/utils.h>
+#include <picox/core/detail/printf.h>
 
 
 #endif // picox_xcore_h_
