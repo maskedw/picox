@@ -55,6 +55,8 @@ extern "C" {
 
 static inline void* x_malloc(size_t size)
 {
+    if (size == 0)
+        return NULL;
     return X_CONF_MALLOC(size);
 }
 
@@ -65,6 +67,29 @@ static inline void x_free(void* ptr)
      * するからここでもNULLチェックしておく */
     if (ptr)
         X_CONF_FREE(ptr);
+}
+
+
+static inline void* x_calloc(size_t nmemb, size_t size)
+{
+    size = nmemb * size;
+    void* const ptr = x_malloc(size);
+    if (ptr)
+        memset(ptr, 0, size);
+    return ptr;
+}
+
+
+static inline void* x_realloc(void *old_mem, size_t size)
+{
+    void* const new_mem = x_malloc(size);
+    if (! new_mem)
+        return NULL;
+
+    memcpy(new_mem, old_mem, size);
+    x_free(old_mem);
+
+    return new_mem;
 }
 
 
