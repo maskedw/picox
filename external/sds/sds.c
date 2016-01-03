@@ -28,52 +28,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
-
+#include <picox/core/xcore.h>
 #include "sds.h"
 
-#ifdef SDS_ASSERT
-    #undef  assert
-    #define assert  SDS_ASSERT
-#else
-    #include <assert.h>
-#endif
-
-#ifdef SDS_MALLOC
-    #undef  malloc
-    #define malloc(size)        SDS_MALLOC(size)
-    #undef  calloc
-    #define calloc(nmemb, size) SdsCalloc(nmemb, size)
-    #undef  realloc
-    #define realloc(ptr, size)  SdsRealloc(ptr, size)
-
-    static void* SdsCalloc(size_t nmemb, size_t size) {
-        if ((nmemb == 0) || (size == 0))
-            return NULL;
-
-        void *ptr = malloc(size * nmemb);
-        if (ptr)
-            memset(ptr, 0, size * nmemb);
-        return ptr;
-    }
-
-    static void* SdsRealloc(void *old, size_t size) {
-        void *new = malloc(size);
-        if (! new)
-            return new;
-        memcpy(new, old, size);
-        return new;
-    }
-#endif
-
-#ifdef SDS_FREE
-    #undef  free
-    #define free(ptr) SDS_FREE(ptr)
-#endif
 
 /* Create a new sds string with the content specified by the 'init' pointer
  * and 'initlen'.
@@ -91,9 +48,9 @@ sds sdsnewlen(const void *init, size_t initlen) {
     struct sdshdr *sh;
 
     if (init) {
-        sh = malloc(sizeof *sh+initlen+1);
+        sh = x_malloc(sizeof *sh+initlen+1);
     } else {
-        sh = calloc(sizeof *sh+initlen+1,1);
+        sh = x_calloc(sizeof *sh+initlen+1,1);
     }
     if (sh == NULL) return NULL;
     sh->len = initlen;
@@ -124,7 +81,7 @@ sds sdsdup(const sds s) {
 /* Free an sds string. No operation is performed if 's' is NULL. */
 void sdsfree(sds s) {
     if (s == NULL) return;
-    free(s-sizeof(struct sdshdr));
+    x_free(s-sizeof(struct sdshdr));
 }
 
 /* Set the sds string length to the length as obtained with strlen(), so
@@ -178,7 +135,7 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
         newlen *= 2;
     else
         newlen += SDS_MAX_PREALLOC;
-    newsh = realloc(sh, sizeof *newsh+newlen+1);
+    newsh = x_realloc(sh, sizeof *newsh+newlen+1);
     if (newsh == NULL) return NULL;
 
     newsh->free = newlen - len;
@@ -187,7 +144,7 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
 
 /* Reallocate the sds string so that it has no free space at the end. The
  * contained string remains not altered, but next concatenation operations
- * will require a reallocation.
+ * will require a x_reallocation.
  *
  * After the call, the passed sds string is no longer valid and all the
  * references must be substituted with the new pointer returned by the call. */
@@ -195,7 +152,7 @@ sds sdsRemoveFreeSpace(sds s) {
     struct sdshdr *sh;
 
     sh = (void*) (s-sizeof *sh);;
-    sh = realloc(sh, sizeof *sh+sh->len+1);
+    sh = x_realloc(sh, sizeof *sh+sh->len+1);
     sh->free = 0;
     return sh->buf;
 }
@@ -239,10 +196,10 @@ size_t sdsAllocSize(sds s) {
 void sdsIncrLen(sds s, int incr) {
     struct sdshdr *sh = (void*) (s-sizeof *sh);;
 
-    assert(sh->free >= incr);
+    X_ASSERT(sh->free >= incr);
     sh->len += incr;
     sh->free -= incr;
-    assert(sh->free >= 0);
+    X_ASSERT(sh->free >= 0);
     s[sh->len] = '\0';
 }
 
@@ -335,20 +292,20 @@ sds sdscatvprintf(sds s, const char *fmt, va_list ap) {
     size_t buflen = 16;
 
     while(1) {
-        buf = malloc(buflen);
+        buf = x_malloc(buflen);
         if (buf == NULL) return NULL;
         buf[buflen-2] = '\0';
         va_copy(cpy,ap);
         vsnprintf(buf, buflen, fmt, cpy);
         if (buf[buflen-2] != '\0') {
-            free(buf);
+            x_free(buf);
             buflen *= 2;
             continue;
         }
         break;
     }
     t = sdscat(s, buf);
-    free(buf);
+    x_free(buf);
     return t;
 }
 
@@ -512,7 +469,7 @@ sds *sdssplitlen(const char *s, int len, const char *sep, int seplen, int *count
 
     if (seplen < 1 || len < 0) return NULL;
 
-    tokens = malloc(sizeof(sds)*slots);
+    tokens = x_malloc(sizeof(sds)*slots);
     if (tokens == NULL) return NULL;
 
     if (len == 0) {
@@ -525,7 +482,7 @@ sds *sdssplitlen(const char *s, int len, const char *sep, int seplen, int *count
             sds *newtokens;
 
             slots *= 2;
-            newtokens = realloc(tokens,sizeof(sds)*slots);
+            newtokens = x_realloc(tokens,sizeof(sds)*slots);
             if (newtokens == NULL) goto cleanup;
             tokens = newtokens;
         }
@@ -549,7 +506,7 @@ cleanup:
     {
         int i;
         for (i = 0; i < elements; i++) sdsfree(tokens[i]);
-        free(tokens);
+        x_free(tokens);
         *count = 0;
         return NULL;
     }
@@ -560,7 +517,7 @@ void sdsfreesplitres(sds *tokens, int count) {
     if (!tokens) return;
     while(count--)
         sdsfree(tokens[count]);
-    free(tokens);
+    x_free(tokens);
 }
 
 /* Create an sds string from a long long value. It is much faster than:
@@ -753,13 +710,13 @@ sds *sdssplitargs(const char *line, int *argc) {
                 if (*p) p++;
             }
             /* add the token to the vector */
-            vector = realloc(vector,((*argc)+1)*sizeof(char*));
+            vector = x_realloc(vector,((*argc)+1)*sizeof(char*));
             vector[*argc] = current;
             (*argc)++;
             current = NULL;
         } else {
             /* Even on empty input string return something not NULL. */
-            if (vector == NULL) vector = malloc(sizeof(void*));
+            if (vector == NULL) vector = x_malloc(sizeof(void*));
             return vector;
         }
     }
@@ -767,7 +724,7 @@ sds *sdssplitargs(const char *line, int *argc) {
 err:
     while((*argc)--)
         sdsfree(vector[*argc]);
-    free(vector);
+    x_free(vector);
     if (current) sdsfree(current);
     *argc = 0;
     return NULL;
