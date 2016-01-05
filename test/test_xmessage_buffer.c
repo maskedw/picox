@@ -30,6 +30,7 @@ TEST_TEAR_DOWN(xmsgbuf)
 TEST(xmsgbuf, init)
 {
     void* data = xmsgbuf_data(mbuf);
+    X_UNUSED(data);
     X_TEST_ASSERTION_FAILED(xmsgbuf_init(NULL, data, X__BUF_SIZE));
     X_TEST_ASSERTION_FAILED(xmsgbuf_init(mbuf, NULL, X__BUF_SIZE));
     X_TEST_ASSERTION_FAILED(xmsgbuf_init(mbuf, NULL, sizeof(XMessageBuffer) - 1));

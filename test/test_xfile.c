@@ -357,6 +357,7 @@ TEST(xfile, tell)
     int err;
     XFileSize pos;
 
+    X_UNUSED(pos);
     TEST_ASSERT_NOT_NULL((fp = xfile_open(path, "w+", &err)));
     X_TEST_ASSERTION_FAILED(xfile_tell(NULL, &pos, &err));
     X_TEST_ASSERTION_FAILED(xfile_tell(fp, NULL, &err));

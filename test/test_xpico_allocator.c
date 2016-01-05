@@ -95,6 +95,7 @@ static uint32_t X__RandomAllocates(void** ptrs)
 TEST(xpalloc, init)
 {
     uint8_t* heap = xpalloc_heap(&alloc);
+    X_UNUSED(heap);
     X_TEST_ASSERTION_FAILED(xpalloc_init(NULL, heap, X__HEAP_SIZE, X__ALIGNMENT));
     X_TEST_ASSERTION_FAILED(xpalloc_init(&alloc, NULL, X__HEAP_SIZE, X__ALIGNMENT));
     X_TEST_ASSERTION_FAILED(xpalloc_init(&alloc, heap, 0, X__ALIGNMENT));
@@ -228,6 +229,9 @@ TEST(xpalloc, walk_heap)
 {
     X__HeapWalker walker;
     memset(&walker, 0, sizeof(walker));
+
+    /* 未使用関数警告対策 */
+    X__DammyWalkHeap(NULL, 0, NULL);
 
     X_TEST_ASSERTION_FAILED(xpalloc_walk_heap(NULL, X__DammyWalkHeap, &walker));
     X_TEST_ASSERTION_FAILED(xpalloc_walk_heap(&alloc, NULL, &walker));

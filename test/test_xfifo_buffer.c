@@ -29,6 +29,7 @@ TEST_TEAR_DOWN(xfifo)
 TEST(xfifo, init)
 {
     void* data = xfifo_data(fifo);
+    X_UNUSED(data);
     X_TEST_ASSERTION_FAILED(xfifo_init(NULL, data, X__BUF_SIZE, NULL));
     X_TEST_ASSERTION_FAILED(xfifo_init(fifo, NULL, X__BUF_SIZE, NULL));
     X_TEST_ASSERTION_FAILED(xfifo_init(fifo, data, 0, NULL));

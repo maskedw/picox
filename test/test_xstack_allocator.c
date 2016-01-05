@@ -53,6 +53,7 @@ static void X__TestAlloc(bool growth_upward)
 TEST(xsalloc, init)
 {
     uint8_t* heap = xsalloc_heap(&alloc);
+    X_UNUSED(heap);
     X_TEST_ASSERTION_FAILED(xsalloc_init(NULL, heap, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign)));
     X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, NULL, X__HEAP_SIZE, X_ALIGN_OF(XMaxAlign)));
     X_TEST_ASSERTION_FAILED(xsalloc_init(&alloc, heap, 0, X_ALIGN_OF(XMaxAlign)));

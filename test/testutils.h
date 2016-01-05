@@ -14,7 +14,7 @@ extern "C" {
 void x_init_test(void);
 void x_escape_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line);
 
-#ifdef X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS
+#ifdef X_HAS_STATEMENT_EXPRESSIONS
     #define X_IS_ASSERTION_FAILED(x)                                \
         ({                                                          \
             extern jmp_buf g_xjmp;                                  \

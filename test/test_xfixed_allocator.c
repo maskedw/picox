@@ -34,6 +34,7 @@ TEST_TEAR_DOWN(xfalloc)
 TEST(xfalloc, init)
 {
     uint8_t* heap = xfalloc_heap(alloc);
+    X_UNUSED(heap);
     X_TEST_ASSERTION_FAILED(xfalloc_init(NULL, heap, X__HEAP_SIZE, X__BLOCK_SIZE, X__ALIGNMENT));
     X_TEST_ASSERTION_FAILED(xfalloc_init(alloc, NULL, X__HEAP_SIZE, X__BLOCK_SIZE, X__ALIGNMENT));
     X_TEST_ASSERTION_FAILED(xfalloc_init(alloc, heap, 0, X__BLOCK_SIZE, X__ALIGNMENT));
@@ -64,8 +65,11 @@ TEST(xfalloc, deallocate)
 {
     uint8_t* heap = xfalloc_heap(alloc);
     uint8_t* p = xfalloc_allocate(alloc);
-
     int dammy;
+
+    X_UNUSED(p);
+    X_UNUSED(dammy);
+
     X_TEST_ASSERTION_FAILED(xfalloc_deallocate(NULL, p));
     X_TEST_ASSERTION_FAILED(xfalloc_deallocate(alloc, &dammy));
     X_TEST_ASSERTION_FAILED(xfalloc_deallocate(alloc, p - 1));
