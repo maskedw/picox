@@ -102,7 +102,7 @@ extern "C" {
  *  通常は型チェックをすることができないので、ptrに間違えたポインタを指定してし
  *  まった場合、発見の難しい申告なバグの原因となりえるので注意してください。
  */
-#if defined(X_HAS_TYPEOF) && defined(X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS)
+#if defined(X_HAS_TYPEOF) && defined(X_HAS_STATEMENT_EXPRESSIONS)
     #define X_CONTAINER_OF(ptr, type, member)                     \
             ({                                                    \
                 const X_TYPEOF(((type*)0)->member)* mptr = (ptr); \

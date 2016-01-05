@@ -25,7 +25,7 @@ TEST_TEAR_DOWN(xfile)
 
 TEST(xfile, open)
 {
-    XFile* fp;
+    XFile* fp = NULL;
     int err;
 
     X_TEST_ASSERTION_FAILED((fp = xfile_open(NULL, "w", &err)));

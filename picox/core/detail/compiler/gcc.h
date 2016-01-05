@@ -46,12 +46,39 @@
 #endif
 
 
-#define X_HAS_STATEMENTS_AND_DECLARATIONS_IN_EXPRESSIONS
-
-
 #ifndef __STRICT_ANSI__
-    #define X_HAS_TYPEOF
-    #define X_TYPEOF(x)     typeof(x)
+    #define X_HAS_TYPEOF            (1)
+    #define X_TYPEOF(x)             typeof(x)
+#endif
+
+
+#define X_HAS_STATEMENT_EXPRESSIONS (1)
+#define X_HAS_VARIADIC_MACROS       (1)
+#define X_ALWAYS_INLINE             static inline __attribute__((__always_inline__))
+#define X_LIKELY(x)                 __builtin_expect(!!(x), 1)
+#define X_UNLIKELY(x)               __builtin_expect(!!(x), 0)
+#define X_MEMORY_BARRIER            asm volatile ("" : : : "memory")
+
+
+#if X_GNUC_PREREQ(3, 1)
+    #define X_DEPRECATED    __attribute__((__deprecated__))
+#endif
+#if X_GNUC_PREREQ(4, 5)
+    #define X_UNREACHABE    __builtin_unreachable()
+#endif
+
+
+#if 0
+#ifndef __cplusplus
+    /* C++のキーワードが使用されていた場合、エラーになるようにする。
+     * マクロやインライン関数内でC++キーワードを使用している場合、振る舞いがやや
+     * こしくなってしまうので、C++キーワードはCでも使用しない方がいい。
+     */
+    #pragma GCC poison new delete class template typename
+    #pragma GCC poison private protected public operator
+    #pragma GCC poison friend mutable using namespace
+    #pragma GCC poison cin cout cerr clog
+#endif
 #endif
 
 

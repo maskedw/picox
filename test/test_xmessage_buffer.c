@@ -207,7 +207,7 @@ TEST(xmsgbuf, push)
     xmsgbuf_clear(mbuf);
     xmsgbuf_push(mbuf, w, X__BUF_SIZE - sizeof(XMessageHeader) * 2 - 1);
     X_TEST_ASSERTION_SUCCESS(xmsgbuf_push(mbuf, w, 1));
-    TEST_ASSERT_TRUE(xmsgbuf_reserve(mbuf) == 0);
+    X_TEST_ASSERTION_FAILED(xmsgbuf_push(mbuf, w, 1));
 }
 
 

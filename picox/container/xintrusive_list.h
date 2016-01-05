@@ -147,15 +147,15 @@ xnode_insert_next(XIntrusiveNode* p1, XIntrusiveNode* p2)
 }
 
 
-/** oldのリンクをnewに置換えます。
+/** p1のリンクをにp2に置換えます。
  */
 static inline void
-xnode_replace(XIntrusiveNode* old, XIntrusiveNode* new)
+xnode_replace(XIntrusiveNode* p1, XIntrusiveNode* p2)
 {
-    new->next       = old->next;
-    new->next->prev = new;
-    new->prev       = old->prev;
-    new->prev->next = new;
+    p2->next       = p1->next;
+    p2->next->prev = p2;
+    p2->prev       = p1->prev;
+    p2->prev->next = p2;
 }
 
 
