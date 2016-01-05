@@ -45,7 +45,7 @@
 
 
 #define X__FLAG_ZERO_PADDING    (X_BIT(0))
-#define X__FLAG_LEFT_ALIGN  (X_BIT(1))
+#define X__FLAG_LEFT_ALIGN      (X_BIT(1))
 #define X__FLAG_LONG            (X_BIT(2))
 #define X__FLAG_SIZE_T          (X_BIT(3))
 #define X__FLAG_DOUBLE          (X_BIT(4))
@@ -66,6 +66,7 @@ typedef struct
 } X__CharPutcContext;
 
 static void X__MemPutc(void* ptr, char c);
+static void X__StreamPutc(void* ptr, char c);
 static void X__SomewherePutc(void* ptr, char c);
 static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list args);
 XCharPutFunc x_putc_stdout;
@@ -97,7 +98,6 @@ int x_snprintf(char* buf, size_t size, const char* fmt, ...)
     const int len = x_vsnprintf(buf, size, fmt, args);
     va_end(args);
     return len;
-
 }
 
 
@@ -137,15 +137,31 @@ int x_printf_to_cputter(XCharPutFunc cputter, const char* fmt, ...)
 }
 
 
-int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args)
+int x_printf_to_stream(XStream* stream, const char* fmt, ...)
 {
-    return X__VPrintf(X__SomewherePutc, cputter, fmt, args);
+    va_list args;
+    va_start(args, fmt);
+    const int len = x_vprintf_to_stream(stream, fmt, args);
+    va_end(args);
+    return len;
 }
 
 
 int x_vprintf(const char* fmt, va_list args)
 {
     return X__VPrintf(X__SomewherePutc, (XCharPutFunc)x_putc, fmt, args);
+}
+
+
+int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args)
+{
+    return X__VPrintf(X__SomewherePutc, cputter, fmt, args);
+}
+
+
+int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args)
+{
+    return X__VPrintf(X__StreamPutc, stream, fmt, args);
 }
 
 
@@ -157,6 +173,13 @@ static void X__MemPutc(void* ptr, char c)
         (*((char*)(context->dst) + context->pos)) = c;
         context->pos++;
     }
+}
+
+
+static void X__StreamPutc(void* ptr, char c)
+{
+    XStream* stream = ptr;
+    xstream_putc(stream, c);
 }
 
 

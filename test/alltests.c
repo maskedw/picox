@@ -17,6 +17,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xfile);
     RUN_TEST_GROUP(xprintf);
     RUN_TEST_GROUP(xdstr);
+    RUN_TEST_GROUP(xstream);
 }
 
 

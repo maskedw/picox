@@ -60,11 +60,6 @@ extern "C" {
 #define X_BYTE_ORDER X_CONFIG_BYTE_ORDER
 
 
-/** 最大サイズのアライメントでsizeバイト以上の領域を持つ変数nameを定義します。
- */
-#define X_DEF_MAX_ALIGNED(name, size) XMaxAlign name[((size) + sizeof(XMaxAlign) - 1) / sizeof(XMaxAlign)]
-
-
 /** 構造体や共用体メンバのsizeofを返します。
  */
 #define X_SIZEOF_MEM(s, m) (sizeof(((s*)0)->m))
@@ -190,7 +185,12 @@ extern "C" {
 
 /** cond == trueの時、x に vを代入します。
  */
-#define X_ASSIGN_IF(cond, x, v)   if(cond) x = v
+#define X_ASSIGN_IF(cond, x, v)   if(cond) x = (v)
+
+
+/** ポインタ変数xがNULLでなければvを代入します
+ */
+#define X_ASSIGN_NOT_NULL(x, v)  (((x) != NULL) ? (*(x) = (v)) : (void)0)
 
 
 /** cond == trueの時、return文を実行します。

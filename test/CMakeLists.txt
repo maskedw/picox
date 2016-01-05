@@ -36,8 +36,10 @@ add_executable(alltests
     test_xutils.c
     test_xprintf.c
     test_xdynamic_string.c
+    test_xstream.c
     ${picox_dir}/core/detail/debug.c
     ${picox_dir}/core/detail/printf.c
+    ${picox_dir}/core/detail/stream.c
     ${picox_dir}/filesystem/xfile.c
     ${picox_dir}/allocator/xstack_allocator.c
     ${picox_dir}/allocator/xfixed_allocator.c

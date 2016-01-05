@@ -131,6 +131,8 @@ int x_printf(const char* fmt, ...);
 int x_vprintf(const char* fmt, va_list args);
 int x_printf_to_cputter(XCharPutFunc cputter, const char* fmt, ...);
 int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args);
+int x_printf_to_stream(XStream* stream, const char* fmt, ...);
+int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args);
 
 
 #ifdef __cplusplus
