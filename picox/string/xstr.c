@@ -46,36 +46,20 @@ static char* X__StripLeft(char* str, int len, const char* strip_chars);
 static char* X__StripRight(char* str, int len, const char* strip_chars);
 
 
-
-bool xstr_equal(const char* s1, const char* s2)
+bool x_strequal(const char* s1, const char* s2)
 {
-    X_ASSERT(s1);
-    X_ASSERT(s2);
-
     return (strcmp(s1, s2) == 0);
 }
 
 
-bool xstr_case_equal(const char* s1, const char* s2)
+bool x_strcaseequal(const char* s1, const char* s2)
 {
-    return (xstr_case_compare(s1, s2) == 0);
+    return (x_strcasecmp(s1, s2) == 0);
 }
 
 
-int xstr_compare(const char* s1, const char* s2)
+int x_strcasecmp(const char *s1, const char *s2)
 {
-    X_ASSERT(s1);
-    X_ASSERT(s2);
-
-    return strcmp(s1, s2);
-}
-
-
-int xstr_case_compare(const char *s1, const char *s2)
-{
-    X_ASSERT(s1);
-    X_ASSERT(s2);
-
     while (tolower((int)*s1) == tolower((int)*s2++))
         if (*s1++ == '\0')
             return 0;
@@ -83,11 +67,8 @@ int xstr_case_compare(const char *s1, const char *s2)
 }
 
 
-int xstr_ncase_compare(const char *s1, const char *s2, size_t n)
+int x_strncasecmp(const char *s1, const char *s2, size_t n)
 {
-    X_ASSERT(s1);
-    X_ASSERT(s2);
-
     if (n != 0)
     {
         do
@@ -102,21 +83,9 @@ int xstr_ncase_compare(const char *s1, const char *s2, size_t n)
 }
 
 
-char* xstr_search_substring(const char* s1, const char* s2)
-{
-    X_ASSERT(s1);
-    X_ASSERT(s2);
-
-    return strstr(s1, s2);
-}
-
-
 // http://stackoverflow.com/questions/211535/fastest-way-to-do-a-case-insensitive-substring-search-in-c-c
-char* xstr_case_search_substring(const char* s1, const char* s2)
+char* x_strcasestr(const char* s1, const char* s2)
 {
-    X_ASSERT(s1);
-    X_ASSERT(s2);
-
     char*cp = (char*)s1;
     char*as1, *as2;
 
@@ -141,29 +110,26 @@ char* xstr_case_search_substring(const char* s1, const char* s2)
 }
 
 
-char* xstr_duplicate(const char* str)
+char* x_strdup(const char* str)
 {
-    return xstr_duplicate2(str, x_malloc);
+    return x_strdup2(str, x_malloc);
 }
 
 
-char* xstr_duplicate2(const char* str, void* (*malloc_func)(size_t))
+char* x_strdup2(const char* str, XMallocFunc malloc_func)
 {
-    return xstr_nduplicate2(str, SIZE_MAX, malloc_func);
+    return x_strndup2(str, SIZE_MAX, malloc_func);
 }
 
 
-char* xstr_nduplicate(const char* str, size_t n)
+char* x_strndup(const char* str, size_t n)
 {
-    return xstr_nduplicate2(str, n, x_malloc);
+    return x_strndup2(str, n, x_malloc);
 }
 
 
-char* xstr_nduplicate2(const char* str, size_t n, void* (*malloc_func)(size_t))
+char* x_strndup2(const char* str, size_t n, XMallocFunc malloc_func)
 {
-    X_ASSERT(str);
-    X_ASSERT(malloc_func);
-
     const size_t slen = strlen(str);
     const size_t len = slen > n ? n : slen;
 
@@ -178,9 +144,8 @@ char* xstr_nduplicate2(const char* str, size_t n, void* (*malloc_func)(size_t))
 }
 
 
-char* xstr_reverse(char* str)
+char* x_strreverse(char* str)
 {
-    X_ASSERT(str);
     int i, j;
     char c;
 
@@ -194,9 +159,8 @@ char* xstr_reverse(char* str)
 }
 
 
-char* xstr_strip(char* str, const char* space)
+char* x_strstrip(char* str, const char* space)
 {
-    X_ASSERT(str);
     const int len = strlen(str);
     char* ret = NULL;
 
@@ -209,28 +173,24 @@ char* xstr_strip(char* str, const char* space)
 }
 
 
-char* xstr_strip_left(char* str, const char* space)
+char* x_strlstrip(char* str, const char* space)
 {
-    X_ASSERT(str);
     const int len = strlen(str);
 
     return X__StripLeft(str, len, space);
 }
 
 
-char* xstr_strip_right(char* str, const char* space)
+char* x_strrstrip(char* str, const char* space)
 {
-    X_ASSERT(str);
     const int len = strlen(str);
 
     return X__StripRight(str, len, space);
 }
 
 
-int32_t xstr_to_int32(const char* str, int32_t def, bool* ok)
+int32_t x_strtoint32(const char* str, int32_t def, bool* ok)
 {
-    X_ASSERT(str);
-
     bool sub;
     if (! ok) ok = &sub;
 
@@ -242,10 +202,8 @@ int32_t xstr_to_int32(const char* str, int32_t def, bool* ok)
 }
 
 
-uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok)
+uint32_t x_strtouint32(const char* str, uint32_t def, bool* ok)
 {
-    X_ASSERT(str);
-
     bool sub;
     if (! ok) ok = &sub;
 
@@ -257,12 +215,11 @@ uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok)
 }
 
 
-float xstr_to_float(const char* str, float def, bool* ok)
+float x_strtofloat(const char* str, float def, bool* ok)
 {
 #if X_CONF_HAS_C99_MATH != 0
-    return xstr_to_double(str, def, ok);
+    return x_strtodouble(str, def, ok);
 #else
-    X_ASSERT(str);
 
     bool sub;
     if (! ok) ok = &sub;
@@ -278,10 +235,8 @@ float xstr_to_float(const char* str, float def, bool* ok)
 }
 
 
-double xstr_to_double(const char* str, double def, bool* ok)
+double x_strtodouble(const char* str, double def, bool* ok)
 {
-    X_ASSERT(str);
-
     bool sub;
     if (! ok) ok = &sub;
 
@@ -294,26 +249,24 @@ double xstr_to_double(const char* str, double def, bool* ok)
 }
 
 
-bool xstr_to_bool(const char* str, bool def, bool* ok)
+bool x_strtobool(const char* str, bool def, bool* ok)
 {
-    X_ASSERT(str);
-
     bool v;
     bool sub;
     if (! ok) ok = &sub;
 
     *ok = true;
-    if (xstr_case_equal(str, "y")       ||
-        xstr_case_equal(str, "yes")     ||
-        xstr_case_equal(str, "true")    ||
-        xstr_case_equal(str, "1"))
+    if (x_strcaseequal(str, "y")       ||
+        x_strcaseequal(str, "yes")     ||
+        x_strcaseequal(str, "true")    ||
+        x_strcaseequal(str, "1"))
     {
         v = true;
     }
-    else if (xstr_case_equal(str, "n")      ||
-             xstr_case_equal(str, "no")     ||
-             xstr_case_equal(str, "false")  ||
-             xstr_case_equal(str, "0"))
+    else if (x_strcaseequal(str, "n")      ||
+             x_strcaseequal(str, "no")     ||
+             x_strcaseequal(str, "false")  ||
+             x_strcaseequal(str, "0"))
     {
         v = false;
     }
@@ -326,20 +279,8 @@ bool xstr_to_bool(const char* str, bool def, bool* ok)
 }
 
 
-char* xstr_pbrk(const char* str, const char* accept)
+char* x_strrpbrk(const char* str, const char* accept)
 {
-    X_ASSERT(str);
-    X_ASSERT(accept);
-
-    return strpbrk(str, accept);
-}
-
-
-char* xstr_rpbrk(const char* str, const char* accept)
-{
-    X_ASSERT(str);
-    X_ASSERT(accept);
-
     if (str[0] == '\0')
         return NULL;
 
@@ -369,12 +310,8 @@ char* xstr_rpbrk(const char* str, const char* accept)
 }
 
 
-char* xstr_case_pbrk(const char* str, const char* accept)
+char* x_strcasepbrk(const char* str, const char* accept)
 {
-    X_ASSERT(str);
-    X_ASSERT(accept);
-
-
     if (str[0] == '\0')
         return NULL;
 
@@ -399,11 +336,8 @@ char* xstr_case_pbrk(const char* str, const char* accept)
 }
 
 
-char* xstr_case_rpbrk(const char* str, const char* accept)
+char* x_strcaserpbrk(const char* str, const char* accept)
 {
-    X_ASSERT(str);
-    X_ASSERT(accept);
-
     if (str[0] == '\0')
         return NULL;
 
@@ -433,10 +367,8 @@ char* xstr_case_rpbrk(const char* str, const char* accept)
 }
 
 
-char* xstr_to_lower(char* str)
+char* x_strtolower(char* str)
 {
-    X_ASSERT(str);
-
     char* p = str;
     while (*p)
     {
@@ -448,10 +380,8 @@ char* xstr_to_lower(char* str)
 }
 
 
-char* xstr_to_upper(char* str)
+char* x_strtoupper(char* str)
 {
-    X_ASSERT(str);
-
     char* p = str;
     while (*p)
     {
@@ -513,7 +443,6 @@ static char* X__StripRight(char* str, int len, const char* strip_chars)
     int i;
     char* ret = str;
 
-    X_ASSERT(str);
     if (len == 0)
         return str;
 

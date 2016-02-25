@@ -51,100 +51,99 @@ extern "C" {
 
 /** 文字列s1とs2が一致するかどうかを返します。
  *
- * (std::strcmp(s1, s2) == 0)と同じです。
+ *  (strcmp(s1, s2) == 0)と同じです。
  */
-bool xstr_equal(const char* s1, const char* s2);
+bool x_strequal(const char* s1, const char* s2);
 
 
-/** 大文字小文字の違いを無視して文字列s1, s2が一致するかどうかを返します。
+/** 大文字小文字の違いを無視したx_strequal()です
  */
-bool xstr_case_equal(const char* s1, const char* s2);
+bool x_strcaseequal(const char* s1, const char* s2);
 
 
-/** std::strcmp()のラッパーです。
+/** 大文字小文字の違いを無視したstrcmp()です。
+ *
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/strcasecmp.3.html
  */
-int xstr_compare(const char* s1, const char* s2);
+int x_strcasecmp(const char* s1, const char* s2);
 
 
-/** 大文字小文字の違いを無視したstd::strcmp()です。
+/** 大文字小文字の違いを無視したstrncmp()です。
+ *
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/strcasecmp.3.html
  */
-int xstr_case_compare(const char* s1, const char* s2);
+int x_strncasecmp(const char* s1, const char* s2, size_t n);
 
 
-/** 大文字小文字の違いを無視したstd::strncmp()です。
+/** 大文字小文字の違いを無視したstrstrです。
+ *
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/strstr.3.html
  */
-int xstr_ncase_compare(const char* s1, const char* s2, size_t n);
+char* x_strcasestr(const char* s1, const char* s2);
 
 
-/** std::strstrのラッパーです。
- */
-char* xstr_search_substring(const char* s1, const char* s2);
-
-
-/** 大文字小文字の違いを無視したstd::strstrです。
- */
-char* xstr_case_search_substring(const char* s1, const char* s2);
-
-
-/** strdup相当の処理を行います。
+/** 文字列の複製をヒープから生成して返します
+ *
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/strdup.3.html
  *
  *  不要になった文字列はx_free()でメモリを解放してください。
  */
-char* xstr_duplicate(const char* str);
+char* x_strdup(const char* str);
 
 
-/** 指定のメモリ確保関数を使用してxstr_duplicate()を実行します。
+/** 指定のメモリ確保関数を使用して複製した文字列を返します
  *
  *  不要になった文字列はmalloc_func()に対応するメモリ解放関数でメモリを解放して
  *  ください。
  */
-char* xstr_duplicate2(const char* str, void* (*malloc_func)(size_t));
+char* x_strdup2(const char* str, XMallocFunc malloc_func);
 
 
-/** strndup相当の処理を行います。
+/** 複製する最大バイト数を指定できるstrdup()です
  *
- *  不要になった文字列はx_free()でメモリを解放してください。
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/strdup.3.html
  */
-char* xstr_nduplicate(const char* str, size_t n);
+char* x_strndup(const char* str, size_t n);
 
 
-/** 指定のメモリ確保関数を使用してxstr_nduplicate()を実行します。
+/** メモリ確保関数と最大バイト数を指定して複製した文字列を返します
+ *
  *
  *  不要になった文字列はmalloc_func()に対応するメモリ解放関数でメモリを解放して
  *  ください。
  */
-char* xstr_nduplicate2(const char* str, size_t n, void* (*malloc_func)(size_t));
+char* x_strndup2(const char* str, size_t n, XMallocFunc malloc_func);
 
 
 /** 文字列を逆転させた結果を返します。
  *
  *  str自身が破壊されることに注意してください。
  */
-char* xstr_reverse(char* str);
+char* x_strreverse(char* str);
 
 
 /** 文字列の前後からspaceに含まれる文字列を取り除いた結果を返します。
  *
  *  + str自身が破壊されることに注意してください。
- *  + space == NULLの場合はstd::isspace()が使用されます。
+ *  + space == NULLの場合はisspace()が使用されます。
  */
-char* xstr_strip(char* str, const char* space);
+char* x_strstrip(char* str, const char* space);
 
 
 /** 文字列の前からspaceに含まれる文字列を取り除いた結果を返します。
  *
  *  + str自身が破壊されることに注意してください。
- *  + space == NULLの場合はstd::isspace()が使用されます。
+ *  + space == NULLの場合はisspace()が使用されます。
  */
-char* xstr_strip_left(char* str, const char* space);
+char* x_strlstrip(char* str, const char* space);
 
 
 /** 文字列の後ろからspaceに含まれる文字列を取り除いた結果を返します。
  *
  *  + str自身が破壊されることに注意してください。
- *  + space == NULLの場合はstd::isspace()が使用されます。
+ *  + space == NULLの場合はisspace()が使用されます。
  */
-char* xstr_strip_right(char* str, const char* space);
+char* x_strrstrip(char* str, const char* space);
 
 
 /** 文字列をint32_tに変換して返します。
@@ -159,33 +158,29 @@ char* xstr_strip_right(char* str, const char* space);
  *  @param def 変換に失敗した場合に返すデフォルト値
  *  @param ok  変換に成功したかどうか
  */
-int32_t xstr_to_int32(const char* str, int32_t def, bool* ok);
+int32_t x_strtoint32(const char* str, int32_t def, bool* ok);
 
 
 /** 文字列をuint32_tに変換して返します。
  *
  *  + -の符号がついていた場合は常時変換失敗となります。
- *  + その他の条件はxstr_to_int32()を参照してください。
+ *  + その他の条件はx_strtoint32()を参照してください。
  */
-uint32_t xstr_to_uint32(const char* str, uint32_t def, bool* ok);
+uint32_t x_strtouint32(const char* str, uint32_t def, bool* ok);
 
 
 /** 文字列をfloatに変換して返します。
  *
  *  c99のstd::strtof()が使用できない場合はstd::strtod()の結果を返します。
- *
- *  @TODO
- *  ライブラリの実装によって、不正な文字列を渡したときの振る舞いが曖昧なので、
- *  [+-.0-9]以外の文字があったら不正ってことにしよか。
  */
-float xstr_to_float(const char* str, float def, bool* ok);
+float x_strtofloat(const char* str, float def, bool* ok);
 
 
 /** 文字列をdoubleに変換して返します。
  *
  *  std::strtod()の結果を返します。
  */
-double xstr_to_double(const char* str, double def, bool* ok);
+double x_strtodouble(const char* str, double def, bool* ok);
 
 
 /** 文字列をboolに変換して返します。
@@ -193,41 +188,36 @@ double xstr_to_double(const char* str, double def, bool* ok);
  *  大文字小文字の違いは無視し、("y", "yes", "true", "1")のいづれかであればtrue。
  *  ("n", "no", "false", "0")のいづれかであればfalseと解釈します。
  */
-bool xstr_to_bool(const char* str, bool def, bool* ok);
-
-
-/** strpbrk()のラッパーです。
- */
-char* xstr_pbrk(const char* str, const char* accept);
+bool x_strtobool(const char* str, bool def, bool* ok);
 
 
 /** strpbrk()の逆走査版です。
  */
-char* xstr_rpbrk(const char* str, const char* accept);
+char* x_strrpbrk(const char* str, const char* accept);
 
 
 /** 大文字小文字の違いを無視したxstr_pbrk()です。
  */
-char* xstr_case_pbrk(const char* str, const char* accept);
+char* x_strcasepbrk(const char* str, const char* accept);
 
 
-/** 大文字小文字の違いを無視したxstr_rpbrk()です。
+/** 大文字小文字の違いを無視したx_strrpbrk()です。
  */
-char* xstr_case_rpbrk(const char* str, const char* accept);
+char* x_strcaserpbrk(const char* str, const char* accept);
 
 
 /** strに含まれるアルファベットを全て小文字に変換して返します
  *
  *  + str自身が破壊されることに注意してください。
  */
-char* xstr_to_lower(char* str);
+char* x_strtolower(char* str);
 
 
 /** strに含まれるアルファベットを全て大文字に変換して返します
  *
  *  + str自身が破壊されることに注意してください。
  */
-char* xstr_to_upper(char* str);
+char* x_strtoupper(char* str);
 
 
 #ifdef __cplusplus
