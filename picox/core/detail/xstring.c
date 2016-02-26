@@ -527,6 +527,65 @@ void* x_memrchr(const void* p, int c, size_t n)
 }
 
 
+void x_memswap(void *a, void *b, size_t size)
+{
+    char* ca;
+    char* cb;
+    char  tmp;
+    for (ca = (char*)a, cb = (char*)b; size > 0; size--, ca++, cb++)
+    {
+        tmp = *ca;
+        *ca  = *cb;
+        *cb  = tmp;
+    }
+}
+
+
+void x_memreverse(void *p, size_t size, size_t n)
+{
+    char* l;
+    char* r;
+
+    l = (char*)p;
+    r = (char*)p + ((n-1) * size);
+    for ( ; l < r; l = l+size, r = r-size)
+        x_memswap( l, r, size );
+}
+
+
+void x_memrotate_right(void *p, size_t shift, size_t size, size_t n)
+{
+    x_memreverse(p,                      size, n);          // 012345678 -> 876543210
+    x_memreverse(p,                      size, shift);      // 876543210 -> 678543210
+    x_memreverse((char*)p+(size*shift),  size, n-shift);    // 678543210 -> 678012345
+}
+
+
+void x_memrotate_left(void *p, size_t shift, size_t size, size_t n)
+{
+    x_memreverse(p,                      size, shift);      // 012345678 -> 210345678
+    x_memreverse((char*)p+(size*shift),  size, n-shift);    // 210345678 -> 210876543
+    x_memreverse(p,                      size, n);          // 210876543 -> 345678012
+}
+
+
+void x_memblt(void* dst, const void* src,
+              size_t width, size_t height,
+              size_t dstride, size_t sstride)
+{
+    char* cdst = (char*)dst;
+    const char* csrc = (const char*)src;
+
+    size_t y;
+    for (y = 0; y < height; ++y)
+    {
+        memcpy(cdst, csrc, width);
+        cdst += dstride;
+        csrc += sstride;
+    }
+}
+
+
 char* x_stpcpy(char* dst, const char* src)
 {
     for (; (*dst = *src); ++src, ++dst);

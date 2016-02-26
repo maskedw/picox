@@ -314,6 +314,43 @@ void* x_memmem(const void* p1, size_t n1, const void* p2, size_t n2);
 void* x_memrchr(const void* p, int c, size_t n);
 
 
+/** aとbからsizeバイトを入れ替えます。
+ */
+void x_memswap(void *a, void *b, size_t size);
+
+
+/** sizeバイトの要素n個からなる配列pの要素を逆順に並べ替えます。
+ */
+void x_memreverse(void *p, size_t size, size_t n);
+
+
+/** sizeバイトの要素n個からなる配列pの要素を右方向にshift個分回転移動させます。
+ */
+void x_memrotate_right(void *p, size_t shift, size_t size, size_t n);
+
+
+/** sizeバイトの要素n個からなる配列pの要素を左方向にshift個分回転移動させます。
+ */
+void x_memrotate_left(void *p, size_t shift, size_t size, size_t n);
+
+
+/** srcからdstにメモリの矩形コピーを行います。
+ *
+ *  @param dst      転送先
+ *  @param src      転送元
+ *  @param width    転送幅
+ *  @param height   転送高さ
+ *  @param dstride  転送先の次のラインまでの幅
+ *  @param sstride  転送元の次のラインまでの幅
+ *
+ *  @attention
+ *  srcとdstの領域は重なっていないことを前提とします。
+ */
+void x_memblt(void* dst, const void* src,
+              size_t width, size_t height,
+              size_t dstride, size_t sstride);
+
+
 #ifdef __cplusplus
 }
 #endif
