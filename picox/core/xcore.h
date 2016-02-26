@@ -59,14 +59,15 @@
 #include <ctype.h>
 #include <limits.h>
 #include <picox/xconfig.h>
-#include <picox/core/detail/types.h>
-#include <picox/core/detail/compiler.h>
-#include <picox/core/detail/preprocessor.h>
-#include <picox/core/detail/debug.h>
-#include <picox/core/detail/memory.h>
-#include <picox/core/detail/utils.h>
-#include <picox/core/detail/stream.h>
-#include <picox/core/detail/printf.h>
+#include <picox/core/detail/xcompiler.h>
+#include <picox/core/detail/xpreprocessor.h>
+#include <picox/core/detail/xstddef.h>
+#include <picox/core/detail/xdebug.h>
+#include <picox/core/detail/xstring.h>
+#include <picox/core/detail/xstdlib.h>
+#include <picox/core/detail/xstream.h>
+#include <picox/core/detail/xstdio.h>
+#include <picox/core/detail/xutils.h>
 
 
 #endif // picox_xcore_h_

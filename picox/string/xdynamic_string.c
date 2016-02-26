@@ -38,7 +38,7 @@
 
 
 #include <picox/string/xdynamic_string.h>
-#include <picox/external/sds/sds.h>
+#include <picox_external/sds/sds.h>
 
 
 struct XDynamicString

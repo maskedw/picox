@@ -37,7 +37,6 @@
  */
 
 #include <picox/misc/xtokenizer.h>
-#include <picox/string/xstr.h>
 
 
 bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens)
@@ -53,7 +52,7 @@ bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens
 
     do
     {
-        X_BREAK_IF(!(tmp_row = xstr_duplicate(row)));
+        X_BREAK_IF(!(tmp_row = x_strdup(row)));
 
         char* p1 = tmp_row;
         char* p2;
@@ -68,14 +67,14 @@ bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens
         X_BREAK_IF(!(tmp_tokens = x_malloc(sizeof(char*) * ntokens)));
 
         p1 = tmp_row;
-        tmp_tokens[0] = p1 = xstr_strip(p1, NULL);
+        tmp_tokens[0] = p1 = x_strstrip(p1, NULL);
         ntokens = 1;
 
         while ((p2 = strchr(p1, separater)) != NULL)
         {
             *p2 = '\0';
             p1 = p2 + 1;
-            p1 = xstr_strip(p1, NULL);
+            p1 = x_strstrip(p1, NULL);
             tmp_tokens[ntokens] = p1;
             ntokens++;
         }

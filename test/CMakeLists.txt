@@ -5,7 +5,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_C_COMPILER gcc)
 set(picox_dir "../picox")
-set(external_dir "../picox/external")
+set(external_dir "../picox_external")
 set(unity_dir ${external_dir}/Unity/src)
 set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
 
@@ -25,10 +25,12 @@ add_executable(alltests
     test_xstack_allocator.c
     test_xpico_allocator.c
     test_xfixed_allocator.c
-    test_xstr.c
+    test_xstring.c
     test_xtokenizer.c
     test_xargparser.c
-    test_xfile.c
+    test_xposixfs.c
+    test_xvfs.c
+    test_xfs.c
     test_sds.c
     test_xfifo_buffer.c
     test_xmessage_buffer.c
@@ -37,14 +39,17 @@ add_executable(alltests
     test_xprintf.c
     test_xdynamic_string.c
     test_xstream.c
-    ${picox_dir}/core/detail/debug.c
-    ${picox_dir}/core/detail/printf.c
-    ${picox_dir}/core/detail/stream.c
-    ${picox_dir}/filesystem/xfile.c
+    ${picox_dir}/core/detail/xdebug.c
+    ${picox_dir}/core/detail/xprintf.c
+    ${picox_dir}/core/detail/xstream.c
+    ${picox_dir}/core/detail/xstring.c
+    ${picox_dir}/filesystem/xposixfs.c
+    ${picox_dir}/filesystem/xvfs.c
+    ${picox_dir}/filesystem/xfs.c
+    ${picox_dir}/filesystem/xramfs.c
     ${picox_dir}/allocator/xstack_allocator.c
     ${picox_dir}/allocator/xfixed_allocator.c
     ${picox_dir}/allocator/xpico_allocator.c
-    ${picox_dir}/string/xstr.c
     ${picox_dir}/string/xdynamic_string.c
     ${picox_dir}/misc/xtokenizer.c
     ${picox_dir}/misc/xargparser.c

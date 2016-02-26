@@ -2,7 +2,6 @@
 #include <unity.h>
 #include <unity_fixture.h>
 #include "testutils.h"
-#include <picox/external/sds/sds.h>
 
 
 TEST_GROUP(xdstr);
