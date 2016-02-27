@@ -285,6 +285,14 @@ char* x_stpncpy(char* dst, const char* src, size_t n);
 char* x_stpncpy2(char* dst, const char* src, size_t n);
 
 
+/** 0埋め無し版のx_strncpy()です
+ *
+ *  strncpy()はsrcのバイト数がnより小さい場合、dstの残りを全て'\0'で埋めるという
+ *  謎の仕様がありますが、こちらはコピー後のdstの末尾にだけ'\0'をセットします。
+ */
+char* x_strncpy2(char* dst, const char* src, size_t n);
+
+
 /** 文字列s中にはじめに文字cが現れた位置へのポインタを返します
  *
  *  strchr()は文字が見つからなかった時にNULLを返しますが、この関数はsの末尾を返
@@ -349,6 +357,11 @@ void x_memrotate_left(void *p, size_t shift, size_t size, size_t n);
 void x_memblt(void* dst, const void* src,
               size_t width, size_t height,
               size_t dstride, size_t sstride);
+
+
+/** (memcmp(p1, p2) == 0)と同じです
+ */
+bool x_memequal(const void* p1, const void* p2, size_t n);
 
 
 #ifdef __cplusplus

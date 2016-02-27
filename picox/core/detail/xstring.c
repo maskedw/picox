@@ -586,6 +586,12 @@ void x_memblt(void* dst, const void* src,
 }
 
 
+bool x_memequal(const void* p1, const void* p2, size_t n)
+{
+    return memcmp(p1, p2, n) == 0;
+}
+
+
 char* x_stpcpy(char* dst, const char* src)
 {
     for (; (*dst = *src); ++src, ++dst);
@@ -618,6 +624,14 @@ char* x_stpncpy2(char* dst, const char* src, size_t n)
         if (!(*dst = *src))
             return dst;
     }
+    return dst;
+}
+
+
+char* x_strncpy2(char* dst, const char* src, size_t n)
+{
+    x_stpncpy2(dst, src, n);
+
     return dst;
 }
 
