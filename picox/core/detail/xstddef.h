@@ -161,6 +161,7 @@ typedef enum
     X_ERR_INPROGRESS,       /** 操作は実行中 */
     X_ERR_PROTOCOL,         /** プロトコルエラー */
     X_ERR_MANY,             /** リソース生成の上限を超えている */
+    X_ERR_RANGE,            /** 結果が大きすぎる */
     X_ERR_BROKEN,           /** 操作対象が破損している */
     X_ERR_INTERNAL,         /** 予期せぬ内部エラー */
     X_ERR_OTHER,            /** その他のエラー */
