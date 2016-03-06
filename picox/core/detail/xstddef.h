@@ -82,14 +82,23 @@ typedef uint32_t XTag;
     | ((uint32_t)(d) <<  0) )
 
 
-/** システム時刻を格納するための型です
+/** time_tの代替をするシステム時刻を格納するための型です
  *
  *  POSIX互換システム風にUNIX時間1970年1月1日0時0分0秒(ただしタイムゾーンは考慮
  *  しない)からの経過秒数を表します。
  *  旧いシステムではtime_tは32bit符号ありで実装されることが多く、2038年問題があ
- *  りますが、XTimeは符号なしなので2106年まで保持可能うです。
+ *  りますが、XTimeは符号なしなので2106年まで保持可能です。
  */
 typedef uint32_t XTime;
+
+
+/** struct timevalの代替をする高精度のシステム時刻を格納するための型です
+ */
+typedef struct
+{
+    XTime   tv_sec;     /** 秒 */
+    int32_t tv_usec;    /** マイクロ秒 */
+} XTimeVal;
 
 
 /** 何らかのビットフラグを格納することを意図した型です
@@ -134,13 +143,20 @@ typedef enum
 } XSeekMode;
 
 
-/** 共通のエラーコードを表す列挙型です
+/** errnoの代替として使用する共通のエラーコードを表す列挙型です
  *
  *  エラーコードを共通とするか、モジュール固有とするかはどちらも一長一短がありま
  *  す。共通化すると、インターフェースを統一しやすくなりますが、モジュール固有に
  *  すると、より詳細な情報を表現できます。
  *  picoxでは主にファイルシステム等の抽象化レイヤのインターフェースの統一のため
  *  にこの型を使用します。
+ *
+ *  @note
+ *  errnoを使用しない理由は、以下の理由により組込み開発では扱いにくいからです。
+ *
+ *  + グローバル変数であるため、マルチスレッド環境では使いづらい。(Linux等の環境
+ *    ではスレッドローカルとして実装されているので問題ない)
+ *  + エラーコードとしてどの値が提供されているかはCライブラリの実装による
  */
 typedef enum
 {
@@ -159,14 +175,91 @@ typedef enum
     X_ERR_NOT_SUPPORTED,    /** サポートされていない操作が指定された */
     X_ERR_DISCONNECTED,     /** 通信相手との接続が切れた */
     X_ERR_INPROGRESS,       /** 操作は実行中 */
-    X_ERR_PROTOCOL,         /** プロトコルエラー */
+    X_ERR_PROTOCOL,         /** プロトコルエラー(操作を行う要件を満たしていない) */
     X_ERR_MANY,             /** リソース生成の上限を超えている */
     X_ERR_RANGE,            /** 結果が大きすぎる */
     X_ERR_BROKEN,           /** 操作対象が破損している */
+    X_ERR_NAME_TOO_LONG,    /** 名前が長すぎる */
+    X_ERR_INVALID_NAME,     /** 名前が不正( 使用不可の文字が含まれている等)  */
+    X_ERR_IS_DIRECTORY,     /** ディレクトリである(ディレクトリを指定してはいけない操作) */
+    X_ERR_NOT_DIRECTORY,    /** ディレクトリではない (ディレクトリを指定すべき操作) */
+    X_ERR_NOT_EMPTY,        /** ディレクトリが空ではない */
     X_ERR_INTERNAL,         /** 予期せぬ内部エラー */
     X_ERR_OTHER,            /** その他のエラー */
     X_ERR_UNKNOWN,          /** 不明なエラー */
 } XError;
+
+
+/** ファイルオープン等に使用するフラグです
+ *
+ *  使用できる組み合わせは決まっているため、引数にはXOpenModeを使用してください
+ *  。この定義は主に内部実装用です。
+ */
+typedef enum
+{
+    X_OPEN_FLAG_READ = (1 << 0),        /** 読み込み */
+    X_OPEN_FLAG_WRITE = (1 << 1),       /** 書き込み */
+    X_OPEN_FLAG_READ_WRITE = X_OPEN_FLAG_READ | X_OPEN_FLAG_WRITE, /** 読み書き */
+    X_OPEN_FLAG_APPEND = (1 << 2),      /** 追記 */
+    X_OPEN_FLAG_TRUNCATE = (1 << 3),    /** 既存の内容の破棄 */
+} XOpenFlag;
+
+
+/** ファイルオープン等のモードです
+ *
+ *  fopen()で使用可能な`"r","r+","w","w+","a","a+"`に対応しています。
+ *  picoxでは、"rb"等の指定によるバイナリモード、テキストモードという区別はして
+ *  おらず、常にバイナリモードの動作を行います。
+ *
+ *  各モードの動作は以下リンク先によくまとまっています。
+ *
+ *  https://docs.oracle.com/cd/E19205-01/820-2985/loc_io/9_3.htm
+ */
+typedef enum
+{
+    /** `"r"` 読み込み
+     *
+     *  + 対象が存在しない場合はエラーになります。
+     */
+    X_OPEN_MODE_READ = X_OPEN_FLAG_READ,
+
+    /** `"w"` 上書き書き込み
+     *
+     *  + 対象が存在しない場合は新規作成されます。
+     *  + 既存のデータはゼロに切り詰めます。
+     */
+    X_OPEN_MODE_WRITE = X_OPEN_FLAG_WRITE | X_OPEN_FLAG_TRUNCATE,
+
+    /** `"a"` 追記書き込み
+     *
+     *  + 対象が存在しない場合は新規作成されます。
+     *  + 書き込み位置の初期値が末尾にセットされます。
+     */
+    X_OPEN_MODE_APPEND = X_OPEN_FLAG_WRITE | X_OPEN_FLAG_APPEND,
+
+    /** `"r+"` 読み書き
+     *
+     *  + 対象が存在しない場合はエラーになります。
+     */
+    X_OPEN_MODE_READ_PLUS = X_OPEN_FLAG_READ_WRITE,
+
+
+    /** `"w+"` 上書き読み書き
+     *
+     *  + 対象が存在しない場合は新規作成されます。
+     *  + 既存のデータはゼロに切り詰めます。
+     */
+    X_OPEN_MODE_WRITE_PLUS = X_OPEN_FLAG_READ_WRITE | X_OPEN_FLAG_TRUNCATE,
+
+
+    /** `"a+"` 追記読み書き
+     *
+     *  + 対象が存在しない場合は新規作成されます。
+     *  + 読み書き位置の初期値が末尾にセットされます。
+     */
+    X_OPEN_MODE_APPEND_PLUS = X_OPEN_FLAG_READ_WRITE | X_OPEN_FLAG_APPEND,
+    X_OPEN_MODE_UNKNOWN = 0xFF,
+} XOpenMode;
 
 
 #ifdef __cplusplus
