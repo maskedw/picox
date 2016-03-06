@@ -181,14 +181,25 @@ void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, co
 #define X_DEFAULT_ASSERT(expr)              X_DEFAULT_ASSERT_MSG(expr, NULL)
 #define X_DEFAULT_ASSERT_MSG(expr, msg)     ((expr) ? (void)0 : x_assertion_failed(#expr, msg, __func__, __FILE__, __LINE__))
 
+
 #if (X_CONF_NDEBUG != 0)
     #define X_ASSERT(expr)              (void)0
     #define X_ASSERT_MSG(expr, msg)     (void)0
+    #define X_ASSERT_SELF(expr)         (void)0
+    #define X_ASSERT_ARG(expr)          (void)0
+    #define X_ASSERT_NULL(expr)         (void)0
+    #define X_ASSERT_TAG(expr)          (void)0
+    #define X_ASSERT_ENUM(expr)         (void)0
     #define X_ABORT(msg)                (void)0
     #define X_ABORT_DEFAULT             default: break
 #else
     #define X_ASSERT(expr)              X_DEFAULT_ASSERT(expr)
     #define X_ASSERT_MSG(expr, msg)     X_DEFAULT_ASSERT_MSG(expr, msg)
+    #define X_ASSERT_SELF(expr)         X_DEFAULT_ASSERT(expr)
+    #define X_ASSERT_ARG(expr)          X_DEFAULT_ASSERT(expr)
+    #define X_ASSERT_NULL(expr)         X_DEFAULT_ASSERT(expr)
+    #define X_ASSERT_TAG(expr)          X_DEFAULT_ASSERT(expr)
+    #define X_ASSERT_ENUM(expr)         X_DEFAULT_ASSERT(expr)
     #define X_ABORT(msg)                X_ASSERT_MSG(0, msg)
     #define X_ABORT_DEFAULT             default: X_ABORT("Runtime error"); break
 #endif
