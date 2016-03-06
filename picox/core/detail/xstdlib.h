@@ -102,8 +102,9 @@ static inline void* x_realloc2(void *old_mem, size_t old_size, size_t new_size)
     if (! new_mem)
         return NULL;
 
-    /* 新しいサイズより旧いサイズの方が大きかったら新しいサイズ分コピー */
-    /* 古いサイズより新しいサイズの方が大きかったら古いサイズ分コピー  */
+    /* 新しいサイズより旧いサイズの方が大きかったら新しいサイズ分コピーする。
+     * 古いサイズより新しいサイズの方が大きかったら古いサイズ分コピーする。
+     */
     if (old_size > new_size)
         memcpy(new_mem, old_mem, new_size);
     else
