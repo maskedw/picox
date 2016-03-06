@@ -599,6 +599,26 @@ char* x_stpcpy(char* dst, const char* src)
 }
 
 
+char* x_stprcpy(char* dst, const char* src)
+{
+    const size_t len = strlen(src);
+    if (len == 0)
+    {
+        *dst = '\0';
+        return dst;
+    }
+
+    const char* p = src + len - 1;
+    do
+    {
+        *dst++ = *p;
+    } while (p-- >= src);
+
+    *dst = '\0';
+    return dst;
+}
+
+
 char* x_stpncpy(char* dst, const char* src, size_t n)
 {
 
@@ -659,6 +679,57 @@ size_t x_strnlen(const char* s, size_t n)
             break;
     }
     return len;
+}
+
+
+XOpenMode x_strtomode(const char* strmode)
+{
+    const size_t len = strlen(strmode);
+    XOpenMode mode = X_OPEN_MODE_UNKNOWN;
+
+    if (len == 0 || len >= 3)
+        return mode;
+
+    char buf[4];
+    strcpy(buf, strmode);
+
+    if (buf[len - 1] == 'b')
+        buf[len - 1] = '\0';
+
+    if (x_strequal(buf, "r"))
+        mode = X_OPEN_MODE_READ;
+    else if (x_strequal(buf, "r+"))
+        mode = X_OPEN_MODE_READ_PLUS;
+    else if (x_strequal(buf, "w"))
+        mode = X_OPEN_MODE_WRITE;
+    else if (x_strequal(buf, "w+"))
+        mode = X_OPEN_MODE_WRITE_PLUS;
+    else if (x_strequal(buf, "a"))
+        mode = X_OPEN_MODE_APPEND;
+    else if (x_strequal(buf, "a+"))
+        mode = X_OPEN_MODE_APPEND_PLUS;
+
+    return mode;
+}
+
+
+char* x_strreplace(char* dst, size_t size, size_t len, size_t dn, const char* src, size_t sn)
+{
+    if (dn == sn)
+    {
+        memcpy(dst, src, sn);
+        return dst;
+    }
+
+    if (sn > dn)
+    {
+        if (sn - dn + len >= size)
+            return NULL;
+    }
+
+    memmove(dst + sn, dst + dn, len - dn + 1);
+    memcpy(dst, src, sn);
+    return dst;
 }
 
 

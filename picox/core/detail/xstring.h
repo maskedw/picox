@@ -270,6 +270,11 @@ size_t x_strcountequal(const char* a, const char* b);
 char* x_stpcpy(char* dst, const char* src);
 
 
+/** dstにsrcを逆順でコピーし、コピーした文字列の終端のポインタを返します
+ */
+char* x_stprcpy(char* dst, const char* src);
+
+
 /** 長さ制限付きのx_stpcpy()です
  *
  *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/stpncpy.3.html
@@ -306,6 +311,11 @@ char* x_strchrnul(const char* s, int c);
 /** 長さ指定付きのstrlen()です
  */
 size_t x_strnlen(const char* s, size_t n);
+
+
+/** `"r", "r+"`等のfopen()で使用するモード指定文字列をXOpenModeに変換して返します
+ */
+XOpenMode x_strtomode(const char* modestr);
 
 
 /** n1バイトの大きさを持つp1からn2バイトのp2が最初に現れた位置のポインタを返します
@@ -362,6 +372,20 @@ void x_memblt(void* dst, const void* src,
 /** (memcmp(p1, p2) == 0)と同じです
  */
 bool x_memequal(const void* p1, const void* p2, size_t n);
+
+
+/** sizeバイトの領域を持つ長さlenのdstの先頭からdnバイトをsnバイトのsrcで上書きします
+ *
+ *  振る舞いがわかりづらいと思うので、3パターンの例を示します。<br>
+ *  + dn == sn (dn = sn = 3, dst="ABCDEF", src="GHI" result => "GHIDEF")
+ *  + dn >  sn (dn = 3 sn = 2, dst="ABCDEF", src="GH" result => "GHDEF")
+ *  + dn <  sn (dn = 2 sn = 3, dst="ABCDEF", src="GHI" result => "GHICDEF)
+ *
+ *  dn < snで、sizeが足りずに、領域をずらせなかった場合はNULLを返します。
+ *  それ以外の場合はdstを返します。
+ *
+ */
+char* x_strreplace(char* dst, size_t size, size_t len, size_t dn, const char* src, size_t sn);
 
 
 #ifdef __cplusplus
