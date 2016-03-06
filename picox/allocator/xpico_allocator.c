@@ -60,12 +60,27 @@ static void X__Deallocate(XPicoAllocator* self, void* ptr, size_t size);
 #define X__HEADER_SIZE  (x_roundup_multiple(sizeof(X__Chunk), self->alignment))
 
 
-void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment)
+bool xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment)
 {
     X_ASSERT(self);
-    X_ASSERT(heap);
     X_ASSERT(alignment);
     X_ASSERT(x_is_power_of_two(alignment));
+
+    self->heap = heap;
+    self->alignment = 0;
+    self->top = NULL;
+    self->capacity = 0;
+    self->reserve = 0;
+    self->max_used = 0;
+    self->ownmemory = false;
+
+    if (! heap)
+    {
+        heap = x_malloc(size);
+        if (!heap)
+            return false;
+        self->ownmemory = true;
+    }
 
     self->heap = heap;
     self->alignment = x_roundup_multiple(alignment, X_ALIGN_OF(size_t));
@@ -75,11 +90,24 @@ void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignmen
     X_ASSERT(size > (size_t)(self->top - self->heap));
     self->capacity = size - (self->top - self->heap);
     self->reserve = self->capacity;
-    self->max_used = 0;
 
     X__Chunk* chunk = (X__Chunk*)self->top;
     chunk->next = NULL;
     chunk->size = self->capacity;
+
+    return true;
+}
+
+
+void xpalloc_deinit(XPicoAllocator* self)
+{
+    X_ASSERT(self);
+    if (self->ownmemory)
+    {
+        x_free(self->heap);
+        self->heap = NULL;
+        self->ownmemory = false;
+    }
 }
 
 
@@ -109,6 +137,41 @@ void* xpalloc_allocate(XPicoAllocator* self, size_t size)
     }
 
     return ptr;
+}
+
+
+void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t new_size)
+{
+    X_ASSERT(self);
+    X_ASSERT(new_size > 0);
+    X_ASSERT(x_is_aligned(old_mem, X__ALIGN));
+
+    size_t old_size = 0;
+
+    if (old_mem)
+    {
+        char* const p = ((char*)old_mem) - X__ALIGN;
+        old_size = *(size_t*)p;
+    }
+
+    if (old_size == new_size)
+        return old_mem;
+
+    void* const new_mem = xpalloc_allocate(self, new_size);
+    if (!new_mem)
+        return NULL;
+
+    /* 新しいサイズより旧いサイズの方が大きかったら新しいサイズ分コピーする。
+     * 古いサイズより新しいサイズの方が大きかったら古いサイズ分コピーする。
+     */
+    if (old_size > new_size)
+        memcpy(new_mem, old_mem, new_size);
+    else
+        memcpy(new_mem, old_mem, old_size);
+
+    xpalloc_deallocate(self, old_mem);
+
+    return new_mem;
 }
 
 

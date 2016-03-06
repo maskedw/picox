@@ -74,17 +74,24 @@ typedef struct XPicoAllocator
     size_t          reserve;
     size_t          alignment;
     size_t          max_used;
+    bool            ownmemory;
 } XPicoAllocator;
 
 
 /** メモリブロックを初期化します
  *
- *  @param heap     スタック管理するメモリ領域
- *  @param size     heap領域のサイズ
+ *  @param heap         heapとして利用するメモリ領域
+ *  @param size         heap領域のサイズ
+ *  @param alignment    allocatorが返すメモリアドレスのアライメント
+ *
+ *  heap == NULLの場合はsizeバイトのメモリをx_malloc()で確保します。
  *
  *  @pre
- *  + heap != NULL
- *  + size  > 0
+ *  + heapをアライメント調整したあとのサイズ > 0
+ *  + alignment == 2のべき乗
+ *
+ *  @retval true    初期化成功
+ *  @retval false   メモリ確保失敗
  *
  *  @note
  *  heapが指すアドレスはalignmentに切り上げられます。そのため、可能であればheap
@@ -94,9 +101,16 @@ typedef struct XPicoAllocator
  *  ださい。
  *
  *  alignmentには特殊なアラインメントが必要な時以外はX_ALIGN_OF(XMaxAlign)を指定
- *  しておくのが無難です。
+ *  しておくのが無難です。例えば文字列等のバイトデータしか扱わないということがわ
+ *  かっているなら、アライメントを1とすることができますが、管理データの格納用に
+ *  内部的には最低でもX_ALIGN_OF(size_t)まで、切り上げが行われます。
  */
-void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment);
+bool xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment);
+
+
+/** オブジェクトの終了処理を行います
+ */
+void xpalloc_deinit(XPicoAllocator* self);
 
 
 /** ヒープからsizeバイトのメモリを切り出して返します
@@ -105,6 +119,12 @@ void xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignmen
  *  + size > 0
  */
 void* xpalloc_allocate(XPicoAllocator* self, size_t size);
+
+
+/** realloc()相当の処理を行います
+ */
+void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t size);
+
 
 
 /** ヒープにメモリを返却します
