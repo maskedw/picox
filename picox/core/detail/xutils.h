@@ -188,6 +188,11 @@ extern "C" {
 #define X_ASSIGN_IF(cond, x, v)   if(cond) x = (v)
 
 
+/** cond == trueの時、xにvを代入してlabelにジャンプします
+ */
+#define X_ASSIGN_AND_GOTO_IF(cond, x, v, label) if(cond) { (x) = (v); goto label; }
+
+
 /** ポインタ変数xがNULLでなければvを代入します
  */
 #define X_ASSIGN_NOT_NULL(x, v)  (((x) != NULL) ? (*(x) = (v)) : (void)0)
