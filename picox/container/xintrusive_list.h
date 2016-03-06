@@ -216,11 +216,11 @@ xilist_empty(const XIntrusiveList* self)
 
 /** コンテナの終端を指すノードを返します。
  */
-static inline const XIntrusiveNode*
+static inline XIntrusiveNode*
 xilist_end(const XIntrusiveList* self)
 {
     X_ASSERT(self);
-    return &self->head;
+    return (XIntrusiveNode*)(&self->head);
 }
 
 
@@ -250,18 +250,50 @@ xilist_back(const XIntrusiveList* self)
  *  ループ毎に、iteratorには次要素が格納されます。
  *
  *  @attention
- *  ループ中に、ノードを除去したり、コンテナを操作する場合は十分注意してくださ
- *  い。iteratorが除去対象となった場合、リンクは無効になってしまう為、工夫が必要
- *  です。
+ *  ループ中に、ノードを除去したり、コンテナを操作する場合はforeach()を使用しな
+ *  いでください。iterator自身がコンテナから除去されると、ループが行えなくなるか
+ *  らです。イテレータが除去されるループは面倒ですが自分でループを書く必要があり
+ *  ます。
  *
  *  @code
+ *  // [NG] リンクを解除した時点でイテレートできなくなる
  *  XIntrusiveNode* ite;
- *  xilist_foreach(&list, ite) {
- *      if (Predicate(ite)) {
- *          XIntrusiveNode* tmp = ite;
+ *  xilist_foreach(&list, ite)
+ *  {
+ *      if (...)
+ *          xnode_unlink(ite);
+ *  }
+ *  @endcode
+ *
+ *  @code
+ *  // [OK] 1つだけ除去してループを抜けるなら問題なし。
+ *  XIntrusiveNode* ite;
+ *  xilist_foreach(&list, ite)
+ *  {
+ *      if (...)
+ *      {
+ *          xnode_unlink(ite);
+ *          break;
+ *      }
+ *  }
+ *  @endcode
+ *
+ *  @code
+ *  // [OK] 1つ以上のノードを除去するならイテレータの管理は自分で行う
+ *  XIntrusiveNode* ite = xilist_front(&ilist);
+ *  const XIntrusiveList* const end = xilist_end(&list);
+ *  while (ite != end)
+ *  {
+ *      if (...)
+ *      {
  *          // 次の要素でiteratorを上書きしてから除去する。
+ *          XIntrusiveNode* tmp = ite;
  *          ite = ite->next;
  *          xnode_unlink(tmp);
+ *      }
+ *      else
+ *      {
+ *          ite = ite->next;
  *      }
  *  }
  *  @endcode
