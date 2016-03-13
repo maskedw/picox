@@ -160,33 +160,34 @@ typedef enum
  */
 typedef enum
 {
-    X_ERR_NONE,             /** エラーなし */
-    X_ERR_IO,               /** 入出力エラー */
-    X_ERR_INVALID,          /** 引数が不正 */
-    X_ERR_TIMED_OUT,        /** 操作がタイムアウトした */
-    X_ERR_BUSY,             /** リソースが使用中 */
-    X_ERR_AGAIN,            /** 送信待ち等によりリソースが一時的に利用不可 */
-    X_ERR_CANCELED,         /** 操作がキャンセルされた */
-    X_ERR_NO_MEMORY,        /** メモリ確保に失敗した */
-    X_ERR_EXIST,            /** 対象がすでに存在している */
-    X_ERR_NOT_READY,        /** 操作を行う準備が未完了 */
-    X_ERR_ACCESS,           /** 対象を操作する許可がない */
-    X_ERR_NO_ENTRY,         /** 対象が存在しない */
-    X_ERR_NOT_SUPPORTED,    /** サポートされていない操作が指定された */
-    X_ERR_DISCONNECTED,     /** 通信相手との接続が切れた */
-    X_ERR_INPROGRESS,       /** 操作は実行中 */
-    X_ERR_PROTOCOL,         /** プロトコルエラー(操作を行う要件を満たしていない) */
-    X_ERR_MANY,             /** リソース生成の上限を超えている */
-    X_ERR_RANGE,            /** 結果が大きすぎる */
-    X_ERR_BROKEN,           /** 操作対象が破損している */
-    X_ERR_NAME_TOO_LONG,    /** 名前が長すぎる */
-    X_ERR_INVALID_NAME,     /** 名前が不正( 使用不可の文字が含まれている等)  */
-    X_ERR_IS_DIRECTORY,     /** ディレクトリである(ディレクトリを指定してはいけない操作) */
-    X_ERR_NOT_DIRECTORY,    /** ディレクトリではない (ディレクトリを指定すべき操作) */
-    X_ERR_NOT_EMPTY,        /** ディレクトリが空ではない */
-    X_ERR_INTERNAL,         /** 予期せぬ内部エラー */
-    X_ERR_OTHER,            /** その他のエラー */
-    X_ERR_UNKNOWN,          /** 不明なエラー */
+    X_ERR_NONE = 0,             /** エラーなし */
+    X_ERR_IO = 1,               /** 入出力エラー */
+    X_ERR_INVALID = 2,          /** 引数が不正 */
+    X_ERR_TIMED_OUT = 3,        /** 操作がタイムアウトした */
+    X_ERR_BUSY = 4,             /** リソースが使用中 */
+    X_ERR_AGAIN = 5,            /** 送信待ち等によりリソースが一時的に利用不可 */
+    X_ERR_CANCELED = 6,         /** 操作がキャンセルされた */
+    X_ERR_NO_MEMORY = 7,        /** メモリ確保に失敗した */
+    X_ERR_EXIST = 8,            /** 対象がすでに存在している */
+    X_ERR_NOT_READY = 9,        /** 操作を行う準備が未完了 */
+    X_ERR_ACCESS = 10,          /** 対象を操作する許可がない */
+    X_ERR_NO_ENTRY = 11,        /** 対象が存在しない */
+    X_ERR_NOT_SUPPORTED = 12,   /** サポートされていない操作が指定された */
+    X_ERR_DISCONNECTED = 13,    /** 通信相手との接続が切れた */
+    X_ERR_INPROGRESS = 14,      /** 操作は実行中 */
+    X_ERR_PROTOCOL = 15,        /** プロトコルエラー(操作を行う要件を満たしていない) */
+    X_ERR_MANY = 16,            /** リソース生成の上限を超えている */
+    X_ERR_RANGE = 17,           /** 結果が大きすぎる */
+    X_ERR_BROKEN = 18,          /** 操作対象が破損している */
+    X_ERR_NAME_TOO_LONG = 19,   /** 名前が長すぎる */
+    X_ERR_INVALID_NAME = 20,    /** 名前が不正( 使用不可の文字が含まれている等)  */
+    X_ERR_IS_DIRECTORY = 21,    /** ディレクトリである(ディレクトリを指定してはいけない操作) */
+    X_ERR_NOT_DIRECTORY = 22,   /** ディレクトリではない (ディレクトリを指定すべき操作) */
+    X_ERR_NOT_EMPTY = 23,       /** ディレクトリが空ではない */
+    X_ERR_NO_SPACE = 24,        /** 空き容量なし */
+    X_ERR_INTERNAL = 25,        /** 予期せぬ内部エラー */
+    X_ERR_OTHER = 25,           /** その他のエラー */
+    X_ERR_UNKNOWN = 27,         /** 不明なエラー */
 } XError;
 
 
