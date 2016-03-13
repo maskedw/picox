@@ -212,9 +212,19 @@ typedef enum
  *  picoxでは、"rb"等の指定によるバイナリモード、テキストモードという区別はして
  *  おらず、常にバイナリモードの動作を行います。
  *
- *  各モードの動作は以下リンク先によくまとまっています。
+ *  各モードの動作は下記リンクを参考にしてください。
  *
- *  https://docs.oracle.com/cd/E19205-01/820-2985/loc_io/9_3.htm
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/fopen.3.html
+ *  + https://docs.oracle.com/cd/E19205-01/820-2985/loc_io/9_3.htm
+ *
+ *  @note
+ *  ANSI-Cで定義された各モードの大雑把な動きはそれほど複雑ではないですが、シーク
+ *  や追記が絡んだ場合の詳細な動作に対して、プラットフォームごとの互換性は期待で
+ *  きません。そもそも未定義の部分も多いように思います。
+ *
+ *  picoxでは基本的にglibcの動作を踏襲するように各モジュールを実装していますが、
+ *  複雑な操作を行う場合は、SEEK_SET以外のシークと、追記は使わない方が無難かもし
+ *  れません。
  */
 typedef enum
 {
@@ -234,7 +244,8 @@ typedef enum
     /** `"a"` 追記書き込み
      *
      *  + 対象が存在しない場合は新規作成されます。
-     *  + 書き込み位置の初期値が末尾にセットされます。
+     *  + 書き込み位置の初期値は末尾にセットされます。
+     *  + 書き込みは常に末尾に行われます。
      */
     X_OPEN_MODE_APPEND = X_OPEN_FLAG_WRITE | X_OPEN_FLAG_APPEND,
 
@@ -256,7 +267,8 @@ typedef enum
     /** `"a+"` 追記読み書き
      *
      *  + 対象が存在しない場合は新規作成されます。
-     *  + 読み書き位置の初期値が末尾にセットされます。
+     *  + 読み込み位置の初期値は先頭にセットされます。
+     *  + 書き込みは常に末尾に行われます。
      */
     X_OPEN_MODE_APPEND_PLUS = X_OPEN_FLAG_READ_WRITE | X_OPEN_FLAG_APPEND,
     X_OPEN_MODE_UNKNOWN = 0xFF,
