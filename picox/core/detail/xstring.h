@@ -388,6 +388,16 @@ bool x_memequal(const void* p1, const void* p2, size_t n);
 char* x_strreplace(char* dst, size_t size, size_t len, size_t dn, const char* src, size_t sn);
 
 
+/** nバイトの領域を持つpをランダムな値で埋めます
+ */
+void x_memrandom(void* p, size_t n);
+
+
+/** nバイトの領域を持つpをランダムなアルファベット[a-zA-Z]で埋めます
+ */
+void x_memrandom_alpha(void* p, size_t n);
+
+
 #ifdef __cplusplus
 }
 #endif

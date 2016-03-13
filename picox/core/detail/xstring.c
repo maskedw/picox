@@ -733,6 +733,28 @@ char* x_strreplace(char* dst, size_t size, size_t len, size_t dn, const char* sr
 }
 
 
+void x_memrandom(void* p, size_t n)
+{
+    uint8_t* up = p;
+    size_t i;
+
+    for (i = 0; i < n; i++)
+        *up++ = x_rand();
+}
+
+
+void x_memrandom_alpha(void* p, size_t n)
+{
+    const char alpha[] = "abcdefghijklmnopqrstuvwxyz"
+                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    uint8_t* up = p;
+    size_t i;
+
+    for (i = 0; i < n; i++)
+        *up++ = alpha[x_rand() % sizeof(alpha)];
+}
+
+
 static bool X__IsSkip(char c, const char* skip_chars)
 {
     for (;;)

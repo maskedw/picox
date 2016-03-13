@@ -67,6 +67,7 @@
 #include <picox/core/detail/xstdlib.h>
 #include <picox/core/detail/xstream.h>
 #include <picox/core/detail/xstdio.h>
+#include <picox/core/detail/xrandom.h>
 #include <picox/core/detail/xutils.h>
 
 
