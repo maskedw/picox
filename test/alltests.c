@@ -17,10 +17,14 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xprintf);
     RUN_TEST_GROUP(xdstr);
     RUN_TEST_GROUP(xstream);
-    // RUN_TEST_GROUP(xposixfs);
-    // RUN_TEST_GROUP(xvfs);
+
+    RUN_TEST_GROUP(xfpath);
+    RUN_TEST_GROUP(xposixfs);
+    RUN_TEST_GROUP(xramfs);
+    RUN_TEST_GROUP(xvfs);
     RUN_TEST_GROUP(xfs);
     RUN_TEST_GROUP(xfatfs);
+    RUN_TEST_GROUP(xspiffs);
 }
 
 

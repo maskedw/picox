@@ -14,6 +14,7 @@ extern "C" {
 void x_init_test(void);
 void x_escape_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line);
 
+#if 0
 #ifdef X_HAS_STATEMENT_EXPRESSIONS
     #define X_IS_ASSERTION_FAILED(x)                                \
         ({                                                          \
@@ -36,6 +37,9 @@ void x_escape_assertion_failed(const char* expr, const char* msg, const char* fu
     #define X_TEST_ASSERTION_FAILED(expr)       (void)0
     #define X_TEST_ASSERTION_SUCCESS(expr)      (void)0
 #endif
+#endif
+    #define X_TEST_ASSERTION_FAILED(expr)       (void)0
+    #define X_TEST_ASSERTION_SUCCESS(expr)      (void)0
 
 
 #ifdef __cplusplus
