@@ -1,6 +1,6 @@
 /**
  *       @file  xfatfs.h
- *      @brief
+ *      @brief  FatFsをバックエンドとするファイル操作定義
  *
  *    @details
  *
@@ -42,27 +42,67 @@
 
 #include <picox/filesystem/xfscore.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+
+/** @addtogroup filesystem
+ *  @{
+ *  @addtogroup  xfatfs
+ *  @brief FatFsをバックエンドとするファイルシステムモジュールです
+ *
+ *  組込み向けファイルシステムでお馴染みの
+ *  [FatFs](http://elm-chan.org/fsw/ff/00index_j.html)をバックエンドとし、picox
+ *  ファイルシステムインターフェースを実装しています。
+ *
+ *  FatFsを使用するために必要な下位ドライバ実装には関知していないので、新規ター
+ *  ゲットへの移植時は、まずはFatFsを直接使用して、R/Wが正常に行えることを確認
+ *  することからはじめてください。
+ *
+ *  @see xfs
+ *  @see xvfs
+ *  @{
+ */
 
 
 #define X_FATFS_TAG     (X_MAKE_TAG('F', 'A', 'F', 'S'))
 typedef struct
 {
 /** @privatesection */
-    XTag            m_tag;
+    XTag  m_tag;
 } XFatFs;
 
 
+/** @brief ファイルシステムを初期化します
+ *
+ *  @pre
+ *  + fs    != NULL
+ *
+ *  FatFsの本体を利用可能にするためには、別途f_mount()等の呼び出しが必要です。
+ */
+void xfatfs_init(XFatFs* fs);
 
-// #define X_CONF_MAIN_FS_TYPE  X_FS_TYPE_FATFS
 
-
-XError xfatfs_init(XFatFs* fs);
+/** @brief ファイルシステムの終了処理を行います
+ *
+ *  @pre
+ *  + fs    != NULL
+ */
 void xfatfs_deinit(XFatFs* fs);
+
+
+/** @brief 仮想ファイルシステムを初期化します
+ *
+ *  @pre
+ *  + fs    != NULL
+ *  + vfs   != NULL
+ *
+ *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
+ */
 void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs);
-XError xfatfs_open(XFatFs* fs, XFile* fp, const char* path, const char* mode);
+XError xfatfs_open(XFatFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xfatfs_close(XFile* fp);
 XError xfatfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
 XError xfatfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
@@ -70,15 +110,20 @@ XError xfatfs_seek(XFile* fp, XOffset pos, XSeekMode whence);
 XError xfatfs_tell(XFile* fp, XSize* pos);
 XError xfatfs_flush(XFile* fp);
 XError xfatfs_mkdir(XFatFs* fs, const char* path);
-XError xfatfs_opendir(XFatFs* fs, XDir* dir, const char* path);
+XError xfatfs_opendir(XFatFs* fs, const char* path, XDir** o_dir);
 XError xfatfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
 XError xfatfs_closedir(XDir* dir);
 XError xfatfs_chdir(XFatFs* fs, const char* path);
 XError xfatfs_getcwd(XFatFs* fs, char* buf, size_t size);
 XError xfatfs_remove(XFatFs* fs, const char* path);
 XError xfatfs_rename(XFatFs* fs, const char* oldpath, const char* newpath);
-XError xfatfs_stat(XFatFs* fs, XStat* stat, const char* path);
+XError xfatfs_stat(XFatFs* fs, const char* path, XStat* statbuf);
 XError xfatfs_utime(XFatFs* fs, const char* path, XTime time);
+
+
+/** @} end of addtogroup xfatfs
+ *  @} end of addtogroup filesystem
+ */
 
 
 #ifdef __cplusplus

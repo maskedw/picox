@@ -48,15 +48,48 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-#define X_FATFS_TAG     (X_MAKE_TAG('F', 'A', 'F', 'S'))
-#define X_SPIFFS_TAG    (X_MAKE_TAG('S', 'P', 'F', 'S'))
-#define X_ROMFS_TAG     (X_MAKE_TAG('R', 'O', 'F', 'S'))
+/** @addtogroup filesystem
+ *  @{
+ *  @addtogroup  xvfs
+ *  @brief 異なるファイルシステムを共通のインターフェースで操作するための抽象化層です
+ *
+ *  LinuxやWindowsではfopen()等の標準のファイル操作APIの下位実装にファイルシステ
+ *  ムの違いを隠蔽する抽象化層が存在し、ファイルシステムは仮想ファイルシステムの
+ *  インターフェースに合わせて実装され、ユーザーアプリケーションからはファイルシ
+ *  ステムの違いを意識せず扱うことができます。
+ *
+ *  しかし、特定のランタイムライブラリを持たない小規模な組込みシステムでは、ファ
+ *  イルシステムドライバ(FatFs等)は抽象化層なしで直接使用できるように実装されま
+ *  す。
+ *
+ *  これらのドライバをpicoxが定義する仮想ファイルシステムインターフェースにに合
+ *  わせてラップすることで、共通のファイル操作を実現します。
+ *  @{
+ */
 
 
-XError xvfs_open(XVirtualFs* vfs, XFile* fp, const char* path, const char* mode);
+XError xvfs_open(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xvfs_close(XFile* fp);
-XError xvfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
 XError xvfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
+XError xvfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
+XError xvfs_seek(XFile* fp, XOffset pos, XSeekMode whence);
+XError xvfs_tell(XFile* fp, XSize* pos);
+XError xvfs_flush(XFile* fp);
+XError xvfs_mkdir(XVirtualFs* vfs, const char* path);
+XError xvfs_opendir(XVirtualFs* vfs, const char* path, XDir** o_dir);
+XError xvfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
+XError xvfs_closedir(XDir* dir);
+XError xvfs_chdir(XVirtualFs* vfs, const char* path);
+XError xvfs_getcwd(XVirtualFs* vfs, char* buf, size_t size);
+XError xvfs_remove(XVirtualFs* vfs, const char* path);
+XError xvfs_rename(XVirtualFs* vfs, const char* oldpath, const char* newpath);
+XError xvfs_stat(XVirtualFs* vfs, const char* path, XStat* statbuf);
+XError xvfs_utime(XVirtualFs* vfs, const char* path, XTime time);
+
+
+/** @} end of addtogroup xvfs
+ *  @} end of addtogroup filesystem
+ */
 
 
 #ifdef __cplusplus

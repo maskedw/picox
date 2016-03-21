@@ -1,6 +1,6 @@
 /**
  *       @file  xposixfs.h
- *      @brief
+ *      @brief  POSIX APIによるファイル操作定義
  *
  *    @details
  *
@@ -48,19 +48,61 @@ extern "C" {
 #endif /* __cplusplus */
 
 
+/** @addtogroup filesystem
+ *  @{
+ *  @addtogroup  xposixfs
+ *  @brief POSIX APIを使用するファイルシステムモジュールです
+ *
+ *  C標準ライブラリではFILE*によるファイル操作は定義されていますが、ディレクトリ
+ *  操作はC標準では定義されておらず、POSIXの範疇となります。
+ *  このモジュールはPOSIX APIをバックエンドとし、picoxファイルシステムインターフ
+ *  ェースを実装しています。
+ *
+ *  このモジュールの目的は以下の通りです。
+ *  + 組込みLinuxでもpicoxインターフェースを使用可能にする。
+ *  + ifdef等でxposixfsとxfatfs等の組込み向けファイルシステムと切替を行い、ホス
+ *    トPC上でのデバッグを行いやすくする。
+ *
+ *  @see xfs
+ *  @see xvfs
+ *  @{
+ */
+
+
 #define X_POSIXFS_TAG   (X_MAKE_TAG('X', 'P', 'O', 'F'))
 typedef struct
 {
 /** @privatesection */
-    char*  m_cwd;
-    size_t m_prefix_len;
+    XTag    m_tag;
 } XPosixFs;
 
 
-XError xposixfs_init(XPosixFs* fs, const char* rootdir);
+/** @brief ファイルシステムを初期化します
+ *
+ *  @pre
+ *  + fs    != NULL
+ */
+void xposixfs_init(XPosixFs* fs);
+
+
+/** @brief ファイルシステムの終了処理を行います
+ *
+ *  @pre
+ *  + fs    != NULL
+ */
 void xposixfs_deinit(XPosixFs* fs);
+
+
+/** @brief 仮想ファイルシステムを初期化します
+ *
+ *  @pre
+ *  + fs    != NULL
+ *  + vfs   != NULL
+ *
+ *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
+ */
 void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs);
-XError xposixfs_open(XPosixFs* fs, XFile* fp, const char* path, const char* mode);
+XError xposixfs_open(XPosixFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xposixfs_close(XFile* fp);
 XError xposixfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
 XError xposixfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
@@ -68,15 +110,21 @@ XError xposixfs_seek(XFile* fp, XOffset pos, XSeekMode whence);
 XError xposixfs_tell(XFile* fp, XSize* pos);
 XError xposixfs_flush(XFile* fp);
 XError xposixfs_mkdir(XPosixFs* fs, const char* path);
-XError xposixfs_opendir(XPosixFs* fs, XDir* dir, const char* path);
+XError xposixfs_opendir(XPosixFs* fs, const char* path, XDir** o_dir);
 XError xposixfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
 XError xposixfs_closedir(XDir* dir);
 XError xposixfs_chdir(XPosixFs* fs, const char* path);
 XError xposixfs_getcwd(XPosixFs* fs, char* buf, size_t size);
 XError xposixfs_remove(XPosixFs* fs, const char* path);
 XError xposixfs_rename(XPosixFs* fs, const char* oldpath, const char* newpath);
-XError xposixfs_stat(XPosixFs* fs, XStat* stat, const char* path);
+XError xposixfs_stat(XPosixFs* fs, const char* path, XStat* statbuf);
 XError xposixfs_utime(XPosixFs* fs, const char* path, XTime time);
+XError xposixfs_rmtree(XPosixFs* fs, const char* path);
+
+
+/** @} end of addtogroup xposixfs
+ *  @} end of addtogroup filesystem
+ */
 
 
 #ifdef __cplusplus

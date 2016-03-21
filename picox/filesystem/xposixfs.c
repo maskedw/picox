@@ -38,7 +38,6 @@
 
 
 #include <picox/filesystem/xposixfs.h>
-#include <picox/filesystem/xflib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -47,152 +46,46 @@
 #include <unistd.h>
 
 
-static char* X__ResolvePath(const XPosixFs* fs, const char* path);
 static XError X__GetError(void);
+static bool X__DoRmTree(char* path, int size, int tail, struct stat* statbuf);
 
 
-XError xposixfs_init(XPosixFs* fs, const char* fakeroot)
+#define X__ASSERT_TAG(p)      (X_ASSERT(((const XPosixFs*)p)->m_tag == X_POSIXFS_TAG))
+#define X__GET_REAL_FP(fp)    (((X__FileStorage*)(fp))->realfp)
+#define X__GET_REAL_DIR(dir)  (((X__DirStorage*)dir)->realdir)
+
+
+typedef struct
+{
+    XFile   vfile;
+    FILE*   realfp;
+} X__FileStorage;
+
+
+typedef struct
+{
+    XDir    vdir;
+    DIR*    realdir;
+} X__DirStorage;
+
+
+void xposixfs_init(XPosixFs* fs)
 {
     X_ASSERT(fs);
-    X_ASSERT(fakeroot);
-
-    XError err = X_ERR_NONE;
-    char* real = NULL;
-    const char* p = fakeroot;
-
-    if (fakeroot[0] != '/')
-    {
-        real = realpath(fakeroot, NULL);
-        if (!real)
-        {
-            err = X__GetError();
-            goto x__exit;
-        }
-
-        p = real;
-    }
-
-    if (x_strequal(p, "/"))
-        fs->m_prefix_len = 0;
-    else
-    {
-        fs->m_prefix_len = strlen(p);
-        fs->m_cwd = x_malloc(fs->m_prefix_len + 2);
-        if (!fs->m_cwd)
-        {
-            err = X_ERR_NO_MEMORY;
-            goto x__exit;
-        }
-
-        memcpy(fs->m_cwd, p, fs->m_prefix_len);
-        memcpy(fs->m_cwd + fs->m_prefix_len, "/", 2);
-    }
-
-x__exit:
-    if (real)
-        free(real);
-
-    return err;
+    fs->m_tag = X_POSIXFS_TAG;
 }
 
 
 void xposixfs_deinit(XPosixFs* fs)
 {
-    x_free(fs->m_cwd);
-}
-
-
-XError xposixfs_open(XPosixFs* fs, XFile* fp, const char* path, const char* mode)
-{
     X_ASSERT(fs);
-    X_ASSERT(fp);
-    X_ASSERT(path);
-    X_ASSERT(mode);
-
-    fp->m_tag = X_POSIXFS_TAG;
-    fp->m_file_handle= NULL;
-    fp->m_fs = fs;
-
-    XError err = X_ERR_NONE;
-    const char* const rpath = X__ResolvePath(fs, path);
-    if (!rpath)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-    fp->m_file_handle = fopen(rpath, mode);
-    if (!fp->m_file_handle)
-        err = X__GetError();
-
-x__exit:
-    x_free((char*)rpath);
-
-    return err;
-}
-
-
-XError xposixfs_close(XFile* fp)
-{
-    XError err = X_ERR_NONE;
-    if (!fp)
-        return err;
-
-    X_ASSERT(fp->m_tag == X_POSIXFS_TAG);
-
-    if (!fp->m_file_handle)
-        return err;
-
-    if (fclose(fp->m_file_handle) != 0)
-        err = X__GetError();
-
-    fp->m_file_handle = NULL;
-
-    return err;
-}
-
-
-XError xposixfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
-{
-    X_ASSERT(fp);
-    X_ASSERT(fp->m_tag == X_POSIXFS_TAG);
-    X_ASSERT(fp->m_file_handle);
-    X_ASSERT(src);
-
-    XError err = X_ERR_NONE;
-    clearerr(fp->m_file_handle);
-    const size_t n = fwrite(src, 1, size, fp->m_file_handle);
-
-    X_ASSIGN_NOT_NULL(nwritten, n);
-    if ((n != size) && ferror(fp->m_file_handle))
-        err = X__GetError();
-
-    return err;
-}
-
-
-XError xposixfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
-{
-    X_ASSERT(fp);
-    X_ASSERT(fp->m_tag == X_POSIXFS_TAG);
-    X_ASSERT(fp->m_file_handle);
-    X_ASSERT(dst);
-
-    XError err = X_ERR_NONE;
-    clearerr(fp->m_file_handle);
-    const size_t n = fread(dst, 1, size, fp->m_file_handle);
-
-    X_ASSIGN_NOT_NULL(nread, n);
-    if ((n != size) && ferror(fp->m_file_handle))
-        err = X__GetError();
-
-    return err;
 }
 
 
 void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs)
 {
-    vfs->m_fs_handle        = fs;
+    memset(vfs, 0, sizeof(*vfs));
+    vfs->m_realfs           = fs;
     vfs->m_open_func        = (XVirtualFsOpenFunc)xposixfs_open;
     vfs->m_close_func       = (XVirtualFsCloseFunc)xposixfs_close;
     vfs->m_read_func        = (XVirtualFsReadFunc)xposixfs_read;
@@ -213,14 +106,126 @@ void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs)
 }
 
 
+XError xposixfs_open(XPosixFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
+{
+    X_ASSERT(fs);
+    X_ASSERT(o_fp);
+    X_ASSERT(path);
+    X__ASSERT_TAG(fs);
+
+    *o_fp = NULL;
+    XError err = X_ERR_NONE;
+    const char* modestr = NULL;
+    switch (mode)
+    {
+        case X_OPEN_MODE_READ:
+            modestr = "rb";     break;
+        case X_OPEN_MODE_WRITE:
+            modestr = "wb";     break;
+        case X_OPEN_MODE_APPEND:
+            modestr = "ab";     break;
+        case X_OPEN_MODE_READ_PLUS:
+            modestr = "r+b";    break;
+        case X_OPEN_MODE_WRITE_PLUS:
+            modestr = "w+b";    break;
+        case X_OPEN_MODE_APPEND_PLUS:
+            modestr = "a+b";    break;
+        default:
+            modestr = "";       break;
+    }
+
+    FILE* realfp = fopen(path, modestr);
+    if (!realfp)
+    {
+        err = X__GetError();
+        goto x__exit;
+    }
+
+    X__FileStorage* buf = x_malloc(sizeof(X__FileStorage));
+    if (! buf)
+    {
+        err = X_ERR_NO_MEMORY;
+        goto x__exit;
+    }
+
+    buf->realfp = realfp;
+    buf->vfile.m_fs = fs;
+    realfp = NULL;
+    *o_fp = &(buf->vfile);
+
+x__exit:
+    if (realfp)
+        fclose(realfp);
+
+    return err;
+}
+
+
+XError xposixfs_close(XFile* fp)
+{
+    XError err = X_ERR_NONE;
+    if (!fp)
+        return err;
+
+    X__ASSERT_TAG(fp->m_fs);
+    X__FileStorage* const storage = (X__FileStorage*)fp;
+
+    if (fclose(storage->realfp) != 0)
+        err = X__GetError();
+    x_free(storage);
+
+    return err;
+}
+
+
+XError xposixfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
+{
+    X_ASSERT(fp);
+    X_ASSERT(src);
+    X__ASSERT_TAG(fp->m_fs);
+
+    XError err = X_ERR_NONE;
+    FILE* const realfp = X__GET_REAL_FP(fp);
+
+    clearerr(realfp);
+    const size_t n = fwrite(src, 1, size, realfp);
+
+    X_ASSIGN_NOT_NULL(nwritten, n);
+    if ((n != size) && ferror(realfp))
+        err = X__GetError();
+
+    return err;
+}
+
+
+XError xposixfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
+{
+    X_ASSERT(fp);
+    X_ASSERT(dst);
+    X__ASSERT_TAG(fp->m_fs);
+
+    XError err = X_ERR_NONE;
+    FILE* const realfp = X__GET_REAL_FP(fp);
+
+    clearerr(realfp);
+    const size_t n = fread(dst, 1, size, realfp);
+
+    X_ASSIGN_NOT_NULL(nread, n);
+    if ((n != size) && ferror(realfp))
+        err = X__GetError();
+
+    return err;
+}
+
+
 XError xposixfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 {
     X_ASSERT(fp);
-    X_ASSERT(fp->m_file_handle);
+    X__ASSERT_TAG(fp->m_fs);
 
     XError err = X_ERR_NONE;
-    FILE* const file = fp->m_file_handle;
-    if (fseek(file, pos, whence) == -1)
+    FILE* const realfp = X__GET_REAL_FP(fp);
+    if (fseek(realfp, pos, whence) == -1)
         err = X__GetError();
 
     return err;
@@ -230,11 +235,12 @@ XError xposixfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 XError xposixfs_tell(XFile* fp, XSize* pos)
 {
     X_ASSERT(fp);
-    X_ASSERT(fp->m_file_handle);
     X_ASSERT(pos);
+    X__ASSERT_TAG(fp->m_fs);
 
+    *pos = 0;
     XError err = X_ERR_NONE;
-    FILE* const file = fp->m_file_handle;
+    FILE* const realfp = X__GET_REAL_FP(fp);
 
     /* XSizeはuint32_tとしており、longがint32_tであった場合、2G以上のファイルに
      * 対するtellの結果は不正になる可能性がある。seekをfsetpos、tellをfgetposを
@@ -242,7 +248,7 @@ XError xposixfs_tell(XFile* fp, XSize* pos)
      * に、2G以上のファイルを使うことはほぼありえないので、ひとまず保留。fsetpos
      * にはwhence引数がないので、whence対応がめんどくさいのだ。
      */
-    const long ret = ftell(file);
+    const long ret = ftell(realfp);
     if (ret == -1)
         err = X__GetError();
     else
@@ -255,11 +261,12 @@ XError xposixfs_tell(XFile* fp, XSize* pos)
 XError xposixfs_flush(XFile* fp)
 {
     X_ASSERT(fp);
-    X_ASSERT(fp->m_file_handle);
+    X__ASSERT_TAG(fp->m_fs);
 
     XError err = X_ERR_NONE;
-    FILE* const file = fp->m_file_handle;
-    if (fflush(file) != 0)
+    FILE* const realfp = X__GET_REAL_FP(fp);
+
+    if (fflush(realfp) != 0)
         err = X__GetError();
 
     return err;
@@ -270,49 +277,55 @@ XError xposixfs_mkdir(XPosixFs* fs, const char* path)
 {
     X_ASSERT(fs);
     X_ASSERT(path);
+    X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
-    const char* const rpath = X__ResolvePath(fs, path);
-    if (!rpath)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
 
 #ifdef _WIN32
-    const int result = mkdir(rpath);
+    const int result = mkdir(path);
 #else
-    const int result = mkdir(rpath, 0777);
+    const int result = mkdir(path, 0777);
 #endif
     if (result != 0)
         err = X__GetError();
-
-x__exit:
-    x_free((char*)rpath);
 
     return err;
 }
 
 
-XError xposixfs_opendir(XPosixFs* fs, XDir* dir, const char* path)
+XError xposixfs_opendir(XPosixFs* fs, const char* path, XDir** o_dir)
 {
     X_ASSERT(fs);
-    X_ASSERT(dir);
+    X_ASSERT(o_dir);
+    X__ASSERT_TAG(fs);
 
+    *o_dir = NULL;
     XError err = X_ERR_NONE;
-    const char* const rpath = X__ResolvePath(fs, path);
-    if (!rpath)
+    DIR* realdir = opendir(path);
+    if (! realdir)
+    {
+        err = X__GetError();
+        goto x__exit;
+    }
+
+    X__DirStorage* buf = x_malloc(sizeof(X__DirStorage));
+    if (! buf)
     {
         err = X_ERR_NO_MEMORY;
         goto x__exit;
     }
 
-    dir->m_dir_handle = opendir(rpath);
-    if (!dir->m_dir_handle)
-        err = X__GetError();
+    buf->vdir.m_fs = fs;
+    buf->realdir = realdir;
+    *o_dir = &(buf->vdir);
+    realdir = NULL;
+    buf = NULL;
 
 x__exit:
-    x_free((char*)rpath);
+    if (realdir)
+        closedir(realdir);
+    if (buf)
+        x_free(buf);
 
     return err;
 }
@@ -321,42 +334,42 @@ x__exit:
 XError xposixfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
     X_ASSERT(dir);
-    X_ASSERT(dir->m_dir_handle);
     X_ASSERT(dirent);
     X_ASSERT(result);
+    X__ASSERT_TAG(dir->m_fs);
 
     XError err = X_ERR_NONE;
     *result = NULL;
-    struct dirent* const dirent_handle = x_malloc(sizeof(struct dirent));
-    if (!dirent_handle)
+    struct dirent* const realent = x_malloc(sizeof(struct dirent));
+    if (!realent)
     {
         err = X_ERR_NO_MEMORY;
         goto x__exit;
     }
 
-    DIR* const dir_handle = dir->m_dir_handle;
-    struct dirent* ret;
-    if (readdir_r(dir_handle, dirent_handle, &ret) != 0)
+    DIR* const realdir = X__GET_REAL_DIR(dir);
+    struct dirent* realret;
+    if (readdir_r(realdir, realent, &realret) != 0)
     {
         err = X__GetError();
         goto x__exit;
     }
 
-    if (!ret)
+    if (!realret)
         goto x__exit;
 
-    const size_t len = strlen(dirent_handle->d_name);
+    const size_t len = strlen(realent->d_name);
     if (len >= X_NAME_MAX)
     {
         err = X_ERR_RANGE;
         goto x__exit;
     }
 
-    strcpy(dirent->name, dirent_handle->d_name);
+    strcpy(dirent->name, realent->d_name);
     *result = dirent;
 
 x__exit:
-    x_free(dirent_handle);
+    x_free(realent);
 
     return err;
 }
@@ -368,14 +381,12 @@ XError xposixfs_closedir(XDir* dir)
     if (!dir)
         return err;
 
-    X_ASSERT(dir->m_tag == X_POSIXFS_TAG);
-    if (!dir->m_dir_handle)
-        return err;
+    X__ASSERT_TAG(dir->m_fs);
+    X__DirStorage* const storage = (X__DirStorage*)dir;
 
-    if (closedir(dir->m_dir_handle) != 0)
+    if (closedir(storage->realdir) != 0)
         err = X__GetError();
-
-    dir->m_dir_handle = NULL;
+    x_free(storage);
 
     return err;
 }
@@ -385,27 +396,11 @@ XError xposixfs_chdir(XPosixFs* fs, const char* path)
 {
     X_ASSERT(fs);
     X_ASSERT(path);
+    X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
-    char* rpath = X__ResolvePath(fs, path);
-    if (!rpath)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-    if (chdir(rpath) != 0)
-    {
+    if (chdir(path) != 0)
         err = X__GetError();
-        goto x__exit;
-    }
-
-    x_free(fs->m_cwd);
-    fs->m_cwd = rpath;
-    rpath = NULL;
-
-x__exit:
-    x_free((char*)rpath);
 
     return err;
 }
@@ -415,14 +410,13 @@ XError xposixfs_getcwd(XPosixFs* fs, char* buf, size_t size)
 {
     X_ASSERT(fs);
     X_ASSERT(buf);
+    X__ASSERT_TAG(fs);
 
-    const size_t len = strlen(fs->m_cwd);
-    if (size <= len - fs->m_prefix_len)
-        return X_ERR_RANGE;
+    XError err = X_ERR_NONE;
+    if (!getcwd(buf, size))
+        err = X__GetError();
 
-    strcpy(buf, fs->m_cwd + fs->m_prefix_len);
-
-    return X_ERR_NONE;
+    return err;
 }
 
 
@@ -430,20 +424,11 @@ XError xposixfs_remove(XPosixFs* fs, const char* path)
 {
     X_ASSERT(fs);
     X_ASSERT(path);
+    X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
-    const char* const rpath = X__ResolvePath(fs, path);
-    if (!rpath)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-    if (remove(rpath) != 0)
+    if (remove(path) != 0)
         err = X__GetError();
-
-x__exit:
-    x_free((char*)rpath);
 
     return err;
 }
@@ -454,41 +439,24 @@ XError xposixfs_rename(XPosixFs* fs, const char* oldpath, const char* newpath)
     X_ASSERT(fs);
     X_ASSERT(oldpath);
     X_ASSERT(newpath);
+    X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
-    const char* const oldrpath = X__ResolvePath(fs, oldpath);
-    const char* const newrpath = X__ResolvePath(fs, newpath);
-
-    if ((!oldrpath) || (!newrpath))
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-    if (rename(oldrpath, newrpath) != 0)
+    if (rename(oldpath, newpath) != 0)
         err = X__GetError();
-
-x__exit:
-    x_free((char*)oldrpath);
-    x_free((char*)newrpath);
 
     return err;
 }
 
 
-XError xposixfs_stat(XPosixFs* fs, XStat* statbuf, const char* path)
+XError xposixfs_stat(XPosixFs* fs, const char* path, XStat* statbuf)
 {
     X_ASSERT(fs);
     X_ASSERT(statbuf);
     X_ASSERT(path);
+    X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
-    const char* const rpath = X__ResolvePath(fs, path);
-    if (!rpath)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
 
     struct stat buf;
     if (stat(path, &buf) != 0)
@@ -502,8 +470,6 @@ XError xposixfs_stat(XPosixFs* fs, XStat* statbuf, const char* path)
     statbuf->mtime = buf.st_mtime;
 
 x__exit:
-    x_free((char*)rpath);
-
     return err;
 }
 
@@ -512,26 +478,107 @@ XError xposixfs_utime(XPosixFs* fs, const char* path, XTime time)
 {
     X_ASSERT(fs);
     X_ASSERT(path);
+    X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
-    const char* const rpath = X__ResolvePath(fs, path);
-    if (!rpath)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
     struct utimbuf times;
     times.actime = time;
     times.modtime = time;
 
-    if (utime(rpath, &times) != 0)
+    if (utime(path, &times) != 0)
         err = X__GetError();
 
-x__exit:
-    x_free((char*)rpath);
+    return err;
+}
+
+
+XError xposixfs_rmtree(XPosixFs* fs, const char* path)
+{
+    X_ASSERT(fs);
+    X_ASSERT(path);
+    X__ASSERT_TAG(fs);
+
+    struct stat statbuf;
+    char buf[X_PATH_MAX];
+    strcpy(buf, path);
+    const int tail = strlen(buf);
+
+    XError err = X_ERR_NONE;
+    errno = 0;
+    if (!X__DoRmTree(buf, X_PATH_MAX, tail, &statbuf))
+        err = X__GetError();
 
     return err;
+}
+
+
+static bool X__DoRmTree(char* path, int size, int tail, struct stat* statbuf)
+{
+    DIR  *dir = NULL;
+    bool ok = false;
+    int ret;
+
+    do
+    {
+        X_BREAK_IF(stat(path, statbuf) != 0);
+
+        if (S_ISDIR(statbuf->st_mode))
+        {
+            X_BREAK_IF((dir = opendir(path)) == NULL);
+            for (;;)
+            {
+                struct dirent* ent;
+                ent = readdir(dir);
+
+                /* ディレクトリ要素の終端 or error */
+                if (ent == NULL)
+                {
+                    if (errno == 0)
+                        ok = true;
+                    break;
+                }
+
+                if (x_strequal(".", ent->d_name) || x_strequal("..", ent->d_name))
+                    continue;
+
+                ret = snprintf(&path[tail], size - tail, "/%s", ent->d_name);
+
+                X_BREAK_IF(ret == -1);
+
+                /* snprintfはbufサイズに空きがなかった場合も、本来書き込めたであ
+                 * ろう文字数を返す。 よって、bufサイズより戻り値が大きかった場
+                 * 合、空きがが足りなかったことを意味する。
+                 */
+                if (ret > size - tail)
+                {
+                    errno = ENOMEM;
+                    break;
+                }
+
+                /* 再帰呼び出し */
+                X_BREAK_IF(! X__DoRmTree(path, size, tail + ret, statbuf));
+            }
+
+            ret = closedir(dir);
+            X_BREAK_IF(! ok);
+
+            ok = false;
+            X_BREAK_IF(ret != 0);
+
+            path[tail] = '\0';
+            ret = rmdir(path);
+            X_BREAK_IF(ret != 0);
+        }
+        else
+        {
+            ret = unlink(path);
+            X_BREAK_IF(ret != 0);
+        }
+
+        ok = true;
+    } while (0);
+
+    return ok;
 }
 
 
@@ -541,35 +588,22 @@ static XError X__GetError(void)
     switch (errno)
     {
         case EROFS:
-        case EACCES:    err = X_ERR_ACCESS;     break;
-        case EEXIST:    err = X_ERR_EXIST;      break;
-        case EBUSY:     err = X_ERR_BUSY;       break;
-        case EINVAL:    err = X_ERR_INVALID;    break;
-        case EIO:       err = X_ERR_IO;         break;
-        case ETIMEDOUT: err = X_ERR_TIMED_OUT;  break;
-        case ENOMEM:    err = X_ERR_NO_MEMORY;  break;
+        case EACCES:    err = X_ERR_ACCESS;         break;
+        case EEXIST:    err = X_ERR_EXIST;          break;
+        case EBUSY:     err = X_ERR_BUSY;           break;
+        case EINVAL:    err = X_ERR_INVALID;        break;
+        case EIO:       err = X_ERR_IO;             break;
+        case ETIMEDOUT: err = X_ERR_TIMED_OUT;      break;
+        case ENOMEM:    err = X_ERR_NO_MEMORY;      break;
         case ENFILE:
-        case EMFILE:    err = X_ERR_MANY;       break;
-        case ENOENT:    err = X_ERR_NO_ENTRY;   break;
-        case ERANGE:    err = X_ERR_RANGE;      break;
-        default:        err = X_ERR_OTHER;      break;
+        case EMFILE:    err = X_ERR_MANY;           break;
+        case ENOENT:    err = X_ERR_NO_ENTRY;       break;
+        case ERANGE:    err = X_ERR_RANGE;          break;
+        case ENOSPC:    err = X_ERR_NO_SPACE;       break;
+        case ENOTDIR:   err = X_ERR_NOT_DIRECTORY;  break;
+        case EISDIR:    err = X_ERR_IS_DIRECTORY;   break;
+        case ENOTEMPTY: err = X_ERR_NOT_EMPTY;      break;
+        default:        err = X_ERR_OTHER;          break;
     }
     return err;
-}
-
-
-static char* X__ResolvePath(const XPosixFs* fs, const char* path)
-{
-    const size_t size = fs->m_prefix_len + X_PATH_MAX;
-    char* buf = x_malloc(size);
-    if (! buf)
-        return NULL;
-
-    if (! xflib_resolve(buf, size, fs->m_cwd, fs->m_prefix_len, path))
-    {
-        x_free(buf);
-        return NULL;
-    }
-
-    return buf;
 }

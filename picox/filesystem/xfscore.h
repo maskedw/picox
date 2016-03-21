@@ -42,6 +42,7 @@
 
 
 #include <picox/core/xcore.h>
+#include <picox/filesystem/xfpath.h>
 
 
 #ifdef __cplusplus
@@ -49,59 +50,117 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-#ifndef X_CONFIG_FILE_NAME_MAX
-#define X_CONFIG_FILE_NAME_MAX (32)
-#endif
+/** @addtogroup filesystem
+ *  @{
+ *  @addtogroup  xfscore
+ *  @brief ファイルシステム関連の共通定義
+ *  @{
+ */
 
 
-#ifndef X_CONFIG_FILE_PATH_MAX
-#define X_CONFIG_FILE_PATH_MAX (128)
-#endif
-
-
-#define X_PATH_MAX (X_CONFIG_FILE_PATH_MAX)
-#define X_NAME_MAX (X_CONFIG_FILE_NAME_MAX)
-
-
+/* 前方宣言 */
 struct XVirtualFs;
-typedef struct XVirtualFs XVirtualFs;
+typedef struct XVirtualFs   XVirtualFs;
 
 
+/** @see X_CONF_FILE_PATH_MAX
+ */
+#define X_PATH_MAX (X_CONF_FILE_PATH_MAX)
+
+
+/** @see X_CONF_FILE_NAME_MAX
+ */
+#define X_NAME_MAX (X_CONF_FILE_NAME_MAX)
+
+
+/** @brief ファイル操作のハンドル構造体です
+ *
+ *  ユーザーが直接アクセスしてよいメンバはありません。
+ */
 typedef struct
 {
 /** @privatesection */
-    XTag        m_tag;
-    void*       m_file_handle;
     void*       m_fs;
     XVirtualFs* m_vfs;
 } XFile;
 
 
+/** @brief ディレクトリ操作のハンドル構造体です
+ *
+ *  ユーザーが直接アクセスしてよいメンバはありません。
+ */
 typedef struct
 {
 /** @privatesection */
-    XTag        m_tag;
-    void*       m_dir_handle;
     void*       m_fs;
     XVirtualFs* m_vfs;
 } XDir;
 
 
+/** @brief ファイル情報を格納する構造体です
+ */
 typedef struct
 {
+/** @publicsection */
+
+    /** @brief ファイルのタイムスタンプ */
     XTime   mtime;
+
+    /** @brief ファイルのバイト数 */
     XSize   size;
+
+    /** @brief ファイルの種別等、属性情報  */
     XMode   mode;
 } XStat;
 
 
+/** @brief ディレクトリエントリ情報を格納する構造体です
+ */
 typedef struct
 {
-    char name[X_CONFIG_FILE_NAME_MAX];
+/** @publicsection */
+
+    /** @brief エントリのファイル名 */
+    char name[X_NAME_MAX];
 } XDirEnt;
 
 
-typedef XError (*XVirtualFsOpenFunc)(void* fs, XFile* fp, const char* path, const char* mode);
+/** @name filemode
+ *  @brief ファイルの属性情報を判定するインターフェースを提供します
+ *
+ *  判定マクロの引数にはXStat.modeを使用してください。
+ *
+ *  @{
+ */
+#define XSTAT_MODE_TYPEMASK         (0x0F)
+#define XSTAT_MODE_REGULAR          (0)
+#define XSTAT_MODE_DIRECTORY        (1)
+
+/** @brief ファイルが通常ファイルかどうかを判定します
+ */
+#define XSTAT_IS_REGULAR(mode)      (((mode) & XSTAT_MODE_TYPEMASK) == XSTAT_MODE_REGULAR)
+
+
+/** @brief ファイルがディレクトリかどうかを判定します
+ */
+#define XSTAT_IS_DIRECTORY(mode)    (((mode) & XSTAT_MODE_TYPEMASK) == XSTAT_MODE_DIRECTORY)
+
+
+/** @} end of name filemode
+ */
+
+/** @name virtual filesystem interface
+ *  @brief 仮想ファイルシステムのインターフェース定義です
+ *
+ *  これらの定義が要求するインターフェースを実装することで、どんなファイルシステ
+ *  ムもxfsにマウントできるようになります。
+ *
+ *  picoxで未提供のファイルシステムを仮想ファイルシステムのアダプトしたい場合、
+ *  各関数の要求内容はxfsの関数説明を参照してください。
+ *
+ *  実装はxfatfs, xramfs等の実装を参考にしてください。
+ */
+typedef XError (*XVirtualFsOpenFunc)(void* fs, const char* path, XOpenMode mode, XFile** o_fp);
 typedef XError (*XVirtualFsCloseFunc)(XFile* fp);
 typedef XError (*XVirtualFsReadFunc)(XFile* fp, void* dst, size_t size, size_t* nread);
 typedef XError (*XVirtualFsWriteFunc)(XFile* fp, const void* src, size_t size, size_t* nwritten);
@@ -109,21 +168,23 @@ typedef XError (*XVirtualFsSeekFunc)(XFile* fp, XOffset pos, XSeekMode whence);
 typedef XError (*XVirtualFsTellFunc)(XFile* fp, XSize* pos);
 typedef XError (*XVirtualFsFlushFunc)(XFile* fp);
 typedef XError (*XVirtualFsMkdirFunc)(void* fs, const char* path);
-typedef XError (*XVirtualFsOpendirFunc)(void* fs, XDir* dir, const char* path);
+typedef XError (*XVirtualFsOpendirFunc)(void* fs, const char* path, XDir** o_dir);
 typedef XError (*XVirtualFsReaddirFunc)(XDir* dir, XDirEnt* dirent, XDirEnt** result);
 typedef XError (*XVirtualFsClosedirFunc)(XDir* dir);
 typedef XError (*XVirtualFsChdirFunc)(void* fs, const char* path);
 typedef XError (*XVirtualFsGetcwdFunc)(void* fs, char* buf, size_t size);
 typedef XError (*XVirtualFsRemoveFunc)(void* fs, const char* path);
 typedef XError (*XVirtualFsRenameFunc)(void* fs, const char* oldpath, const char* newpath);
-typedef XError (*XVirtualFsStatFunc)(void* fs, XStat* stat, const char* path);
+typedef XError (*XVirtualFsStatFunc)(void* fs, const char* path, XStat* statbuf);
 typedef XError (*XVirtualFsUtimeFunc)(void* fs, const char* path, XTime time);
 
 
+/** 仮想ファイルシステム関数テーブルです
+ */
 struct XVirtualFs
 {
 /** @privatesection */
-    void*                       m_fs_handle;
+    void*                       m_realfs;
     XVirtualFsOpenFunc          m_open_func;
     XVirtualFsCloseFunc         m_close_func;
     XVirtualFsReadFunc          m_read_func;
@@ -142,6 +203,15 @@ struct XVirtualFs
     XVirtualFsStatFunc          m_stat_func;
     XVirtualFsUtimeFunc         m_utime_func;
 };
+
+
+/** @} end of name virtual filesystem interface
+ */
+
+
+/** @} end of addtogroup xfscore
+ *  @} end of addtogroup filesystem
+ */
 
 
 #ifdef __cplusplus
