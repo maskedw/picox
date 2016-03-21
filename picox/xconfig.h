@@ -56,6 +56,11 @@
 #endif
 
 
+/** @addtogroup config
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -255,6 +260,50 @@ extern "C" {
 #ifndef X_CONFIG_USE_FLOATING_POINT_PRINTF
 #define X_CONFIG_USE_FLOATING_POINT_PRINTF (0)
 #endif
+
+
+/** @def X_CONF_FILE_PATH_MAX
+ *  NULL終端を含むファイルパスの最大バイト数を指定します
+ *
+ *  filesystemモジュールの関数内では、X_CONF_FILE_PATH_MAXバイトの
+ *  ローカル変数を多数使用するため、メモリ制約の厳しい組込みシステムではスタック
+ *  サイズに注意する必要があります。
+ *
+ *  ファイル関数を使用する場合は、最低でもX_CONF_FILE_PATH_MAX * 3バイト程度のス
+ *  タックを用意しておく確保しておいてください。
+ *
+ *  マルチスレッド環境ではファイル関数を呼び出すスレッドを限定しておくとメモリの
+ *  節約となります。
+ */
+#ifndef X_CONF_FILE_PATH_MAX
+#define X_CONF_FILE_PATH_MAX (128)
+#endif
+
+
+/** @def X_CONF_FILE_NAME_MAX
+ *  NULL終端を含むファイル名の最大バイト数を指定します
+ *
+ *  X_CONF_FILE_PATH_MAXと同様に、スタックサイズに注意してください。
+ */
+#ifndef X_CONF_FILE_NAME_MAX
+#define X_CONF_FILE_NAME_MAX (32)
+#endif
+
+
+/** @def X_CONF_PORT_GETTIMEOFDAY
+ *
+ *  時刻を取得する関数x_gettimeofday()には、このコンフィグ値が1の時には
+ *  x_port_gettimeofday()が、0の時は、常に0を返すx_default_gettimeofday()が使用
+ *  されます。
+ *  x_port_gettimeofday()をユーザーが提供できる場合は1をセットしてください。
+ */
+#ifndef X_CONF_PORT_GETTIMEOFDAY
+#define X_CONF_PORT_GETTIMEOFDAY (0)
+#endif
+
+
+/** @} end of addtogroup config
+ */
 
 
 #ifdef __cplusplus
