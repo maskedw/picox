@@ -69,6 +69,7 @@
 #include <picox/core/detail/xstdio.h>
 #include <picox/core/detail/xrandom.h>
 #include <picox/core/detail/xutils.h>
+#include <picox/core/detail/xtime.h>
 
 
 #endif // picox_xcore_h_

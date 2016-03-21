@@ -137,9 +137,12 @@ typedef union XMaxAlign
  */
 typedef enum
 {
-    X_SEEK_SET = SEEK_SET, /** 先頭    */
-    X_SEEK_CUR = SEEK_CUR, /** 現在地  */
-    X_SEEK_END = SEEK_END, /** 終端    */
+    /** @brief ストリームの先頭 */
+    X_SEEK_SET = SEEK_SET,
+    /** @brief ストリームポインタの現在地  */
+    X_SEEK_CUR = SEEK_CUR,
+    /** @brief ストリームサイズの末尾 */
+    X_SEEK_END = SEEK_END
 } XSeekMode;
 
 
