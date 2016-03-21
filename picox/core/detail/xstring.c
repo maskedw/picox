@@ -485,6 +485,20 @@ size_t x_strcountequal(const char* a, const char* b)
 }
 
 
+size_t x_strcountcaseequal(const char* a, const char* b)
+{
+    size_t n = 0;
+    while (tolower((int)*a) == tolower((int)(*b++)))
+    {
+        if (*a++ == '\0')
+            break;
+        ++n;
+    }
+
+    return n;
+}
+
+
 void* x_memmem(const void* p1, size_t n1, const void* p2, size_t n2)
 {
     const char* cur;

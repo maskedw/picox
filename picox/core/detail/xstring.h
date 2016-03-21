@@ -260,6 +260,11 @@ size_t x_strlcat(char* dst, const char* src, size_t n);
 size_t x_strcountequal(const char* a, const char* b);
 
 
+/** 大文字小文字の違いを無視したx_strcountequal()です。
+ */
+size_t x_strcountcaseequal(const char* a, const char* b);
+
+
 /** srcをdstにコピーし、コピーした文字列の終端のポインタを返します
  *
  *  コピーした文字列の後ろに続けて処理をしたい時に、strcpy()よりもこちらを使用す
