@@ -254,11 +254,11 @@ extern "C" {
 #endif
 
 
-/** @def X_CONFIG_USE_FLOATING_POINT_PRINTF
+/** @def X_CONF_USE_FLOATING_POINT_PRINTF
  *  x_printf系統の関数で%fによる浮動小数点出力を使用可能にします。
  */
-#ifndef X_CONFIG_USE_FLOATING_POINT_PRINTF
-#define X_CONFIG_USE_FLOATING_POINT_PRINTF (0)
+#ifndef X_CONF_USE_FLOATING_POINT_PRINTF
+#define X_CONF_USE_FLOATING_POINT_PRINTF (0)
 #endif
 
 

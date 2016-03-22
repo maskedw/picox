@@ -206,7 +206,7 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
     #error unspported platform
 #endif
 
-#if X_CONFIG_USE_FLOATING_POINT_PRINTF
+#if X_CONF_USE_FLOATING_POINT_PRINTF
     unsigned char precision;
     double f;
 #endif
@@ -243,7 +243,7 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
             i = i * 10 + c - '0';
         minimum_width = i;
 
-#if X_CONFIG_USE_FLOATING_POINT_PRINTF
+#if X_CONF_USE_FLOATING_POINT_PRINTF
         precision = 0xFF;
         if (c == '.')
         {
@@ -322,7 +322,7 @@ X__PRINT_STRING:
                 continue;
         }
 
-#if X_CONFIG_USE_FLOATING_POINT_PRINTF
+#if X_CONF_USE_FLOATING_POINT_PRINTF
         if (c == 'f')
         {
             f = va_arg(args, double);
@@ -398,7 +398,7 @@ X__PRINT_STRING:
             s[i++] = '-';
 
         j = i;
-#if X_CONFIG_USE_FLOATING_POINT_PRINTF
+#if X_CONF_USE_FLOATING_POINT_PRINTF
         if ((c == 'f') && (precision > 0))
         {
             j += precision + 1;
@@ -426,7 +426,7 @@ X__PRINT_STRING:
             X__PUTC(s[--i]);
         } while (i);
 
-#if X_CONFIG_USE_FLOATING_POINT_PRINTF
+#if X_CONF_USE_FLOATING_POINT_PRINTF
         if ((c == 'f') && (precision > 0))
         {
             X__PUTC('.');
