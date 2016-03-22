@@ -1,6 +1,6 @@
 /**
  *       @file  xstddef.h
- *      @brief  共通の型定義等
+ *      @brief  共通の型やマクロ定義等
  *
  *    @details
  *
@@ -36,8 +36,17 @@
  * SOFTWARE.
  */
 
-#ifndef picox_core_detail_types_h_
-#define picox_core_detail_types_h_
+#ifndef picox_core_detail_xstddef_h_
+#define picox_core_detail_xstddef_h_
+
+
+/** @addtogroup core
+ *  @{
+ *  @addtogroup xstddef
+ *  @brief picoxで共通に使用する型や定数、マクロの定義
+ *
+ *  @{
+ */
 
 
 #ifdef __cplusplus
@@ -45,33 +54,225 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-/** 何らかの大きさを表すのに十分なサイズを備えた符号なし整数型です
+/** @brief 一次元配列の要素数を返します。
+ */
+#define X_COUNT_OF(a)      (sizeof(a) / sizeof(*(a)))
+
+
+/** @brief 二次元配列の行要素数を返します。
+ */
+#define X_COUNT_OF_ROW(x) (sizeof(x) / sizeof(x[0]))
+
+
+/** @brief 二次元配列の列要素数を返します。
+ */
+#define X_COUNT_OF_COL(x) (sizeof(x[0]) / sizeof(x[0][0]))
+
+
+/** @brief 二次元配列の要素数を返します。
+ */
+#define X_COUNT_OF_2D(x)   (X_COUNT_OF_ROW(x) * X_COUNT_OF_COL(x))
+
+
+/** @brief 構造体や共用体メンバのsizeofを返します。
+ */
+#define X_SIZEOF_MEM(s, m) (sizeof(((s*)0)->m))
+
+
+/** @brief 構造体や共用体メンバの先頭からのオフセットを返します。
+ */
+#define X_OFFSET_OF(s, m)   ((uintptr_t)&(((s *)0)->m))
+
+
+/** @brief 型typeのアライメントを返します。
+ */
+#define X_ALIGN_OF(type)   X_OFFSET_OF(struct { char c; type member; }, member)
+
+
+/** @def    X_CONTAINER_OF
+ *  @brief  複合型のメンバを指すポインタから、複合型の先頭アドレスを取得します
+ *  @param  ptr    複合型typeのmemberを指すポインタ
+ *  @param  type   memberをメンバに持つ複合型
+ *  @param  member ptrが指す複合型のメンバ名
+ *
+ *  @code {.c}
+ *  typedef struct Foo
+ *   {
+ *       int          a;
+ *       int          b;
+ *  } Foo;
+
+ *  struct Foo foo;
+ *  int* mem_ptr = &foo.b;
+ *  Foo* foo_ptr = X_CONTAINER_OF(mem_ptr, struct Foo, b);
+ *  assert(&foo == foo_ptr);
+ *  @endcode
+ *
+ *  @note
+ *  正直、使い道や使い方のイメージがしづらいかと思いますが、Linuxカーネルでは同
+ *  様のマクロが定義されており、多用されています。
+ *  より詳しい情報は、"linux container_of"等でググってみてください。
+ */
+#if defined(X_HAS_TYPEOF) && defined(X_HAS_STATEMENT_EXPRESSIONS)
+    #define X_CONTAINER_OF(ptr, type, member)                     \
+            ({                                                    \
+                const X_TYPEOF(((type*)0)->member)* mptr = (ptr); \
+                (type*)((char*)mptr - X_OFFSET_OF(type,member) ); \
+            })
+#else
+    #define X_CONTAINER_OF(ptr, type, member)                     \
+            ((type*) ((char*)(ptr) - X_OFFSET_OF(type, member)))
+#endif
+
+
+/// @cond IGNORE
+#define X_STATIC_ASSERT_CAT_(a, b)          a ## b
+/// @endcond IGNORE
+
+
+/** @brief コンパイル時アサートを行います。
+ */
+#define X_STATIC_ASSERT(cond)  \
+    enum { X_STATIC_ASSERT_CAT_(X_STATIC_ASSERTION_FAILED, __LINE__) = \
+          sizeof( struct { int assertion_failed[(cond) ? 1: -1];})}
+
+
+/** @name X_SIZEOF_XXX
+ *  @brief プリプロセスで使用するためのsizeof定義です
+ *
+ *  プリプロセスでsizeof()は使用できないのでlimits.hのXXX_MAXの定義から型サイズ
+ *  を推測しています。
+ *
+ *  @note
+ *  Cの規格上はintのビット幅が8 or 16 or 32 or 64といった保証はないので本当は
+ *  0xXXと比較してサイズを推測するのは問題がある。
+ *  しかしこのライブラリは特殊なビット幅のプロセッサは対象としていないのでこれで
+ *  よしとする。
+ *  @{
+ */
+#define X_SIZEOF_CHAR       (1)
+#define X_SIZEOF_SHORT      (2)
+
+#if UINT_MAX == 0xFF
+    #define X_SIZEOF_INT    (1)
+#elif UINT_MAX == 0xFFFF
+    #define X_SIZEOF_INT    (2)
+#elif UINT_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_INT    (4)
+#elif UINT_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_INT    (8)
+#else
+    #error unspported platform
+#endif
+
+#if ULONG_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_LONG   (4)
+#elif ULONG_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_LONG   (8)
+#else
+    #error unspported platform
+#endif
+
+#if UINTPTR_MAX == 0xFFFF
+    #define X_SIZEOF_INTPTR    (2)
+#elif UINTPTR_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_INTPTR    (4)
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_INTPTR    (8)
+#else
+    #error unspported platform
+#endif
+
+#if SIZE_MAX == 0xFFFF
+    #define X_SIZEOF_SIZE    (2)
+#elif SIZE_MAX == 0xFFFFFFFF
+    #define X_SIZEOF_SIZE    (4)
+#elif SIZE_MAX == 0xFFFFFFFFFFFFFFFF
+    #define X_SIZEOF_SIZE    (8)
+#else
+    #error unspported platform
+#endif
+
+
+/** @} end of name X_SIZEOF_XXX
+ */
+
+
+/** @name X_MSBOF_XXX
+ *  @brief 各型の最上位ビットです
+ *  @{
+ */
+#define X_MSBOF_CHAR     (X_BIT(CHAR_BIT))
+#define X_MSBOF_SHORT    (USHORT_MAX  & (~(USHORT_MAX  >> 1)))
+#define X_MSBOF_INT      (UINT_MAX    & (~(UINT_MAX    >> 1)))
+#define X_MSBOF_LONG     (ULONG_MAX   & (~(ULONG_MAX   >> 1)))
+#define X_MSBOF_INTPTR   (UINTPTR_MAX & (~(UINTPTR_MAX >> 1)))
+#define X_MSBOF_SIZE     (SIZE_MAX    & (~(SIZE_MAX    >> 1)))
+
+
+/** @} endof name X_MSBOF_XXX
+ */
+
+
+/** @name X_XXX_C
+ *  @brief 定数サフィックスを補完するためのマクロです。
+ *
+ *  末尾の`_C`はConstantを表します
+ *  @{
+ */
+#if X_SIZEOF_INT < 4
+    #define X_INT32_C(c)    c ## L
+    #define X_UINT32_C(c)   c ## UL
+#else
+    #define X_INT32_C(c)    c
+    #define X_UINT32_C(c)   c
+#endif
+
+#if X_SIZEOF_LONG < 8
+    #define X_INT64_C(c)    c ## LL
+    #define X_UINT64_C(c)   c ## ULL
+#else
+    #define X_INT64_C(c)    c ## L
+    #define X_UINT64_C(c)   c ## UL
+#endif
+
+/** @} end of name X_XXX_C
+ */
+
+
+/** @brief 何らかの大きさを表すのに十分なサイズを備えた符号なし整数型です
  *
  *  size_tの型は実装依存であり、例えばsizeof(size_t) == 2の環境では、32bitのアド
- *  レス空間を持つシリアルフラッシュのアドレッシングに使用できませし、16bit以上
- *  のファイルサイズを扱えません。
- *  この型はそういった問題に対処するために使用します。
+ *  レス空間を持つシリアルフラッシュのアドレッシングに使用できませんし、16bit以
+ *  上のファイルサイズを扱えません。
+ *
+ *  この型はそういった外部デバイスのサイズ情報の格納にも適した型で定義しています
+ *  。
  */
 typedef uint32_t XSize;
 
 
-/** XSizeの符号あり版です。size_tに対するssize_tと同じ役割です
+/** @brief XSizeの符号あり版です。size_tに対するssize_tと同じ役割です
  */
 typedef int32_t XSSize;
 
 
-/** 何らかのオフセットを表すのに十分な大きさをもった符号あり整数型です
+/** @brief 何らかのオフセットを表すのに十分な大きさをもった符号あり整数型です
  */
 typedef int32_t XOffset;
 
 
-/** 何らかのIDを格納するための符号なし整数が型です
+/** @brief 何らかのIDを格納するための符号なし整数が型です
+ *
+ *  IDには決まった使い道があるわけではないですが、例えばCでC++の仮想クラスのよう
+ *  な機能を実現したい時の型チェックに使用するといった例があります。
  */
 typedef uint32_t XTag;
 
-/** a, b, c, dからXTagに格納するIDを生成します
+
+/** @brief a, b, c, dからXTagに格納するIDを生成します
  *
- *  @code
+ *  @code {.c}
  *  XTag tag = X_MAKE_TAG('P', 'I', 'C', 'O')
  *  @endcode
  */
@@ -82,7 +283,7 @@ typedef uint32_t XTag;
     | ((uint32_t)(d) <<  0) )
 
 
-/** time_tの代替をするシステム時刻を格納するための型です
+/** @brief time_tの代替をするシステム時刻を格納するための型です
  *
  *  POSIX互換システム風にUNIX時間1970年1月1日0時0分0秒(ただしタイムゾーンは考慮
  *  しない)からの経過秒数を表します。
@@ -92,7 +293,7 @@ typedef uint32_t XTag;
 typedef uint32_t XTime;
 
 
-/** struct timevalの代替をする高精度のシステム時刻を格納するための型です
+/** @brief struct timevalの代替をする高精度のシステム時刻を格納するための型です
  */
 typedef struct
 {
@@ -101,24 +302,24 @@ typedef struct
 } XTimeVal;
 
 
-/** 何らかのビットフラグを格納することを意図した型です
+/** @brief 何らかのビットフラグを格納することを意図した型です
  */
 typedef uint32_t XMode;
 
 
-/** qsort()互換の比較関数ポインタ型です */
+/** @brief qsort()互換の比較関数ポインタ型です */
 typedef int (*XCompareFunc)(const void* a, const void* b);
 
 
-/** malloc()互換のメモリ確保関数ポインタ型です */
+/** @brief malloc()互換のメモリ確保関数ポインタ型です */
 typedef void* (*XMallocFunc)(size_t size);
 
 
-/** free()互換のメモリ確保関数ポインタ型です */
+/** @brief free()互換のメモリ確保関数ポインタ型です */
 typedef void (*XFreeFunc)(void* ptr);
 
 
-/** 組込み型の最大アライメント型です。
+/** @brief 組込み型の最大アライメント型です。
  */
 typedef union XMaxAlign
 {
@@ -127,13 +328,13 @@ typedef union XMaxAlign
 } XMaxAlign;
 
 
-/** 最大サイズのアライメントでsizeバイト以上の領域を持つ変数nameを定義します。
+/** @brief 最大サイズのアライメントでsizeバイト以上の領域を持つ変数nameを定義します。
  */
 #define X_DEF_MAX_ALIGNED(name, size) \
     XMaxAlign name[((size) + sizeof(XMaxAlign) - 1) / sizeof(XMaxAlign)]
 
 
-/** シークの起点を指定する列挙型です
+/** @brief シークの起点を指定する列挙型です
  */
 typedef enum
 {
@@ -146,19 +347,20 @@ typedef enum
 } XSeekMode;
 
 
-/** errnoの代替として使用する共通のエラーコードを表す列挙型です
+/** @brief errnoの代替として使用する共通のエラーコードを表す列挙型です
  *
- *  エラーコードを共通とするか、モジュール固有とするかはどちらも一長一短がありま
- *  す。共通化すると、インターフェースを統一しやすくなりますが、モジュール固有に
- *  すると、より詳細な情報を表現できます。
+ *  エラーコードを共通とするか、モジュール固有とするかはどちらも一長一短があり、
+ *  難しい問題です。共通化すると、インターフェースを統一しやすくなりますが、モジ
+ *  ュール固有にすると、より詳細な情報を表現できます。
+ *
  *  picoxでは主にファイルシステム等の抽象化レイヤのインターフェースの統一のため
  *  にこの型を使用します。
  *
  *  @note
  *  errnoを使用しない理由は、以下の理由により組込み開発では扱いにくいからです。
  *
- *  + グローバル変数であるため、マルチスレッド環境では使いづらい。(Linux等の環境
- *    ではスレッドローカルとして実装されているので問題ない)
+ *  + グローバル変数であるため、マルチスレッド環境では使いづらい。(Linux等の一部
+ *    実行環境ではスレッドローカル変数として実装されているので問題ない)
  *  + エラーコードとしてどの値が提供されているかはCライブラリの実装による
  */
 typedef enum
@@ -189,15 +391,15 @@ typedef enum
     X_ERR_NOT_EMPTY = 23,       /** ディレクトリが空ではない */
     X_ERR_NO_SPACE = 24,        /** 空き容量なし */
     X_ERR_INTERNAL = 25,        /** 予期せぬ内部エラー */
-    X_ERR_OTHER = 25,           /** その他のエラー */
+    X_ERR_OTHER = 26,           /** その他のエラー */
     X_ERR_UNKNOWN = 27,         /** 不明なエラー */
 } XError;
 
 
-/** ファイルオープン等に使用するフラグです
+/** @brief ファイルオープン等に使用するフラグです
  *
  *  使用できる組み合わせは決まっているため、引数にはXOpenModeを使用してください
- *  。この定義は主に内部実装用です。
+ *  。この定義を直接使用するのはfilesystem等の下位モジュールのです。
  */
 typedef enum
 {
@@ -209,7 +411,7 @@ typedef enum
 } XOpenFlag;
 
 
-/** ファイルオープン等のモードです
+/** @brief ファイルオープン等のモードです
  *
  *  fopen()で使用可能な`"r","r+","w","w+","a","a+"`に対応しています。
  *  picoxでは、"rb"等の指定によるバイナリモード、テキストモードという区別はして
@@ -231,20 +433,20 @@ typedef enum
  */
 typedef enum
 {
-    /** `"r"` 読み込み
+    /** @brief `"r"` 読み込み
      *
      *  + 対象が存在しない場合はエラーになります。
      */
     X_OPEN_MODE_READ = X_OPEN_FLAG_READ,
 
-    /** `"w"` 上書き書き込み
+    /** @brief `"w"` 上書き書き込み
      *
      *  + 対象が存在しない場合は新規作成されます。
      *  + 既存のデータはゼロに切り詰めます。
      */
     X_OPEN_MODE_WRITE = X_OPEN_FLAG_WRITE | X_OPEN_FLAG_TRUNCATE,
 
-    /** `"a"` 追記書き込み
+    /** @brief `"a"` 追記書き込み
      *
      *  + 対象が存在しない場合は新規作成されます。
      *  + 書き込み位置の初期値は末尾にセットされます。
@@ -252,14 +454,14 @@ typedef enum
      */
     X_OPEN_MODE_APPEND = X_OPEN_FLAG_WRITE | X_OPEN_FLAG_APPEND,
 
-    /** `"r+"` 読み書き
+    /** @brief `"r+"` 読み書き
      *
      *  + 対象が存在しない場合はエラーになります。
      */
     X_OPEN_MODE_READ_PLUS = X_OPEN_FLAG_READ_WRITE,
 
 
-    /** `"w+"` 上書き読み書き
+    /** @brief `"w+"` 上書き読み書き
      *
      *  + 対象が存在しない場合は新規作成されます。
      *  + 既存のデータはゼロに切り詰めます。
@@ -267,7 +469,7 @@ typedef enum
     X_OPEN_MODE_WRITE_PLUS = X_OPEN_FLAG_READ_WRITE | X_OPEN_FLAG_TRUNCATE,
 
 
-    /** `"a+"` 追記読み書き
+    /** @brief `"a+"` 追記読み書き
      *
      *  + 対象が存在しない場合は新規作成されます。
      *  + 読み込み位置の初期値は先頭にセットされます。
@@ -283,4 +485,9 @@ typedef enum
 #endif /* __cplusplus */
 
 
-#endif /* picox_core_detail_types_h_ */
+/** @} end of addtogroup xstddef
+ *  @} end of addtogroup core
+ */
+
+
+#endif /* picox_core_detail_xstddef_h_ */
