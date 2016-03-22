@@ -1,6 +1,6 @@
 /**
  *       @file  xstring.c
- *      @brief
+ *      @brief  標準Cライブラリstring.hの拡張実装
  *
  *    @details
  *
