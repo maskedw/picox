@@ -41,22 +41,8 @@
 #define picox_xconfig_h_
 
 
-/* X_CONF_XXXの値を置き換えるたいときはこのファイルを直接編集してもいいですが、
- * ソースコードに変更を加えたくない場合は以下の手順を行ってください。
- *
- * + picox_config.hというファイルを作成し、必要な設定値を記述する。
- * + #include <picox_config.h>でincludeできるようにインクルードパスを通す。
- * + X_CONF_USE_USER_CONFIG=1をコンパイラのプリデファインオプションで設定する。
- */
-#ifndef X_CONF_USE_USER_CONFIG
-    #define X_CONF_USE_USER_CONFIG  (0)
-#endif
-#if X_CONF_USE_USER_CONFIG != 0
-    #include <picox_config.h>
-#endif
-
-
 /** @addtogroup config
+ *  @brief picoxライブラリのコンパイル時コンフィギュレーション
  *  @{
  */
 
@@ -66,56 +52,81 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_NDEBUG
- *  アサートによる実行時チェックルーチンをコンパイル時に除去します。
+/** @def    X_CONF_USE_USER_CONFIG
+ *  @brief  カスタムコンフィギュレーションを定義したヘッダファイルをincludeする
+ *          かどうかを指定します
+ *
+ *  picoxを含む外部ライブラリを使用する時は、管理上あまりファイルを編集したくな
+ *  いものです。
+ *
+ *  この設定値が0でない場合は、picox_config.hという設定ファイルをincludeするので
+ *  、プレデファインオプションで1に設定し、picox_config.hに変更したい項目だけ定
+ *  義すると、picoxのファイルを直接編集することなくカスタマイズが可能です。
+ */
+#ifndef X_CONF_USE_USER_CONFIG
+    #define X_CONF_USE_USER_CONFIG  (0)
+#endif
+
+#if X_CONF_USE_USER_CONFIG != 0
+    #include <picox_config.h>
+#endif
+
+
+/** @def   X_CONF_NDEBUG
+ *  @brief アサートによる実行時チェックルーチンをコンパイル時に除去します。
  */
 #ifndef X_CONF_NDEBUG
 #define X_CONF_NDEBUG   (0)
 #endif
 
 
-/** @def X_CONF_ASSERT
- *  X_ASSERT()を置き換えるルーチンを設定します。
+/** @def   X_CONF_ASSERT
+ *  @brief X_ASSERT()を置き換えるルーチンを設定します。
  */
 #ifndef X_CONF_ASSERT
 #define X_CONF_ASSERT(expr)     X_DEFAULT_ASSERT(expr)
 #endif
 
 
-/** @def X_CONF_ASSERT_MSG
- *  X_ASSERT_MSG()を置き換えるルーチンを設定します。
+/** @def   X_CONF_ASSERT_MSG
+ *  @brief X_ASSERT_MSG()を置き換えるルーチンを設定します。
  */
 #ifndef X_CONF_ASSERT
 #define X_CONF_ASSERT_MSG(expr, msg)    X_DEFAULT_ASSERT_MSG(expr, msg)
 #endif
 
 
-/** @def X_CONF_MALLOC
- *  動的メモリ確保関数を設定します。未指定時はmalloc()が使用されます。
+/** @def   X_CONF_MALLOC
+ *  @brief 動的メモリ確保関数を設定します。未指定時はmalloc()が使用されます。
  */
 #ifndef X_CONF_MALLOC
 #define X_CONF_MALLOC(size)       malloc(size)
 #endif
 
 
-/** @def X_CONF_FREE
- *  メモリ解放関数を設定します。未指定時はfree()が使用されます。
+/** @def   X_CONF_FREE
+ *  @brief メモリ解放関数を設定します。未指定時はfree()が使用されます。
  */
 #ifndef X_CONF_FREE
 #define X_CONF_FREE(ptr)         free(ptr)
 #endif
 
 
-/** @def X_CONF_USE_DETECT_MALLOC_NULL
- *  picoxライブラリで何らかの動的メモリ確保失敗をX_ASSERT()で検出します。
+/** @def   X_CONF_USE_DETECT_MALLOC_NULL
+ *  @brief picoxライブラリで何らかの動的メモリ確保失敗をX_ASSERT()で検出します。
+ *
+ *  @details
+ *  組込みプログラムでは動的メモリ確保に失敗しないように設計することが普通なので
+ *  まじめにNULLチェックをするより、メモリ不足 == バグ or 設計ミスとして即死させ
+ *  た方が楽かもしれません。
  */
 #ifndef X_CONF_USE_DETECT_MALLOC_NULL
 #define X_CONF_USE_DETECT_MALLOC_NULL   (0)
 #endif
 
 
-/** @def X_CONF_BYTE_ORDER
- *  CPUのバイトオーダーを指定します。
+/** @def   X_CONF_BYTE_ORDER
+ *  @brief CPUのバイトオーダーを指定します。
  *
  *  @details
  *  以下の値が指定可能です。CPUのバイトオーダーを指定していると、一部関数の実行
@@ -130,8 +141,8 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_USE_ANSI_COLOR_LOG
- *  ログ出力時に、各レベルに応じて色をつけます。
+/** @def   X_CONF_USE_ANSI_COLOR_LOG
+ *  @brief ログ出力時に、各レベルに応じて色をつけます。
  *
  *  @details
  *  ログ表示端末がANSIカラーシーケンスに対応していない場合は、表示崩れになるので
@@ -145,11 +156,11 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_USE_LOG_TIMESTAMP
- * ログ出力に任意のタイムスタンプを付加します。
+/** @def   X_CONF_USE_LOG_TIMESTAMP
+ *  @brief ログ出力に任意のタイムスタンプを付加します。
  *
- * @details
- * この設定を有効にした場合は以下の関数を実装する必要があります。
+ *  @details
+ *  この設定を有効にした場合は以下の関数を実装する必要があります。
  *
  *  @code
  *  void x_port_stimestamp(char* dst, size_t size)
@@ -160,8 +171,9 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_LOG_TIMESTAMP_BUF_SIZE
- *  タイムスタンプ文字列('\0'含む)の最大値を指定します
+/** @def   X_CONF_LOG_TIMESTAMP_BUF_SIZE
+ *  @brief タイムスタンプ文字列('\0'含む)の最大値を指定します
+ *
  *  @details
  *  指定なしの場合は、32がデフォルト値となります。x_port_stimestamp()にはここで
  *  指定した値が渡されます。
@@ -174,8 +186,8 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_LOG_LEVEL
- *  ログ出力レベルを設定します。
+/** @def   X_CONF_LOG_LEVEL
+ *  @brief ログ出力レベルを設定します。
  *
  *  @details
  *  指定可能な値は以下の通りです。
@@ -194,8 +206,8 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_USE_DYNAMIC_LOG_SUPPRESS
- *  ログ出力レベルの実行時変更機能を使用します。
+/** @def   X_CONF_USE_DYNAMIC_LOG_SUPPRESS
+ *  @brief ログ出力レベルの実行時変更機能を使用します。
  *
  *  @details
  *  x_set_log_level()でログレベルを指定し、指定レベル未満のログは、出力されませ
@@ -206,64 +218,64 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_VERB_HEADER
- *  VERBOSEレベルのログヘッダ文字列を指定します。
+/** @def   X_CONF_VERB_HEADER
+ *  @brief VERBOSEレベルのログヘッダ文字列を指定します。
  */
 #ifndef X_CONF_VERB_HEADER
 #define X_CONF_VERB_HEADER  "[VERB]"
 #endif
 
 
-/** @def X_CONF_INFO_HEADER
- *  INFOMATONレベルのログヘッダ文字列を指定します。
+/** @def   X_CONF_INFO_HEADER
+ *  @brief INFOMATONレベルのログヘッダ文字列を指定します。
  */
 #ifndef X_CONF_INFO_HEADER
 #define X_CONF_INFO_HEADER  "[INFO]"
 #endif
 
 
-/** @def X_CONF_NOTI_HEADER
- *  NOTICEレベルのログヘッダ文字列を指定します。
+/** @def   X_CONF_NOTI_HEADER
+ *  @brief NOTICEレベルのログヘッダ文字列を指定します。
  */
 #ifndef X_CONF_NOTI_HEADER
 #define X_CONF_NOTI_HEADER  "[NOTI]"
 #endif
 
 
-/** @def X_CONF_WARN_HEADER
- *  WARNINGレベルのログヘッダ文字列を指定します。
+/** @def   X_CONF_WARN_HEADER
+ *  @brief WARNINGレベルのログヘッダ文字列を指定します。
  */
 #ifndef X_CONF_WARN_HEADER
 #define X_CONF_WARN_HEADER  "[WARN]"
 #endif
 
 
-/** @def X_CONF_ERR_HEADER
- *  ERRORレベルのログヘッダ文字列を指定します。
+/** @def   X_CONF_ERR_HEADER
+ *  @brief ERRORレベルのログヘッダ文字列を指定します。
  */
 #ifndef X_CONF_ERR_HEADER
 #define X_CONF_ERR_HEADER   "[ERR ]"
 #endif
 
 
-/** @def X_CONF_HAS_C99_MATH
- *  strtof()等のC99で追加されたfloat版の標準関数を使用します。
+/** @def   X_CONF_HAS_C99_MATH
+ *  @brief strtof()等のC99で追加されたfloat版の標準関数を使用します。
  */
 #ifndef X_CONF_HAS_C99_MATH
 #define X_CONF_HAS_C99_MATH (0)
 #endif
 
 
-/** @def X_CONF_USE_FLOATING_POINT_PRINTF
- *  x_printf系統の関数で%fによる浮動小数点出力を使用可能にします。
+/** @def   X_CONF_USE_FLOATING_POINT_PRINTF
+ *  @brief x_printf系統の関数で%fによる浮動小数点出力を使用可能にします。
  */
 #ifndef X_CONF_USE_FLOATING_POINT_PRINTF
 #define X_CONF_USE_FLOATING_POINT_PRINTF (0)
 #endif
 
 
-/** @def X_CONF_FILE_PATH_MAX
- *  NULL終端を含むファイルパスの最大バイト数を指定します
+/** @def   X_CONF_FILE_PATH_MAX
+ *  @brief NULL終端を含むファイルパスの最大バイト数を指定します
  *
  *  filesystemモジュールの関数内では、X_CONF_FILE_PATH_MAXバイトの
  *  ローカル変数を多数使用するため、メモリ制約の厳しい組込みシステムではスタック
@@ -280,8 +292,8 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_FILE_NAME_MAX
- *  NULL終端を含むファイル名の最大バイト数を指定します
+/** @def   X_CONF_FILE_NAME_MAX
+ *  @brief NULL終端を含むファイル名の最大バイト数を指定します
  *
  *  X_CONF_FILE_PATH_MAXと同様に、スタックサイズに注意してください。
  */
@@ -290,7 +302,8 @@ extern "C" {
 #endif
 
 
-/** @def X_CONF_PORT_GETTIMEOFDAY
+/** @def   X_CONF_PORT_GETTIMEOFDAY
+ *  @brief 時刻を取得する関数が利用可能かどうかを指定します
  *
  *  時刻を取得する関数x_gettimeofday()には、このコンフィグ値が1の時には
  *  x_port_gettimeofday()が、0の時は、常に0を返すx_default_gettimeofday()が使用
