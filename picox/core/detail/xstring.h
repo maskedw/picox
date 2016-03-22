@@ -418,6 +418,14 @@ void x_memrandom(void* p, size_t n);
 void x_memrandom_alpha(void* p, size_t n);
 
 
+/** @brief 真偽値に対応する"true" or "false"の文字列を返します
+ */
+static inline const char* x_btos(bool cond)
+{
+    return cond ? "true" : "false";
+}
+
+
 #ifdef __cplusplus
 }
 #endif
