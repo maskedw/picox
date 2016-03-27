@@ -1,6 +1,6 @@
 /**
  *       @file  xrandom.c
- *      @brief
+ *      @brief  擬似乱数生成実装
  *
  *    @details
  *

@@ -1,6 +1,6 @@
 /**
  *       @file  xpreprocessor.h
- *      @brief
+ *      @brief  プリプロセッサユーティリティ
  *
  *    @details
  *
@@ -41,26 +41,35 @@
 #define picox_core_detail_xpreprocessor_h_
 
 
+/** @addtogroup core
+ *  @{
+ *  @addtogroup xpreprocessor
+ *  @brief プロプロセッサのユーティリティ機能を提供します
+ *  @{
+ */
+
+
 /// @cond IGNORE
 #define X_PP_CAT__(a, b)          a ## b
 /// @endcond IGNORE
 
-/** トークンa, bを連結します。
+
+/** @brief トークンa, bを連結します。
  */
 #define X_PP_CAT(a, b)            X_PP_CAT__(a, b)
 
 
-/** トークンa, b, cを連結します。
+/** @brief トークンa, b, cを連結します。
  */
 #define X_PP_CAT3(a,b,c)          X_PP_CAT(X_PP_CAT(a,b),c)
 
 
-/** トークンa, b, c, dを連結します。
+/** @brief トークンa, b, c, dを連結します。
  */
 #define X_PP_CAT4(a,b,c,d)        X_PP_CAT(X_PP_CAT3(a,b,c),d)
 
 
-/** トークンa, b, c, d, eを連結します。
+/** @brief トークンa, b, c, d, eを連結します。
  */
 #define X_PP_CAT5(a,b,c,d,e)      X_PP_CAT(X_PP_CAT4(a,b,c,d),e)
 
@@ -69,13 +78,19 @@
 #define X_PP_STRINGIZE__(text)    #text
 /// @endcond IGNORE
 
-/** トークンtextを文字列化します。
+
+/** @brief トークンtextを文字列化します。
  *
  *  @note
  *  X_PP_STRINGIZE__()を通して2段階のマクロを使用しているのは、textにdefineされた
  *  トークンを渡された時に、defineを展開した後の値で文字列化するためです。
  */
 #define X_PP_STRINGIZE(text)      X_PP_STRINGIZE__(text)
+
+
+/** @} end of addtogroup xpreprocessor
+ *  @} end of addtogroup core
+ */
 
 
 #endif // picox_core_detail_xpreprocessor_h_

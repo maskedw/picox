@@ -71,22 +71,35 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
 XCharPutFunc x_putc_stdout;
 
 
-void x_putc(int c)
+int x_putc(int c)
 {
-    if (! x_putc_stdout)
-        return;
-
-    x_putc_stdout(c);
+    if (!x_putc_stdout)
+        return EOF;
+    x_putc_stdout((uint8_t)c);
+    return c;
 }
 
 
-void x_puts(const char* str)
+int x_puts(const char* str)
 {
-    if (! x_putc_stdout)
-        return;
+    if (!x_putc_stdout)
+        return EOF;
 
     while (*str)
-        x_putc_stdout(*str++);
+        x_putc_stdout((uint8_t)(*str++));
+    x_putc_stdout('\n');
+    return 0;
+}
+
+
+int x_puts2(const char* str)
+{
+    if (!x_putc_stdout)
+        return EOF;
+
+    while (*str)
+        x_putc_stdout((uint8_t)(*str++));
+    return 0;
 }
 
 
@@ -371,7 +384,7 @@ X__PRINT_STRING:
         else
             v = va_arg(args, unsigned int);
 
-        if (c == 'd' && (v & X_LONG_MSB))
+        if (c == 'd' && (v & X_MSBOF_LONG))
         {
             v = 0 - v;
             flags |= X__FLAG_NEGATIVE;

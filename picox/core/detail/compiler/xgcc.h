@@ -42,7 +42,7 @@
 
 
 #ifndef __GNUC__
-#error   This header file required 'GCC'
+    #error This header file required 'GNU C/C++ Compiler'
 #endif
 
 
@@ -67,8 +67,13 @@
     #define X_UNREACHABE    __builtin_unreachable()
 #endif
 
+#define X_PACKED_PRE_BEGIN
+#define X_PACKED_POST_BEGIN
+#define X_PACKED_PRE_END    __attribute__((__packed__))
+#define X_PACKED_POST_END
 
-#if 0
+
+#ifdef X_INTERNAL_DEVMODE
 #ifndef __cplusplus
     /* C++のキーワードが使用されていた場合、エラーになるようにする。
      * マクロやインライン関数内でC++キーワードを使用している場合、振る舞いがやや

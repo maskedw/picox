@@ -44,7 +44,6 @@
  *  @{
  *  @addtogroup xstddef
  *  @brief picoxで共通に使用する型や定数、マクロの定義
- *
  *  @{
  */
 

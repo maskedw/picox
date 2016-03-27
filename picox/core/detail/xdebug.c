@@ -1,6 +1,6 @@
 /**
- *       @file  debug.c
- *      @brief
+ *       @file  xdebug.c
+ *      @brief  デバッグログやassert等の実装
  *
  *    @details
  *

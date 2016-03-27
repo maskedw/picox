@@ -22,7 +22,7 @@ include_directories(${fatfs_dir})
 include_directories(${spiffs_dir})
 
 # set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -Wpedantic -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -D X_INTERNAL_DEVMODE -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wchar-subscripts")
 
 add_executable(alltests
@@ -51,7 +51,7 @@ add_executable(alltests
     test_xstream.c
     glue/fatfs_glue.c
     ${picox_dir}/core/detail/xdebug.c
-    ${picox_dir}/core/detail/xprintf.c
+    ${picox_dir}/core/detail/xstdio.c
     ${picox_dir}/core/detail/xstream.c
     ${picox_dir}/core/detail/xstring.c
     ${picox_dir}/core/detail/xrandom.c

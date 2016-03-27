@@ -1,24 +1,8 @@
 /**
  *       @file  xstream.h
- *      @brief  入出力を抽象化するストリームモジュール
+ *      @brief  入出力を抽象化するストリーム定義
  *
  *    @details
- *    プログラムは入力を受け取り出力を行うことを目的としていますが、入出力先を固
- *    定していまうと、再利用性に問題があります。例えば、入出力先にはメモリ、ファ
- *    イル、UART, シリアルフラッシュ等が考えられますが、それらをすべて別の関数で
- *    実装するのは大変ですし、ライブラリ側としては、メモリ、ファイル以外の入出力
- *    先は限定できないのが普通です。
- *
- *    そこで、ストリームという抽象型に対して入出力を行うことでこの問題を解決する
- *    ことができます。
- *    標準CではFILE*がストリームの役割を担いますが、FILEストリームは基本的にファ
- *    イルシステムや実行環境依存の前提条件が多いため、組込み環境では扱いにくいも
- *    のです。
- *
- *    このライブラリが提供する簡易的なストリーム型を使用することで、環境に依存せ
- *    ずにストリームの恩恵を受けることができます。
- *    独自のストリームを定義したい場合はxstream.cにある、XMemStreamの実装を参考に
- *    してみてください。
  *
  *     @author  MaskedW
  *
@@ -56,14 +40,53 @@
 #define picox_core_detail_xstream_h_
 
 
-/** @defgroup X_STREAM_FUNCTION_POINTERS
+/** @addtogroup core
+ *  @{
+ *  @addtogroup xstream
+ *  @brief 入出力を抽象化するストリーム機能を提供します
  *
- *  ストリームにセットする関数ポインタ型のグループです。戻り値のint型はエラース
- *  テータスを返し、0は正常終了、0以外はエラーを表します。
+ *  プログラムの目的とは、どこかから入力を受け取り、処理をし、どこかへ出力をする
+ *  ことで、C言語ではそれを関数で実現します。
+ *
+ *  例えば組込みプログラムでの入出力先は、メモリ、ファイル、UART、シリアルフラッ
+ *  シュ等です。(ファイルという概念が既に入出力を抽象化したものであることにも注
+ *  目)
+ *
+ *  入出力先が異なるだけで、内部処理が同じ関数を全て用意することは困難で、ライブ
+ *  ラリ実装者としては、精々メモリとファイル用位までしかインターフェースを限定で
+ *  きません。
+ *
+ *  そこで、ストリームという抽象型に対して入出力を行うことでこの問題を解決する
+ *  ことができます。
+ *
+ *  標準CではFILEがストリームの役割を担いますが、FILEストリームは基本的にファイ
+ *  ルシステムや実行環境依存の前提条件が多いため、組込み環境では扱いにくいもので
+ *  す。
+ *
+ *  picoxが提供する簡易的なストリームを入出力に使用することで、入出力先に依存し
+ *  ない関数を実装できます。
+ *
+ *  基本的なストリームはpicoxが提供しますが、独自のストリームを定義したい場合は
+ *  、まずはXMemStreamの実装を参考にしてみてください。
  *  @{
  */
 
-/** ストリームからの読み出し関数ポインタ型です
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
+/** @name  stream_function_pointers
+ *  @brief ストリームにセットする関数ポインタ型のグループです
+ *
+ *  戻り値のint型はエラーステータスを返し、0は正常終了、0以外はエラーを表します
+ *  。
+ *  @{
+ */
+
+
+/** @brief ストリームからの読み出し関数ポインタ型です
  *
  *  dstにストリームからsizeバイトの読み出しを試み、nreadには実際に読み出せたバイ
  *  ト数を格納してください。
@@ -71,7 +94,7 @@
 typedef int (*XStreamReadFunc)(void* driver, void* dst, size_t size, size_t* nread);
 
 
-/** ストリームへの書き込み関数ポインタ型です
+/** @brief ストリームへの書き込み関数ポインタ型です
  *
  *  srcからストリームにsizeバイトの書き込みを試み、nwrittenには実際に書き込めた
  *  バイト数を格納してください。
@@ -79,45 +102,46 @@ typedef int (*XStreamReadFunc)(void* driver, void* dst, size_t size, size_t* nre
 typedef int (*XStreamWriteFunc)(void* driver, const void* src, size_t size, size_t* nwritten);
 
 
-/** ストリームの現在位置を移動する関数ポインタ型です
+/** @brief ストリームの現在位置を移動する関数ポインタ型です
  *
  *  modeに応じて、offsetバイトの移動を行ってください。
  */
 typedef int (*XStreamSeekFunc)(void* driver, XOffset offset, XSeekMode mode);
 
 
-/** ストリームの現在位置を取得する関数ポインタ型です
+/** @brief ストリームの現在位置を取得する関数ポインタ型です
  */
 typedef int (*XStreamPosFunc)(void* driver, XSize* pos);
 
 
-/** ストリームのバイト数を取得する関数ポインタ型です
+/** @brief ストリームのバイト数を取得する関数ポインタ型です
  */
 typedef int (*XStreamSizeFunc)(void* driver, XSize* size);
 
 
-/** ストリームのバッファリングをフラッシュする関数ポインタ型です
+/** @brief ストリームのバッファリングをフラッシュする関数ポインタ型です
  */
 typedef int (*XStreamFlushFunc)(void* driver);
 
 
-/** ストリームのフラッシュと、リソースの開放を行う関数ポインタ型です
+/** @brief ストリームのフラッシュと、リソースの開放を行う関数ポインタ型です
  */
 typedef int (*XStreamCloseFunc)(void* driver);
 
 
-/** ストリームが返したエラーステータスに対応する文字列を返す関数ポインタ型です
+/** @brief ストリームが返したエラーステータスに対応する文字列を返す関数ポインタ型です
  */
 typedef const char* (*XStreamErrorStringFunc)(const void* driver, int errcode);
 
 
-/** @}*/ /* endgroup X_STREAM_FUNCTION_POINTERS */
+/** @} end of name stream_function_pointers
+ */
 
 
-/** ストリームを表す抽象型です
+/** @brief ストリームを表す抽象型です
  *
- *  独自ストリームを定義する場合は、先頭メンバにこの型を配置してください(スト
- *  リーム型から独自形へ直接キャスト可能にするため)。
+ *  独自ストリームを定義する場合は、必ず先頭メンバにこの型を配置してください(ス
+ *  トリーム型から独自型へのキャストのため)。
  *
  *  独自ストリームの初期化は、はじめにxstream_init()で初期化を行ったあとに必要な
  *  変数セットしてください。
@@ -128,13 +152,11 @@ typedef const char* (*XStreamErrorStringFunc)(const void* driver, int errcode);
  */
 typedef struct XStream
 {
-    /** ストリームの識別ID
+    /** @brief ストリームの識別ID
+     *
      *  独自ストリームを定義するときに、このタグをストリームを識別できるようにセ
      *  ットしておくと、ストリームの実際の型に応じた処理の振り分けができて、便利
      *  な場合があります。
-     *  また、このメンバは定義位置は先頭から移動させないことを保証します。任意の
-     *  型の先頭メンバに同じくtagを定義しておいて、void*からタグ値を取り出すとい
-     *  う使い型が可能です。
      */
     XTag                    tag;
 
@@ -152,10 +174,14 @@ typedef struct XStream
     XStreamSizeFunc         size_func;
     XStreamErrorStringFunc  error_string_func;
 } XStream;
+
+
+/** @brief ストリームタグの初期値です
+ */
 #define X_STREAM_TAG        (X_MAKE_TAG('X', 'S', 'T', 'R'))
 
 
-/** メモリに対して入出力を行うストリーム型です
+/** @brief メモリに対して入出力を行うストリーム型です
  */
 typedef struct XMemStream
 {
@@ -165,15 +191,19 @@ typedef struct XMemStream
     XSize           size;
     XSize           capacity;
 } XMemStream;
+
+
+/** @brief XMemStreamのタグです
+ */
 #define X_MEMSTREAM_TAG     (X_MAKE_TAG('X', 'M', 'M', 'S'))
 
 
-/** ストリームの初期化を行います
+/** @brief ストリームの初期化を行います
  */
 void xstream_init(XStream* self);
 
 
-/** ストリームからdstにsizeバイトの読み出しを試みます
+/** @brief ストリームからdstにsizeバイトの読み出しを試みます
  *
  *  nreadには読み出しに成功したバイト数がセットされます。
  *
@@ -183,7 +213,7 @@ void xstream_init(XStream* self);
 int xstream_read(XStream* self, void* dst, size_t size, size_t* nread);
 
 
-/** ストリームにsrcからsizeバイトの書き込みを試みます
+/** @brief ストリームにsrcからsizeバイトの書き込みを試みます
  *
  *  nwrittenには書き込みに成功したバイト数がセットされます。
  *
@@ -193,7 +223,7 @@ int xstream_read(XStream* self, void* dst, size_t size, size_t* nread);
 int xstream_write(XStream* self, const void* src, size_t size, size_t* nwritten);
 
 
-/** ストリームの終了処理を行います
+/** @brief ストリームの終了処理を行います
  *
  *  @retval == 0 正常終了
  *  @retval != 0 エラー
@@ -201,7 +231,7 @@ int xstream_write(XStream* self, const void* src, size_t size, size_t* nwritten)
 int xstream_close(XStream* self);
 
 
-/** ストリームの終了処理を行います
+/** @brief ストリームの終了処理を行います
  *
  *  @retval == 0 正常終了
  *  @retval != 0 エラー
@@ -209,7 +239,7 @@ int xstream_close(XStream* self);
 int xstream_flush(XStream* self);
 
 
-/** ストリームの現在位置を移動します
+/** @brief ストリームの現在位置を移動します
  *
  *  @retval == 0 正常終了
  *  @retval != 0 エラー
@@ -217,7 +247,7 @@ int xstream_flush(XStream* self);
 int xstream_seek(XStream* self, XOffset offset, XSeekMode mode);
 
 
-/** ストリームの現在位置をposにセットします
+/** @brief ストリームの現在位置をposにセットします
  *
  *  @retval == 0 正常終了
  *  @retval != 0 エラー
@@ -225,7 +255,7 @@ int xstream_seek(XStream* self, XOffset offset, XSeekMode mode);
 int xstream_pos(XStream* self, XSize* pos);
 
 
-/** ストリームのバイト数をsizeにセットします
+/** @brief ストリームのバイト数をsizeにセットします
  *
  *  @retval == 0 正常終了
  *  @retval != 0 エラー
@@ -233,17 +263,17 @@ int xstream_pos(XStream* self, XSize* pos);
 int xstream_size(XStream* self, XSize* size);
 
 
-/** 最後のエラー値を返します
+/** @brief 最後のエラー値を返します
  */
 int xstream_error(const XStream* self);
 
 
-/** エラー値の文字列表現を返します
+/** @brief エラー値の文字列表現を返します
  */
 const char* xstream_error_string(const XStream* self, int errcode);
 
 
-/** cをunsigned charにキャストしてストリームに書き込みます
+/** @brief cをunsigned charにキャストしてストリームに書き込みます
  *
  *  エラー or ストリーム終端に達していた場合はEOFを返し、正常終了ならc自身を返し
  *  ます。
@@ -251,14 +281,14 @@ const char* xstream_error_string(const XStream* self, int errcode);
 int xstream_putc(XStream* self, int c);
 
 
-/** ストリームから1バイトを読みだし、intにキャストして返します
+/** @brief ストリームから1バイトを読みだし、intにキャストして返します
  *
  *  エラー or ストリーム終端に達していた場合はEOFを返します。
  */
 int xstream_getc(XStream* self);
 
 
-/** ストリームから1行を取り出します
+/** @brief ストリームから1行を取り出します
  *
  *  ストリームにはテキストデータが格納されていることが前提です。
  *  行サイズがsizeを超えてる場合は、size - 1までのデータが格納され(末尾は常に
@@ -268,7 +298,7 @@ int xstream_getc(XStream* self);
 int xstream_read_line(XStream* self, char* dst, size_t size, char** result, bool* overflow);
 
 
-/** ストリームにvprintf形式の出力を行います
+/** @brief ストリームにvprintf形式の出力を行います
  *
  *  @retval >= 0 書き込んだバイト数
  *  @retval < 0  エラー
@@ -276,7 +306,7 @@ int xstream_read_line(XStream* self, char* dst, size_t size, char** result, bool
 int xstream_printf(XStream* self, const char* fmt, ...);
 
 
-/** ストリームにvprintf形式の出力を行います
+/** @brief ストリームにvprintf形式の出力を行います
  *
  *  @retval >= 0 書き込んだバイト数
  *  @retval < 0  エラー
@@ -284,7 +314,7 @@ int xstream_printf(XStream* self, const char* fmt, ...);
 int xstream_vprintf(XStream* self, const char* fmt, va_list args);
 
 
-/** メモリストリームを初期化します
+/** @brief メモリストリームを初期化します
  *
  *  @param mem      ストリーム対象のメモリ先頭アドレス
  *  @param size     初期有効バイト数
@@ -298,13 +328,23 @@ int xstream_vprintf(XStream* self, const char* fmt, va_list args);
 void xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity);
 
 
-/** tagがXMemStreamと一致していなければNULLを返します
+/** @brief tagがXMemStreamと一致していなければNULLを返します
  */
 static inline XMemStream* x_memstream_cast(XStream* stream)
 {
     X_ASSERT(stream);
     return (stream->tag == X_MEMSTREAM_TAG) ? (XMemStream*)stream : NULL;
 }
+
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+
+/** @} end of addtogroup xstream
+ *  @} end of addtogroup core
+ */
 
 
 #endif /* picox_core_detail_xstream_h_ */

@@ -1,6 +1,6 @@
 /**
  *       @file  xrandom.h
- *      @brief
+ *      @brief  擬似乱数生成定義
  *
  *    @details
  *
@@ -41,25 +41,76 @@
 #define picox_core_detail_xrandom_h_
 
 
+/** @addtogroup core
+ *  @{
+ *  @addtogroup xrandom
+ *  @brief 擬似乱数値の取得機能を提供します
+ *
+ *  標準ライブラリはrand()が返す乱数の品質は実装に依存するため、独自の乱数生成機
+ *  能を提供しています。picoxでは実行速度と品質のバランスがいいXorshiftアルゴリ
+ *  ズムを採用しています。
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 
+/** @brief randが生成する擬似乱数の種を設定します
+ */
 void x_srand(uint32_t seed);
+
+
+/** @brief 0 ~ UINT8_MAXの範囲の擬似乱数を返します
+ */
 uint8_t x_rand8(void);
+
+
+/** @brief min ~ maxの範囲の擬似乱数を返します
+ */
 uint8_t x_randrange8(uint8_t min, uint8_t max);
+
+
+/** @brief 0 ~ UINT16_MAXの範囲の擬似乱数を返します
+ */
 uint16_t x_rand16(void);
+
+
+/** @brief min ~ maxの範囲の擬似乱数を返します
+ */
 uint16_t x_randrange16(uint16_t min, uint16_t max);
+
+
+/** @brief 0 ~ UINT32_MAXの範囲の擬似乱数を返します
+ */
 uint32_t x_rand32(void);
+
+
+/** @brief min ~ maxの範囲の擬似乱数を返します
+ */
 uint32_t x_randrange32(uint32_t min, uint32_t max);
+
+
+/** @brief 0 ~ UINT_MAXの範囲の擬似乱数を返します
+ */
 unsigned x_rand(void);
+
+
+/** @brief min ~ maxの範囲の擬似乱数を返します
+ */
 unsigned x_randrange(unsigned min, unsigned max);
 
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+
+/** @} end of addtogroup xrandom
+ *  @} end of addtogroup core
+ */
 
 
 #endif /* picox_core_detail_xrandom_h_ */

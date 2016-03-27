@@ -41,8 +41,21 @@
 #define picox_core_detail_xcompiler_h_
 
 
+/** @addtogroup core
+ *  @{
+ *  @addtogroup xcompiler
+ *  @brief コンパイラごとの依存機能を吸収します
+ *
+ *  コンパイラごとに独自の拡張機能があったり、同じ機能でも構文が違ったり、C標準
+ *  (特にC99)で未サポートの機能があったりと、コンパイラ非依存のプログラムの記述
+ *  は相当大変です。このモジュールが提供する機能を利用することで、その負担を軽減
+ *  できます。
+ *  @{
+ */
+
+
 /** @def    X_COMPILER_C99
- *  @brief  �R���p�C����C99�ɑΉ����Ă��邩�ǂ���
+ *  @brief  コンパイラがC99に対応しているかどうか
  */
 #ifdef __STDC_VERSION__
     #if (__STDC_VERSION__ >= 199901L)
@@ -56,7 +69,7 @@
 
 
 /** @def    X_GNUC_PREREQ
- *  @brief  GCC�̃o�[�W������n.m�ȏォ�ǂ�����Ԃ��܂�
+ *  @brief  GCCのバージョンがn.m以上かどうかを返します
  */
 #if defined __GNUC__ && defined __GNUC_MINOR__
     #define X_GNUC_PREREQ(maj, min) \
@@ -66,17 +79,22 @@
 #endif
 
 
-#ifdef __GNUC__
+/* コンパイラごとの設定のロード */
+#if defined(__GNUC__)
 
-#include <picox/core/detail/compiler/xgcc.h>
+    #include <picox/core/detail/compiler/xgcc.h>
+
+#elif defined(__RENESAS__)
+
+    #include <picox/core/detail/compiler/xrenesas.h>
 
 #endif
 
 
 /** @def    X_INLINE
- *  @brief  �R���p�C���ɑ΂��āA�֐��̃C�����C���W�J���w������L�[���[�h�ł��B
+ *  @brief  コンパイラに対して、関数のインライン展開を指示するキーワードです。
  *
- *  ���ۂɃC�����C���W�J����邩�ǂ����́A�R���p�C�������f���܂��B
+ *  実際にインライン展開されるかどうかは、コンパイラが判断します。
  */
 #ifndef X_INLINE
     #define X_INLINE  static inline
@@ -84,9 +102,10 @@
 
 
 /** @def    X_ALWAYS_INLINE
- *  @brief  �R���p�C���ɑ΂��āA�֐��̃C�����C���W�J����������L�[���[�h�ł��B
+ *  @brief  コンパイラに対して、関数のインライン展開を強制するキーワードです。
  *
- *  �œK�����x����A�֐��̓��e�Ɋւ�炸�A�K���C�����C���������悤�ɂ��܂��B
+ *  コンパイラがこの機能をサポートしていれば、最適化レベルや、関数の内容に関わら
+ *  ず、必ずインライン化されるようにします。
  */
 #ifndef X_ALWAYS_INLINE
     #define X_ALWAYS_INLINE static inline
@@ -94,7 +113,13 @@
 
 
 /** @def    X_HAS_VARIADIC_MACROS
- *  @brief  �R���p�C�����ϒ������}�N���ɑΉ����Ă��邩�ǂ���
+ *  @brief  コンパイラが可変長引数マクロに対応しているかどうか
+ *
+ *  @note
+ *  特に気をつけるべきなのが、CコンパイラがC99に対応していても、C++だと使えない
+ *  というケース(例 Renesasコンパイラ)があることです。C++が可変長引数マクロに正
+ *  式対応したのはC++11からなので、まあ規格準拠ではありますがちょっと納得がいか
+ *  ない・・・。
  */
 #ifndef X_HAS_VARIADIC_MACROS
     #if X_COMPILER_C99 > 0
@@ -104,9 +129,9 @@
 
 
 /** @def    X_HAS_TYPEOF
- *  @brief  �R���p�C����typeof�g���ɑΉ����Ă��邩�ǂ���
+ *  @brief  コンパイラがtypeof拡張に対応しているかどうか
  *
- *  X_HAS_TYPEOF == 1�̏ꍇ�AX_TYPEOF()���g�p�\�ł��B
+ *  X_HAS_TYPEOF == 1の場合、X_TYPEOF()が使用可能です。
  */
 #ifndef X_HAS_TYPEOF
     #define X_HAS_TYPEOF    (0)
@@ -114,9 +139,9 @@
 
 
 /** @def    X_LIKELY
- *  @brief  ��������Ɏg�p����R���p�C���œK���f�B���N�e�B�u�ł�
+ *  @brief  条件分岐に使用するコンパイラ最適化ディレクティブです
  *
- *  �Q�l�T�C�g<br>
+ *  参考サイト<br>
  *  http://d.hatena.ne.jp/tkuro/20110114/1294956535
  */
 #ifndef X_LIKELY
@@ -125,7 +150,7 @@
 
 
 /** @def    X_UNLIKELY
- *  @brief  ��������Ɏg�p����R���p�C���œK���f�B���N�e�B�u�ł�
+ *  @brief  条件分岐に使用するコンパイラ最適化ディレクティブです
  *
  *  @see X_LIKELY
  */
@@ -135,35 +160,39 @@
 
 
 /** @def    X_HAS_STATEMENT_EXPRESSIONS
- *  @brief  {}�ň͂܂ꂽ�������ƕϐ��̐錾��()�̎��̒��Ŏg�p�ł��邩�ǂ���
+ *  @brief  {}で囲まれた複合文と変数の宣言を()の式の中で使用できるかどうか
  *
- *  ����ɑΉ����Ă���ƈȉ��̂悤�Ȗ����Ȃ��Ƃ��ł��܂��B
- *  @code
+ *  これに対応していると以下のような無茶なことができます。
+ *  @code {.c}
  *  if ({ func1();
- *        if (x) // if �̒��� if��������
+ *        if (x) // if の中に ifも書ける
  *          ...
  *        else
  *          ...
- *        1; // �Ō�̎���if�̔���Ɏg�p�����
+ *        1; // 最後の式がifの判定に使用される
  *        })
  *      ...
  *  @endcode
+ *
+ *  @note
+ *  これが標準でサポートされると、相当面白いことができそうなんですが、まあされな
+ *  いでしょう。プログラムがGCC限定でいいなら、使ってもいいかも。
  */
 #ifndef X_HAS_STATEMENT_EXPRESSIONS
     #define X_HAS_STATEMENT_EXPRESSIONS (0)
 #endif
 
 
-/** @def    X_MEMORY_BARRIER
- *  @brief  ����������̏������𐧌䂷��CPU���߂ł�
+/** @def   X_MEMORY_BARRIER
+ *  @brief メモリ動作の順序性を制御するCPU命令です
  */
 #ifndef X_MEMORY_BARRIER
     #define X_MEMORY_BARRIER
 #endif
 
 
-/** @def    X_UNREACHABE
- *  @brief  �ȉ��̃R�[�h�ɂ͌����ē��B���Ȃ����Ƃ�\������R���p�C���f�B���N�e�B�u�ł�
+/** @def   X_UNREACHABE
+ *  @brief 以下のコードには決して到達しないことを表明するコンパイラディレクティブです
  */
 #ifndef X_UNREACHABE
     #define X_UNREACHABE    for (;;)
@@ -171,11 +200,11 @@
 
 
 /** @def    X_DEPRECATED
- *  @brief  �w��̒�`���p�~�\���񐄏��ł��邱�Ƃ�\������R���p�C���f�B���N�e�B�u�ł�
+ *  @brief  指定の定義が廃止予定や非推奨であることを表明するコンパイラディレクティブです
  *
- *  �R���p�C�������̋@�\�ɑΉ����Ă���΁ADEPRECATED�w��̒�`���g�p����Ă����
- *  ���A�R���p�C�����Ɍx�����o�͂���܂��B
- *  �֐��ȊO�ɂ��A�^��`��A�ϐ��ɂ��g�p���邱�Ƃ��ł��܂��B
+ *  コンパイラがこの機能に対応していれば、DEPRECATED指定の定義が使用されている場
+ *  合、コンパイル時に警告が出力されます。
+ *  関数以外にも、型定義や、変数にも使用することができます。
  *
  *  @code
  *  X_DEPRECATED void deprecated_func(void);
@@ -187,6 +216,61 @@
 #endif
 
 
+#ifndef X_FUNC
+    #define X_FUNC  __func__
+#endif
+
+
+/** @name  packed
+ *  @brief 構造体のパックオプションのグループです
+ *
+ *  構造体のパディングを行わないパックオプションはバイナリデータの読み書きに便利
+ *  ですが、C標準ではないですが、多くのコンパイラがサポートしています。
+ *  しかし、構文はコンパイラごとに違うので、4つのセクションを設けて、様々な構文
+ *  に対応できるようにしています。パックする構造体は以下のように定義してください
+ *  。
+ *
+ *  @code {.c}
+ *
+ *  X_PACKED_PRE_BEGIN
+ *  struct Foo X_PACKED_POST_BEGIN
+ *  {
+ *  } X_PACKED_PRE_END;
+ *  X_PACKED_POST_END
+ *
+ *  X_PACKED_PRE_BEGIN
+ *  typedef struct X_PACKED_POST_BEGIN
+ *  {
+ *  } X_PACKED_PRE_END Foo;
+ *  X_PACKED_POST_END
+ *
+ *
+ *  @endcode
+ *
+ *  @{
+ */
+#ifndef X_PACKED_PRE_BEGIN
+    #define X_PACKED_PRE_BEGIN
+#endif
+
+
+#ifndef X_PACKED_POST_BEGIN
+    #define X_PACKED_POST_BEGIN
+#endif
+
+
+#ifndef X_PACKED_PRE_END
+    #define X_PACKED_PRE_END
+#endif
+
+
+#ifndef X_PACKED_POST_END
+    #define X_PACKED_POST_END
+#endif
+/** @} end of name packed
+ */
+
+
 #ifndef NULL
     #define NULL    ((void*)0)
 #endif
@@ -195,6 +279,11 @@
 #ifndef EOF
     #define EOF     (-1)
 #endif
+
+
+/** @} end of addtogroup xcompiler
+ *  @} end of addtogroup core
+ */
 
 
 #endif // picox_core_detail_xcompiler_h_
