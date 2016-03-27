@@ -647,7 +647,10 @@ TEST(xfs, copyfile)
 bool PrintTree(void* userptr, const char* path, const XStat* statbuf, const XDirEnt* dirent)
 {
     X_UNUSED(userptr);
+    X_UNUSED(statbuf);
+    X_UNUSED(dirent);
     printf("%s\n", path);
+
     // printf("%s\n", dirent->name);
 
     return true;

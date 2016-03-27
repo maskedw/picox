@@ -148,7 +148,7 @@ extern "C" {
 
 /** @brief ポインタ変数xがNULLでなければvを代入します
  */
-#define X_ASSIGN_NOT_NULL(x, v)  (((x) != NULL) ? (*(x) = (v)) : (void)0)
+#define X_ASSIGN_NOT_NULL(x, v)  if (x) *(x) = (v)
 
 
 /** @brief cond == trueの時、return文を実行します。
@@ -909,17 +909,17 @@ static inline uint32_t x_find_msb32(uint32_t x) { return 1UL << x_find_msb_pos32
 
 /** @brief 8bit符号なし変数のセットされたビット数を返します
  */
-static inline int x_count_bits8(uint8_t x)  { X_COUNT_BITS_IMPL(x); };
+static inline int x_count_bits8(uint8_t x)  { X_COUNT_BITS_IMPL(x); }
 
 
 /** @brief x_count_bits8()の16bit版です
  */
-static inline int x_count_bits16(uint16_t x) { X_COUNT_BITS_IMPL(x); };
+static inline int x_count_bits16(uint16_t x) { X_COUNT_BITS_IMPL(x); }
 
 
 /** @brief x_count_bits8()の32bit版です
  */
-static inline int x_count_bits32(uint32_t x) { X_COUNT_BITS_IMPL(x); };
+static inline int x_count_bits32(uint32_t x) { X_COUNT_BITS_IMPL(x); }
 
 
 /** @brief xが指す先頭2バイトを逆転します

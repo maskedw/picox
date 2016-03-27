@@ -306,9 +306,9 @@ extern XAssertionFailedFunc x_post_assertion_failed;
  *  @brief 動的メモリ確保のNULL検査用アサートです
  */
 #if X_CONF_USE_DETECT_MALLOC_NULL != 0
-    #define X_ASSERT_MALLOC_NULL(ptr)       X_ASSERT(ptr)
+    #define X_ASSERT_MALLOC_NULL(expr)       X_ASSERT(expr)
 #else
-    #define X_ASSERT_MALLOC_NULL(ptr)       (void)0
+    #define X_ASSERT_MALLOC_NULL(expr)       (void)0
 #endif
 
 

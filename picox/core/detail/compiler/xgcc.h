@@ -47,12 +47,12 @@
 
 
 #ifndef __STRICT_ANSI__
-    #define X_HAS_TYPEOF            (1)
-    #define X_TYPEOF(x)             typeof(x)
+    #define X_HAS_TYPEOF                (1)
+    #define X_TYPEOF(x)                 typeof(x)
+    #define X_HAS_STATEMENT_EXPRESSIONS (1)
 #endif
 
 
-#define X_HAS_STATEMENT_EXPRESSIONS (1)
 #define X_HAS_VARIADIC_MACROS       (1)
 #define X_ALWAYS_INLINE             static inline __attribute__((__always_inline__))
 #define X_LIKELY(x)                 __builtin_expect(!!(x), 1)

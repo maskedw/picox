@@ -112,7 +112,7 @@ extern "C" {
  *  様のマクロが定義されており、多用されています。
  *  より詳しい情報は、"linux container_of"等でググってみてください。
  */
-#if defined(X_HAS_TYPEOF) && defined(X_HAS_STATEMENT_EXPRESSIONS)
+#if (X_HAS_TYPEOF != 0) && (X_HAS_STATEMENT_EXPRESSIONS != 0)
     #define X_CONTAINER_OF(ptr, type, member)                     \
             ({                                                    \
                 const X_TYPEOF(((type*)0)->member)* mptr = (ptr); \

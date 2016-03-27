@@ -59,6 +59,7 @@ typedef struct
     size_t  pos;
     size_t  size;
 } X__MemPutcContext;
+
 typedef struct
 {
     XCharPutFunc char_put_func;
@@ -161,13 +162,15 @@ int x_printf_to_stream(XStream* stream, const char* fmt, ...)
 
 int x_vprintf(const char* fmt, va_list args)
 {
-    return X__VPrintf(X__SomewherePutc, (XCharPutFunc)x_putc, fmt, args);
+    X__CharPutcContext ctx = {(XCharPutFunc)x_putc};
+    return X__VPrintf(X__SomewherePutc, &ctx, fmt, args);
 }
 
 
 int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args)
 {
-    return X__VPrintf(X__SomewherePutc, cputter, fmt, args);
+    X__CharPutcContext ctx = {(XCharPutFunc)cputter};
+    return X__VPrintf(X__SomewherePutc, &ctx, fmt, args);
 }
 
 
@@ -197,7 +200,7 @@ static void X__StreamPutc(void* ptr, char c)
 
 static void X__SomewherePutc(void* ptr, char c)
 {
-    XCharPutFunc putc_func = ptr;
+    XCharPutFunc putc_func = ((X__CharPutcContext*)ptr)->char_put_func;
     putc_func(c);
 }
 

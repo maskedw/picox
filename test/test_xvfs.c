@@ -2,14 +2,13 @@
 #include <picox/filesystem/xposixfs.h>
 #include "testutils.h"
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 
 
 
 TEST_GROUP(xvfs);
-
-
-static const char* path = "tmp/foo.txt";
 
 
 TEST_SETUP(xvfs)
@@ -33,7 +32,7 @@ TEST(xvfs, open)
     xposixfs_init_vfs(&fs, &vfs);
 
     XFile* fp;
-    int err = xvfs_open(&vfs, "hoge.txt", X_OPEN_MODE_WRITE, &fp);
+    xvfs_open(&vfs, "hoge.txt", X_OPEN_MODE_WRITE, &fp);
 
     xvfs_close(fp);
 

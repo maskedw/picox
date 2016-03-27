@@ -94,6 +94,7 @@ void* xsalloc_allocate(XStackAllocator* self, size_t size)
     void* ret;
 
     X_ASSERT_MALLOC_NULL(reserve >= size);
+    X_UNUSED(reserve);
 
     size = x_roundup_alignment(size, self->alignment);
 

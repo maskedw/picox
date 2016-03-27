@@ -530,7 +530,7 @@ void* x_memrchr(const void* p, int c, size_t n)
 
     if (n != 0)
     {
-        cp = p  + n;
+        cp = (const uint8_t*)p  + n;
         do
         {
             if (*(--cp) == (uint8_t)c)

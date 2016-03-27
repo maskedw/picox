@@ -22,7 +22,7 @@ include_directories(${fatfs_dir})
 include_directories(${spiffs_dir})
 
 # set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -Wpedantic -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -D X_INTERNAL_DEVMODE -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
+set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wpedantic -D_POSIX_C_SOURCE=200112L -DX_INTERNAL_DEVMODE -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wchar-subscripts")
 
 add_executable(alltests

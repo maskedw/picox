@@ -95,7 +95,7 @@ char* xfpath_resolve_dot(char* path)
             if (left - 1 == root)
                 return NULL;
 
-            left = x_memrchr(root, '/', left - root - 1) + 1;
+            left = (char*)(x_memrchr(root, '/', left - root - 1)) + 1;
             right += 3;
         }
         else

@@ -22,5 +22,5 @@ static void X__PostAssertionFailed(void)
 
 void x_init_test(void)
 {
-    x_post_assertion_failed = (void*)X__PostAssertionFailed;
+    x_post_assertion_failed = (XAssertionFailedFunc)X__PostAssertionFailed;
 }

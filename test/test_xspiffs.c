@@ -19,6 +19,11 @@ static int check_valid_flash = 1;
 static const char WRITE_DATA[] = "Hello world";
 static const size_t WRITE_LEN = 11; // strlen WRITE_DATA
 
+static void dump_page(spiffs *fs, spiffs_page_ix p);
+static void hexdump(u32_t addr, u32_t len);
+static s32_t _erase(spiffs *fs, u32_t addr, u32_t size);
+static s32_t _write(spiffs *fs, u32_t addr, u32_t size, u8_t *src);
+static s32_t _read(spiffs *fs, u32_t addr, u32_t size, u8_t *dst);
 
 static s32_t _read(spiffs *fs, u32_t addr, u32_t size, u8_t *dst) {
   if (addr < fs->cfg.phys_addr) {
@@ -35,7 +40,7 @@ static s32_t _read(spiffs *fs, u32_t addr, u32_t size, u8_t *dst) {
 
 
 static s32_t _write(spiffs *fs, u32_t addr, u32_t size, u8_t *src) {
-  int i;
+  u32_t i;
   //printf("wr %08x %i\n", addr, size);
   if (addr < fs->cfg.phys_addr) {
     printf("FATAL write addr too low %08x < %08x\n", addr, SPIFFS_PHYS_ADDR);
@@ -74,17 +79,8 @@ static s32_t _erase(spiffs *fs, u32_t addr, u32_t size) {
   return 0;
 }
 
-void hexdump_mem(u8_t *b, u32_t len) {
-  while (len--) {
-    if ((((intptr_t)b)&0x1f) == 0) {
-      printf("\n");
-    }
-    printf("%02x", *b++);
-  }
-  printf("\n");
-}
 
-void hexdump(u32_t addr, u32_t len) {
+static void hexdump(u32_t addr, u32_t len) {
   int remainder = (addr % 32) == 0 ? 0 : 32 - (addr % 32);
   u32_t a;
   for (a = addr - remainder; a < addr+len; a++) {
@@ -120,7 +116,7 @@ void hexdump(u32_t addr, u32_t len) {
   printf("\n");
 }
 
-void dump_page(spiffs *fs, spiffs_page_ix p) {
+static void dump_page(spiffs *fs, spiffs_page_ix p) {
   printf("page %04x  ", p);
   u32_t addr = SPIFFS_PAGE_TO_PADDR(fs, p);
   if (p % SPIFFS_PAGES_PER_BLOCK(fs) < SPIFFS_OBJ_LOOKUP_PAGES(fs)) {
@@ -157,14 +153,14 @@ void dump_page(spiffs *fs, spiffs_page_ix p) {
 }
 
 void area_write(u32_t addr, u8_t *buf, u32_t size) {
-  int i;
+  u32_t i;
   for (i = 0; i < size; i++) {
     AREA(addr + i) = *buf++;
   }
 }
 
 void area_read(u32_t addr, u8_t *buf, u32_t size) {
-  int i;
+  u32_t i;
   for (i = 0; i < size; i++) {
     *buf++ = AREA(addr + i);
   }
@@ -192,7 +188,7 @@ TEST_SETUP(xspiffs)
     c.phys_erase_block = SECTOR_SIZE;
     c.phys_size = SPIFFS_FLASH_SIZE;
 #if SPIFFS_FILEHDL_OFFSET
-  c.fh_ix_offset = TEST_SPIFFS_FILEHDL_OFFSET;
+    c.fh_ix_offset = TEST_SPIFFS_FILEHDL_OFFSET;
 #endif
 
     int res = SPIFFS_mount(spiffsbuf, &c, _work, _fds, sizeof(_fds), _cache, sizeof(_cache), NULL);
@@ -208,6 +204,7 @@ TEST_SETUP(xspiffs)
     // printf("ret => %d\n", res);
     // printf("ret => %d\n", SPIFFS_errno(spiffsbuf));
 
+    X_UNUSED(res);
     xspiffs_init(fs, spiffsbuf);
 }
 
