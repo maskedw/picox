@@ -8,24 +8,35 @@ TEST_GROUP(xspiffs);
 
 
 #define AREA(x) area[(x) - addr_offset]
+#define PHYS_FLASH_SIZE       (16*1024*1024)
+#define SPIFFS_FLASH_SIZE     (2*1024*1024)
+#define SPIFFS_PHYS_ADDR      (4*1024*1024)
+#define SECTOR_SIZE         65536
+#define LOG_BLOCK           (SECTOR_SIZE*2)
+#define LOG_PAGE            (SECTOR_SIZE/256)
+#define FD_BUF_SIZE     64*6
+#define CACHE_BUF_SIZE  (LOG_PAGE + 32)*8
+#define TEST_SPIFFS_FILEHDL_OFFSET      0x1000
+
+
 static unsigned char area[PHYS_FLASH_SIZE];
-static u32_t addr_offset = 0;
+static uint32_t addr_offset = 0;
 static spiffs* spiffsbuf;
 static XSpiFFs* fs;
-static u8_t _work[LOG_PAGE*2];
-static u8_t _fds[FD_BUF_SIZE];
-static u8_t _cache[CACHE_BUF_SIZE];
+static uint8_t _work[LOG_PAGE*2];
+static uint8_t _fds[FD_BUF_SIZE];
+static uint8_t _cache[CACHE_BUF_SIZE];
 static int check_valid_flash = 1;
 static const char WRITE_DATA[] = "Hello world";
 static const size_t WRITE_LEN = 11; // strlen WRITE_DATA
 
 static void dump_page(spiffs *fs, spiffs_page_ix p);
-static void hexdump(u32_t addr, u32_t len);
-static s32_t _erase(spiffs *fs, u32_t addr, u32_t size);
-static s32_t _write(spiffs *fs, u32_t addr, u32_t size, u8_t *src);
-static s32_t _read(spiffs *fs, u32_t addr, u32_t size, u8_t *dst);
+static void hexdump(uint32_t addr, uint32_t len);
+static int32_t _erase(spiffs *fs, uint32_t addr, uint32_t size);
+static int32_t _write(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *src);
+static int32_t _read(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *dst);
 
-static s32_t _read(spiffs *fs, u32_t addr, u32_t size, u8_t *dst) {
+static int32_t _read(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *dst) {
   if (addr < fs->cfg.phys_addr) {
     printf("FATAL read addr too low %08x < %08x\n", addr, SPIFFS_PHYS_ADDR);
     exit(1);
@@ -39,8 +50,8 @@ static s32_t _read(spiffs *fs, u32_t addr, u32_t size, u8_t *dst) {
 }
 
 
-static s32_t _write(spiffs *fs, u32_t addr, u32_t size, u8_t *src) {
-  u32_t i;
+static int32_t _write(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *src) {
+  uint32_t i;
   //printf("wr %08x %i\n", addr, size);
   if (addr < fs->cfg.phys_addr) {
     printf("FATAL write addr too low %08x < %08x\n", addr, SPIFFS_PHYS_ADDR);
@@ -66,7 +77,7 @@ static s32_t _write(spiffs *fs, u32_t addr, u32_t size, u8_t *src) {
 }
 
 
-static s32_t _erase(spiffs *fs, u32_t addr, u32_t size) {
+static int32_t _erase(spiffs *fs, uint32_t addr, uint32_t size) {
   if (addr & (fs->cfg.phys_erase_block-1)) {
     printf("trying to erase at addr %08x, out of boundary\n", addr);
     exit(1);
@@ -80,9 +91,9 @@ static s32_t _erase(spiffs *fs, u32_t addr, u32_t size) {
 }
 
 
-static void hexdump(u32_t addr, u32_t len) {
+static void hexdump(uint32_t addr, uint32_t len) {
   int remainder = (addr % 32) == 0 ? 0 : 32 - (addr % 32);
-  u32_t a;
+  uint32_t a;
   for (a = addr - remainder; a < addr+len; a++) {
     if ((a & 0x1f) == 0) {
       if (a != addr) {
@@ -118,12 +129,12 @@ static void hexdump(u32_t addr, u32_t len) {
 
 static void dump_page(spiffs *fs, spiffs_page_ix p) {
   printf("page %04x  ", p);
-  u32_t addr = SPIFFS_PAGE_TO_PADDR(fs, p);
+  uint32_t addr = SPIFFS_PAGE_TO_PADDR(fs, p);
   if (p % SPIFFS_PAGES_PER_BLOCK(fs) < SPIFFS_OBJ_LOOKUP_PAGES(fs)) {
     // obj lu page
     printf("OBJ_LU");
   } else {
-    u32_t obj_id_addr = SPIFFS_BLOCK_TO_PADDR(fs, SPIFFS_BLOCK_FOR_PAGE(fs , p)) +
+    uint32_t obj_id_addr = SPIFFS_BLOCK_TO_PADDR(fs, SPIFFS_BLOCK_FOR_PAGE(fs , p)) +
         SPIFFS_OBJ_LOOKUP_ENTRY_FOR_PAGE(fs, p) * sizeof(spiffs_obj_id);
     spiffs_obj_id obj_id = *((spiffs_obj_id *)&AREA(obj_id_addr));
     // data page
@@ -148,19 +159,19 @@ static void dump_page(spiffs *fs, spiffs_page_ix p) {
     }
   }
   printf("\n");
-  u32_t len = fs->cfg.log_page_size;
+  uint32_t len = fs->cfg.log_page_size;
   hexdump(addr, len);
 }
 
-void area_write(u32_t addr, u8_t *buf, u32_t size) {
-  u32_t i;
+void area_write(uint32_t addr, uint8_t *buf, uint32_t size) {
+  uint32_t i;
   for (i = 0; i < size; i++) {
     AREA(addr + i) = *buf++;
   }
 }
 
-void area_read(u32_t addr, u8_t *buf, u32_t size) {
-  u32_t i;
+void area_read(uint32_t addr, uint8_t *buf, uint32_t size) {
+  uint32_t i;
   for (i = 0; i < size; i++) {
     *buf++ = AREA(addr + i);
   }
@@ -211,6 +222,7 @@ TEST_SETUP(xspiffs)
 
 TEST_TEAR_DOWN(xspiffs)
 {
+    SPIFFS_gc(spiffsbuf, 0xFFFF);
     xspiffs_deinit(fs);
     SPIFFS_unmount(spiffsbuf);
     x_free(spiffsbuf);
