@@ -10,7 +10,7 @@ set(external_dir "../picox_external")
 set(external_config_dir "../picox_external/config")
 set(unity_dir ${external_dir}/Unity/src)
 set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
-set(fatfs_dir ${external_dir}/fatfs/src)
+set(fatfs_dir ${external_dir}/fatfs/port_picox)
 set(spiffs_dir ${external_dir}/spiffs/port_picox)
 
 

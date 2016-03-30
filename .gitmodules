@@ -1,3 +1,6 @@
 [submodule "picox_external/spiffs"]
 	path = picox_external/spiffs
 	url = https://github.com/maskedw/spiffs
+[submodule "picox_external/fatfs"]
+	path = picox_external/fatfs
+	url = https://github.com/maskedw/fatfs.git
