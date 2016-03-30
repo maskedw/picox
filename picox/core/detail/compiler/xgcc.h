@@ -82,7 +82,16 @@
     #pragma GCC poison new delete class template typename
     #pragma GCC poison private protected public operator
     #pragma GCC poison friend mutable using namespace
+    #pragma GCC poison static_cast const_cast reinterpret_cast dynamic_cast
+    #pragma GCC poison explicit export
+    #pragma GCC poison virtual this typeid try catch throw
     #pragma GCC poison cin cout cerr clog
+
+    /* C11 features */
+    #pragma GCC poison final nullptr override constexpr
+    #pragma GCC poison alignas alignof auto noexcept static_assert
+    #pragma GCC poison char16_t char32_t
+    #pragma GCC poison thread_local
 #endif
 #endif
 

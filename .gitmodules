@@ -1,0 +1,3 @@
+[submodule "picox_external/spiffs"]
+	path = picox_external/spiffs
+	url = https://github.com/maskedw/spiffs
