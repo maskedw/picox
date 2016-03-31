@@ -22,5 +22,6 @@ static void X__PostAssertionFailed(void)
 
 void x_init_test(void)
 {
+    x_putc_stdout = (XCharPutFunc)putchar;
     x_post_assertion_failed = (XAssertionFailedFunc)X__PostAssertionFailed;
 }

@@ -321,6 +321,7 @@ X__PRINT_STRING:
                 break;
             case 'd' :
             case 'u' :
+            case 'i' :
                 base = 10;
                 break;
             case 'x' :
@@ -382,12 +383,12 @@ X__PRINT_STRING:
             v = va_arg(args, long);
         else if (flags & X__FLAG_SIZE_T)
             v = va_arg(args, size_t);
-        else if (c == 'd')
+        else if ((c == 'd') || (c == 'i'))
             v = va_arg(args, int);
         else
             v = va_arg(args, unsigned int);
 
-        if (c == 'd' && (v & X_MSBOF_LONG))
+        if (((c == 'd') || (c == 'i')) && (v & X_MSBOF_LONG))
         {
             v = 0 - v;
             flags |= X__FLAG_NEGATIVE;
