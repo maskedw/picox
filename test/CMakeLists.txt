@@ -12,6 +12,7 @@ set(unity_dir ${external_dir}/Unity/port_picox)
 set(fatfs_dir ${external_dir}/fatfs/port_picox)
 set(spiffs_dir ${external_dir}/spiffs/port_picox)
 set(sds_dir ${external_dir}/sds/port_picox)
+set(uthash_dir ${external_dir}/uthash/port_picox)
 
 
 include_directories("./")
@@ -76,6 +77,10 @@ add_executable(alltests
     ${spiffs_dir}/spiffs_gc.c
     ${spiffs_dir}/spiffs_hydrogen.c
     ${spiffs_dir}/spiffs_nucleus.c
+    ${uthash_dir}/libut.c
+    ${uthash_dir}/ringbuf.c
+    ${uthash_dir}/utmm.c
+    ${uthash_dir}/utvector.c
     ${unity_dir}/unity.c
     ${unity_dir}/unity_fixture.c)
 

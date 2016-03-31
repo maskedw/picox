@@ -10,3 +10,6 @@
 [submodule "picox_external/Unity"]
 	path = picox_external/Unity
 	url = https://github.com/maskedw/Unity.git
+[submodule "picox_external/uthash"]
+	path = picox_external/uthash
+	url = https://github.com/maskedw/uthash.git

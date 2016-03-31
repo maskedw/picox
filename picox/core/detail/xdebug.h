@@ -324,6 +324,12 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 #define X_ABORT_DEFAULT             default: X_ABORT("Runtime error"); break
 
 
+/** @def   X_EXIT
+ *  @brief プログラムの実行を強制停止します
+ */
+#define X_EXIT(return_code)         X_ABORT("exit:" #return_code)
+
+
 /** @} end of name assertions
  */
 
