@@ -7,3 +7,6 @@
 [submodule "picox_external/sds"]
 	path = picox_external/sds
 	url = https://github.com/maskedw/sds.git
+[submodule "picox_external/Unity"]
+	path = picox_external/Unity
+	url = https://github.com/maskedw/Unity.git

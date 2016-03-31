@@ -8,8 +8,7 @@ set(CMAKE_C_COMPILER gcc)
 set(picox_dir "../picox")
 set(external_dir "../picox_external")
 set(external_config_dir "../picox_external/config")
-set(unity_dir ${external_dir}/Unity/src)
-set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
+set(unity_dir ${external_dir}/Unity/port_picox)
 set(fatfs_dir ${external_dir}/fatfs/port_picox)
 set(spiffs_dir ${external_dir}/spiffs/port_picox)
 set(sds_dir ${external_dir}/sds/port_picox)
@@ -19,7 +18,6 @@ include_directories("./")
 include_directories("../")
 include_directories(${external_config_dir})
 include_directories(${unity_dir})
-include_directories(${unity_ex_dir})
 include_directories(${fatfs_dir})
 include_directories(${spiffs_dir})
 include_directories(${sds_dir})
@@ -79,7 +77,7 @@ add_executable(alltests
     ${spiffs_dir}/spiffs_hydrogen.c
     ${spiffs_dir}/spiffs_nucleus.c
     ${unity_dir}/unity.c
-    ${unity_ex_dir}/unity_fixture.c)
+    ${unity_dir}/unity_fixture.c)
 
 add_custom_target(run_tests ALL DEPENDS alltests)
 add_custom_command(TARGET run_tests POST_BUILD
