@@ -4,3 +4,6 @@
 [submodule "picox_external/fatfs"]
 	path = picox_external/fatfs
 	url = https://github.com/maskedw/fatfs.git
+[submodule "picox_external/sds"]
+	path = picox_external/sds
+	url = https://github.com/maskedw/sds.git

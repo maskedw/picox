@@ -15,19 +15,19 @@
 
 // Set generic spiffs debug output call.
 #ifndef SPIFFS_USE_DBG
-    #define SPIFFS_USE_DBG          1
+    #define SPIFFS_USE_DBG          0
 #endif
 
 #ifndef SPIFFS_USE_GC_DBG
-    #define SPIFFS_USE_GC_DBG       1
+    #define SPIFFS_USE_GC_DBG       0
 #endif
 
 #ifndef SPIFFS_USE_CACHE_DBG
-    #define SPIFFS_USE_CACHE_DBG    1
+    #define SPIFFS_USE_CACHE_DBG    0
 #endif
 
 #ifndef SPIFFS_USE_CHECK_DBG
-    #define SPIFFS_USE_CHECK_DBG    1
+    #define SPIFFS_USE_CHECK_DBG    0
 #endif
 
 #if SPIFFS_USE_DBG != 0

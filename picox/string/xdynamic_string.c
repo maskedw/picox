@@ -37,8 +37,8 @@
  */
 
 
+#include <sds.h>
 #include <picox/string/xdynamic_string.h>
-#include <picox_external/sds/sds.h>
 
 
 struct XDynamicString
@@ -194,20 +194,14 @@ XDynamicString* xdstr_shrink_to_fit(XDynamicString* self)
 XDynamicString* xdstr_reserve(XDynamicString* self, size_t size)
 {
     X_ASSERT(self);
-    const size_t capacity = xdstr_capacity(self);
-    if (size <= capacity)
+
+    const size_t curlen = sdslen((sds)self);
+    if (curlen >= size)
         return self;
-
-    struct sdshdr *sh, *newsh;
-    sds s = (sds)self;
-    sh = (struct sdshdr*)(s - sizeof(*sh));
-
-    newsh = x_realloc(sh, sizeof(*newsh) + size + 1);
-    if (newsh == NULL) return NULL;
-
-    newsh->free = size - sh->len;
-
-    return (XDynamicString*)(newsh->buf);
+    sds new_str = sdsMakeFitRoomFor((sds)self, size - curlen);
+    if (!new_str)
+        return NULL;
+    return (XDynamicString*)new_str;
 }
 
 

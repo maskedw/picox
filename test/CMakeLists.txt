@@ -12,16 +12,17 @@ set(unity_dir ${external_dir}/Unity/src)
 set(unity_ex_dir ${external_dir}/Unity/extras/fixture/src)
 set(fatfs_dir ${external_dir}/fatfs/port_picox)
 set(spiffs_dir ${external_dir}/spiffs/port_picox)
+set(sds_dir ${external_dir}/sds/port_picox)
 
 
 include_directories("./")
 include_directories("../")
 include_directories(${external_config_dir})
-include_directories(${external_dir}/sds)
 include_directories(${unity_dir})
 include_directories(${unity_ex_dir})
 include_directories(${fatfs_dir})
 include_directories(${spiffs_dir})
+include_directories(${sds_dir})
 
 # set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -Wpedantic -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
 set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wpedantic -D_POSIX_C_SOURCE=200112L -DX_INTERNAL_DEVMODE -DUNITY_INCLUDE_DOUBLE -DX_CONF_USE_USER_CONFIG=1 -include unity.h -include unity_fixture.h")
@@ -70,7 +71,7 @@ add_executable(alltests
     ${picox_dir}/string/xdynamic_string.c
     ${picox_dir}/misc/xtokenizer.c
     ${picox_dir}/misc/xargparser.c
-    ${external_dir}/sds/sds.c
+    ${sds_dir}/sds.c
     ${fatfs_dir}/ff.c
     ${spiffs_dir}/spiffs_cache.c
     ${spiffs_dir}/spiffs_check.c
