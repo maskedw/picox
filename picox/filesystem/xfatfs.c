@@ -475,6 +475,17 @@ XError xfatfs_getcwd(XFatFs* fs, char* buf, size_t size)
     X_ASSERT(buf);
     X__ASSERT_TAG(fs);
 
+#if _VOLUMES == 1
+    /* ボリューム数が1の時は、f_getcwd()はボリュームラベルを付加しないが、xfsの
+     * 実装上、常にボリュームラベルがついているほうが都合がいい。
+     */
+    if (size < 3)
+        return X_ERR_NAME_TOO_LONG;
+    strcpy(buf, "0:");
+    buf += 2;
+    size -= 2;
+#endif
+
     XError err = X_ERR_NONE;
     const FRESULT fres = f_getcwd(buf, size);
     X_ASSIGN_IF(fres != FR_OK, err, X__ToXError(fres));
