@@ -13,3 +13,6 @@
 [submodule "picox_external/uthash"]
 	path = picox_external/uthash
 	url = https://github.com/maskedw/uthash.git
+[submodule "picox_external/minIni"]
+	path = picox_external/minIni
+	url = https://github.com/maskedw/minIni.git
