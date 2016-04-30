@@ -144,12 +144,12 @@ void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t new_size)
 {
     X_ASSERT(self);
     X_ASSERT(new_size > 0);
-    X_ASSERT(x_is_aligned(old_mem, X__ALIGN));
 
     size_t old_size = 0;
 
     if (old_mem)
     {
+        X_ASSERT(x_is_aligned(old_mem, X__ALIGN));
         char* const p = ((char*)old_mem) - X__ALIGN;
         old_size = *(size_t*)p;
     }
@@ -160,6 +160,9 @@ void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t new_size)
     void* const new_mem = xpalloc_allocate(self, new_size);
     if (!new_mem)
         return NULL;
+
+    if (!old_mem)
+        return new_mem;
 
     /* 新しいサイズより旧いサイズの方が大きかったら新しいサイズ分コピーする。
      * 古いサイズより新しいサイズの方が大きかったら古いサイズ分コピーする。
