@@ -50,7 +50,7 @@ static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode);
 static int X__GenericPos(void* ptr, XSize* pos);
 static int X__GenericFlush(void* ptr);
 static int X__GenericClose(void* ptr);
-static const char* X__GenericErrorString(const void* ptr, int errcode);
+static const char* X__GenericErrorString(int errcode);
 
 
 void xstream_init(XStream* self)
@@ -150,7 +150,7 @@ int xstream_error(const XStream* self)
 const char* xstream_error_string(const XStream* self, int errcode)
 {
     X_ASSERT(self);
-    return self->error_string_func(self->driver, errcode);
+    return self->error_string_func(errcode);
 }
 
 
@@ -372,9 +372,8 @@ static int X__GenericClose(void* ptr)
 }
 
 
-static const char* X__GenericErrorString(const void* ptr, int errcode)
+static const char* X__GenericErrorString(int errcode)
 {
-    X_UNUSED(ptr);
     switch (errcode)
     {
         case 0:

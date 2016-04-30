@@ -131,7 +131,7 @@ typedef int (*XStreamCloseFunc)(void* driver);
 
 /** @brief ストリームが返したエラーステータスに対応する文字列を返す関数ポインタ型です
  */
-typedef const char* (*XStreamErrorStringFunc)(const void* driver, int errcode);
+typedef const char* (*XStreamErrorStringFunc)(int errcode);
 
 
 /** @} end of name stream_function_pointers
