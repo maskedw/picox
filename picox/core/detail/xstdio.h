@@ -171,9 +171,25 @@ int x_puts2(const char* str);
 int x_snprintf(char* buf, size_t size, const char* fmt, ...);
 
 
+/** @brief fmtに従って、出力をbufに書き込みます
+ *
+ *  バッファオーバフローの危険性があるので、通常はx_snprintfを使用してください。
+ *  この関数は既存のsprintfを使用したコードの移植用に用意しています。
+ */
+int x_sprintf(char* buf, const char* fmt, ...);
+
+
 /** @brief fmtに従って、出力をsizeバイトの領域を持つbufに書き込みます
  */
 int x_vsnprintf(char* buf, size_t size, const char* fmt, va_list args);
+
+
+/** @brief fmtに従って、出力をbufに書き込みます
+ *
+ *  バッファオーバフローの危険性があるので、通常はx_snprintfを使用してください。
+ *  この関数は既存のsprintfを使用したコードの移植用に用意しています。
+ */
+int x_vsprintf(char* buf, const char* fmt, va_list args);
 
 
 /** @brief fmtに従って出力先に書き込みます

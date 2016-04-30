@@ -124,6 +124,16 @@ int x_snprintf(char* buf, size_t size, const char* fmt, ...)
 }
 
 
+int x_sprintf(char* buf, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    const int len = x_vsnprintf(buf, SIZE_MAX, fmt, args);
+    va_end(args);
+    return len;
+}
+
+
 int x_vsnprintf(char* buf, size_t size, const char* fmt, va_list args)
 {
     X__MemPutcContext context;
@@ -137,6 +147,12 @@ int x_vsnprintf(char* buf, size_t size, const char* fmt, va_list args)
     else
         buf[len] = '\0';
     return len;
+}
+
+
+int x_vsprintf(char* buf, const char* fmt, va_list args)
+{
+    return x_vsnprintf(buf, SIZE_MAX, fmt, args);
 }
 
 
