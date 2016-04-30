@@ -333,6 +333,49 @@ char* xfpath_stem(const char* path, char** o_end);
 char* xfpath_parent(const char* path, const char* end, char** o_end);
 
 
+/** パスのドライブ文字を返します
+ *
+ *  ドライブ文字として有効な文字は[0-9a-zA-Z]です。
+ *
+ *  @pre
+ *  + path != NULL
+ *  + 解決済みのパスであること
+ *
+ *  @code {.c}
+ *  xfpath_drive("0:/foo") => '0'
+ *  xfpath_drive("C:/foo") => 'C'
+ *  xfpath_drive("/foo")   => '\0'
+ *  @endcode
+ */
+char xfpath_drive(const char* path);
+
+
+/** パスがルートディレクトリを指しているかどうかを返します
+ *
+ *  @pre
+ *  + path != NULL
+ *  + 解決済みのパスであること
+ */
+bool xfpath_is_root(const char* path);
+
+
+/** パスが絶対パスかどうかを返します
+ *
+ *  @pre
+ *  + path != NULL
+ */
+bool xfpath_is_absolute(const char* path);
+
+
+/** パスが相対パスかどうかを返します
+ *
+ *  @pre
+ *  + path != NULL
+ */
+bool xfpath_is_relative(const char* path);
+
+
+
 /** @} end of addtogroup xfpath
  *  @} end of addtogroup filesystem
  */

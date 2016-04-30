@@ -41,7 +41,8 @@
 
 char* xfpath_join(char* p1, const char* p2, size_t size)
 {
-    if (*p2 == '/')
+    /* p2が絶対パスなら、丸コピすればいい */
+    if (xfpath_is_absolute(p2))
     {
         if (x_strlcpy(p1, p2, size) >= size)
             return NULL;
@@ -49,9 +50,9 @@ char* xfpath_join(char* p1, const char* p2, size_t size)
     }
 
     size_t len = strlen(p1);
-    if (len >= size)
-        return NULL;
+    X_ASSERT(len < size);
 
+    /* p1の長さが0の時も 丸コピすればいい */
     if (len == 0)
     {
         if (x_strlcpy(p1, p2, size) >= size)
@@ -59,12 +60,14 @@ char* xfpath_join(char* p1, const char* p2, size_t size)
         return p1;
     }
 
+    /* p1の末尾がディレクトリセパレータでなければセパレータを付加する */
     if (p1[len - 1] != '/')
     {
         p1[len++] = '/';
         --size;
     }
 
+    /* p2を結合したら完了 */
     size -= len;
     if (x_strlcpy(p1 + len, p2, size) >= size)
         return NULL;
@@ -128,6 +131,14 @@ XError xfpath_resolve(char* dst, const char* cwd, const char* path, size_t size)
 
     if (!xfpath_join(dst, path, X_PATH_MAX))
         return X_ERR_NAME_TOO_LONG;
+
+    /* ルート以外の末尾の'/'は除去する */
+    if (!xfpath_is_root(dst))
+    {
+        const size_t len = strlen(dst);
+        if (dst[len - 1] == '/')
+            dst[len - 1] = '\0';
+    }
 
     if (!xfpath_resolve_dot(dst))
         return X_ERR_NO_ENTRY;
@@ -282,4 +293,52 @@ char* xfpath_parent(const char* path, const char* end, char** o_end)
         *o_end = (char*)(p + 1);
 
     return (char*)path;
+}
+
+
+char xfpath_drive(const char* path)
+{
+    if (path[0] == '\0')
+        return '\0';
+
+    if ((isalnum((int)(path[0]))) && (path[1] == ':'))
+        return path[0];
+
+    return '\0';
+}
+
+
+bool xfpath_is_root(const char* path)
+{
+    if (path[0] == '\0')
+        return false;
+
+    /* skip drive later */
+    if ((isalnum((int)(path[0]))) && (path[1] == ':'))
+        path += 2;
+
+    while (path[0] == '/') ++path;
+    if (path[0] == '\0')
+        return true;
+
+    return false;
+}
+
+
+bool xfpath_is_absolute(const char* path)
+{
+    /* skip drive later */
+    if ((isalnum((int)(path[0]))) && (path[1] == ':'))
+        path += 2;
+
+    if (path[0] == '/')
+        return true;
+
+    return false;
+}
+
+
+bool xfpath_is_relative(const char* path)
+{
+    return !(xfpath_is_absolute(path));
 }
