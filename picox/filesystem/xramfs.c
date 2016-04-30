@@ -298,8 +298,8 @@ XError xramfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
         return X_ERR_NONE;
     }
 
-    const size_t to_read = ((infp->m_pos + size) <= fileent->m_capacity)
-                            ? size : (fileent->m_capacity - infp->m_pos);
+    const size_t to_read = ((infp->m_pos + size) <= fileent->m_size)
+                            ? size : (fileent->m_size - infp->m_pos);
     memcpy(dst, fileent->m_data + infp->m_pos, to_read);
     infp->m_pos += to_read;
     X_ASSIGN_NOT_NULL(nread, to_read);
@@ -320,7 +320,7 @@ XError xramfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
         return X_ERR_ACCESS;
 
     XRamFs* const fs = fp->m_fs;
-    const size_t pos = (infp->m_mode & X_OPEN_FLAG_APPEND) ? infp->m_fileent->m_size : infp->m_pos;
+    const size_t pos = (infp->m_mode & X_OPEN_FLAG_APPEND) ? fileent->m_size : infp->m_pos;
 
     if (pos + size > fileent->m_capacity)
     {
@@ -364,10 +364,10 @@ XError xramfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
             new_pos = pos;
             break;
         case X_SEEK_CUR:
-            new_pos = ((int64_t)infp->m_pos) + pos;
+            new_pos = ((int64_t)(infp->m_pos)) + pos;
             break;
         case X_SEEK_END:
-            new_pos = ((int64_t)fileent->m_size) + pos;
+            new_pos = ((int64_t)(fileent->m_size)) + pos;
             break;
         default:
             break;
@@ -698,9 +698,8 @@ static XError X__FindEntry(const XRamFs* fs, const char* path, char* name,
     for (;;)
     {
         next = xfpath_top(endptr, (char**)&endptr);
-
+        X__EXIT_IF(next == NULL, X_ERR_NO_ENTRY);
         X__EXIT_IF(endptr - next >= X_NAME_MAX, X_ERR_NAME_TOO_LONG);
-        X__EXIT_IF(next[0] == '\0', X_ERR_NO_ENTRY);
 
         memcpy(name, next, endptr - next);
         name[endptr - next] = '\0';
@@ -724,8 +723,13 @@ static XError X__FindEntry(const XRamFs* fs, const char* path, char* name,
             continue;
         }
 
-        /* 現在のディレクトリから要素を探す */
         ent = NULL;
+        /* ":"は別のファイルシステムがドライブレターで使用する可能性があるので、
+         * 禁止。"\"もトラブルの元になりそうなので禁止。
+         */
+        X__EXIT_IF(strpbrk(name, ":\\"), X_ERR_INVALID_NAME);
+
+        /* 現在のディレクトリから要素を探す */
         XIntrusiveNode* ite;
         xilist_foreach(&dir->m_children, ite)
         {
@@ -739,6 +743,7 @@ static XError X__FindEntry(const XRamFs* fs, const char* path, char* name,
 
         X__EXIT_IF(!ent, X_ERR_NO_ENTRY);
 
+        while (*endptr == '/') ++endptr;
         if (*endptr != '\0')
         {
             /* 次の要素があるなら、エントリはディレクトリでなければおかしい */
