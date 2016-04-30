@@ -44,12 +44,10 @@ static int X__MemStreamWrite(XMemStream* self, const void* src, size_t size, siz
 static int X__MemStreamRead(XMemStream* self, void* dst, size_t size, size_t* nread);
 static int X__MemStreamSeek(XMemStream* self, XOffset offset, XSeekMode mode);
 static int X__MemStreamPos(XMemStream* self, XSize* pos);
-static int X__MemStreamSize(XMemStream* self, XSize* size);
 static int X__GenericRead(void* ptr, void* dst, size_t size, size_t* nread);
 static int X__GenericWrite(void* ptr, const void* src, size_t size, size_t* nwritten);
 static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode);
 static int X__GenericPos(void* ptr, XSize* pos);
-static int X__GenericSize(void* ptr, XSize* size);
 static int X__GenericFlush(void* ptr);
 static int X__GenericClose(void* ptr);
 static const char* X__GenericErrorString(const void* ptr, int errcode);

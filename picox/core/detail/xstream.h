@@ -171,7 +171,6 @@ typedef struct XStream
     XStreamFlushFunc        flush_func;
     XStreamSeekFunc         seek_func;
     XStreamPosFunc          pos_func;
-    XStreamSizeFunc         size_func;
     XStreamErrorStringFunc  error_string_func;
 } XStream;
 
@@ -253,14 +252,6 @@ int xstream_seek(XStream* self, XOffset offset, XSeekMode mode);
  *  @retval != 0 エラー
  */
 int xstream_pos(XStream* self, XSize* pos);
-
-
-/** @brief ストリームのバイト数をsizeにセットします
- *
- *  @retval == 0 正常終了
- *  @retval != 0 エラー
- */
-int xstream_size(XStream* self, XSize* size);
 
 
 /** @brief 最後のエラー値を返します
