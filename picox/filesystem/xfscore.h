@@ -63,16 +63,6 @@ struct XVirtualFs;
 typedef struct XVirtualFs   XVirtualFs;
 
 
-/** @see X_CONF_FILE_PATH_MAX
- */
-#define X_PATH_MAX (X_CONF_FILE_PATH_MAX)
-
-
-/** @see X_CONF_FILE_NAME_MAX
- */
-#define X_NAME_MAX (X_CONF_FILE_NAME_MAX)
-
-
 /** @brief ファイル操作のハンドル構造体です
  *
  *  ユーザーが直接アクセスしてよいメンバはありません。

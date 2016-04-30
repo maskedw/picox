@@ -342,6 +342,18 @@ extern "C" {
 #endif
 
 
+/** @def   X_CONF_LINE_MAX
+ *  @brief 1行のNULL終端を含む最大文字数を指定します
+ *
+ *  char[X_CONF_LINE_MAX]がスタックに確保される場合を考慮して適切な値を指定して
+ *  ください
+ */
+#ifndef X_CONF_LINE_MAX
+#define X_CONF_LINE_MAX (128)
+#endif
+
+
+
 /** @def   X_CONF_PORT_GETTIMEOFDAY
  *  @brief 時刻を取得する関数が利用可能かどうかを指定します
  *
