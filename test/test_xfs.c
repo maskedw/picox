@@ -8,98 +8,142 @@ TEST_GROUP(xfs);
 
 static XRamFs* ramfs;
 static XVirtualFs* vramfs;
+static XRamFs* ramfs2;
+static XVirtualFs* vramfs2;
 static XFatFs* fatfs;
 static XVirtualFs* vfatfs;
+static XFatFs* fatfs2;
+static XVirtualFs* vfatfs2;
 static FATFS* fatfsbody;
+static FATFS* fatfsbody2;
 static const char WRITE_DATA[] = "Hello world";
 static const size_t WRITE_LEN = 11; // strlen WRITE_DATA
+void disk_deinit(BYTE pdrv);
 
-#if 1
+
 TEST_SETUP(xfs)
 {
+    XFile* fp;
     XError err;
     ramfs = x_malloc(sizeof(XRamFs));
     vramfs = x_malloc(sizeof(XVirtualFs));
+    ramfs2 = x_malloc(sizeof(XRamFs));
+    vramfs2 = x_malloc(sizeof(XVirtualFs));
     fatfs = x_malloc(sizeof(XFatFs));
     vfatfs = x_malloc(sizeof(XVirtualFs));
+    fatfs2 = x_malloc(sizeof(XFatFs));
+    vfatfs2 = x_malloc(sizeof(XVirtualFs));
     fatfsbody = x_malloc(sizeof(FATFS));
+    fatfsbody2 = x_malloc(sizeof(FATFS));
 
-    TEST_ASSERT_NOT_NULL(ramfs);
-    TEST_ASSERT_NOT_NULL(vramfs);
-    TEST_ASSERT_NOT_NULL(fatfs);
-    TEST_ASSERT_NOT_NULL(vfatfs);
-    TEST_ASSERT_NOT_NULL(fatfsbody);
+    X_ASSERT(ramfs);
+    X_ASSERT(vramfs);
+    X_ASSERT(ramfs2);
+    X_ASSERT(vramfs2);
+    X_ASSERT(fatfs);
+    X_ASSERT(vfatfs);
+    X_ASSERT(fatfs2);
+    X_ASSERT(vfatfs2);
+    X_ASSERT(fatfsbody);
+    X_ASSERT(fatfsbody2);
 
     FRESULT res;
-    res = f_mount(fatfsbody, "", 0);
-    TEST_ASSERT_EQUAL(FR_OK, res);
-    res = f_mkfs("0", 0, 0);
-    TEST_ASSERT_EQUAL(FR_OK, res);
+
+    res = f_mount(fatfsbody, "0:", 0);
+    X_ASSERT(res == FR_OK);
+    res = f_mount(fatfsbody2, "1:", 0);
+    X_ASSERT(res == FR_OK);
+
+    res = f_mkfs("0:", 0, 0);
+    X_ASSERT(res == FR_OK);
+    res = f_mkfs("1:", 0, 0);
+    X_ASSERT(res == FR_OK);
+
     xfatfs_init(fatfs);
     xfatfs_init_vfs(fatfs, vfatfs);
-    xfatfs_mkdir(fatfs, "/FATFS");
+    err = xfatfs_mkdir(fatfs, "0:/otherfs");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfatfs_mkdir(fatfs, "0:/otherfs2");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfatfs_mkdir(fatfs, "0:/otherfs3");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfatfs_open(fatfs, "0:/fatfs.txt", X_OPEN_MODE_WRITE, &fp);
+    X_ASSERT(err == X_ERR_NONE);
+    xfatfs_close(fp);
+
+    xfatfs_init(fatfs2);
+    xfatfs_init_vfs(fatfs2, vfatfs2);
+    err = xfatfs_mkdir(fatfs2, "1:/hoge");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfatfs_mkdir(fatfs2, "1:/hoge/fuga");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfatfs_open(fatfs2, "1:/hoge/fuga.txt", X_OPEN_MODE_WRITE, &fp);
+    X_ASSERT(err == X_ERR_NONE);
+    xfatfs_close(fp);
+    err = xfatfs_open(fatfs2, "1:/hoge/fuga/fuge.txt", X_OPEN_MODE_WRITE, &fp);
+    X_ASSERT(err == X_ERR_NONE);
+    xfatfs_close(fp);
 
     xramfs_init(ramfs, NULL, 2048);
     xramfs_init_vfs(ramfs, vramfs);
-    // xramfs_mkdir(ramfs, "/fatfs");
+    xramfs_init(ramfs2, NULL, 2048);
+    xramfs_init_vfs(ramfs2, vramfs2);
+
+    err = xramfs_open(ramfs, "/foo.txt", X_OPEN_MODE_WRITE, &fp);
+    X_ASSERT(err == X_ERR_NONE);
+    xramfs_close(fp);
+
+    err = xramfs_mkdir(ramfs2, "/foo");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xramfs_open(ramfs, "/foo/bar.txt", X_OPEN_MODE_WRITE, &fp);
+    X_ASSERT(err == X_ERR_NONE);
+    xramfs_close(fp);
+    err = xramfs_mkdir(ramfs2, "/foo/bar");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xramfs_open(ramfs2, "/foo/bar/baz.txt", X_OPEN_MODE_WRITE, &fp);
+    X_ASSERT(err == X_ERR_NONE);
+    xramfs_close(fp);
 
     xfs_init();
-    err = xfs_mount(vfatfs, "/", "/");
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    err = xfs_mount(vramfs, "/fatfs", "/");
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    err = xfs_mount(vfatfs, "/", "0:/");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfs_mount(vramfs, "/otherfs", "/");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfs_mount(vramfs2, "/otherfs2", "/foo");
+    X_ASSERT(err == X_ERR_NONE);
+    err = xfs_mount(vfatfs2, "/otherfs3", "1:/hoge");
+    X_ASSERT(err == X_ERR_NONE);
 }
-#endif
-#if 0
-TEST_SETUP(xfs)
-{
-    XError err;
-    ramfs = x_malloc(sizeof(XRamFs));
-    vramfs = x_malloc(sizeof(XVirtualFs));
-    fatfs = x_malloc(sizeof(XFatFs));
-    vfatfs = x_malloc(sizeof(XVirtualFs));
-    fatfsbody = x_malloc(sizeof(FATFS));
-
-    TEST_ASSERT_NOT_NULL(ramfs);
-    TEST_ASSERT_NOT_NULL(vramfs);
-    TEST_ASSERT_NOT_NULL(fatfs);
-    TEST_ASSERT_NOT_NULL(vfatfs);
-    TEST_ASSERT_NOT_NULL(fatfsbody);
-
-    xramfs_init(ramfs, NULL, 2048);
-    xramfs_init_vfs(ramfs, vramfs);
-    xramfs_mkdir(ramfs, "/fatfs");
-
-    FRESULT res;
-    res = f_mount(fatfsbody, "", 0);
-    TEST_ASSERT_EQUAL(FR_OK, res);
-    res = f_mkfs("0", 0, 0);
-    TEST_ASSERT_EQUAL(FR_OK, res);
-    xfatfs_init(fatfs);
-    xfatfs_init_vfs(fatfs, vfatfs);
-
-
-    xfs_init();
-    err = xfs_mount(vramfs, "/", "/");
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-
-    err = xfs_mount(vfatfs, "/fatfs", "/");
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-}
-#endif
-
 
 TEST_TEAR_DOWN(xfs)
 {
-    xfs_umount("/");
     xfs_deinit();
-    xramfs_deinit(ramfs);
-    xfatfs_deinit(fatfs);
-    x_free(ramfs);
-    x_free(vramfs);
-    x_free(fatfs);
-    x_free(vfatfs);
-    x_free(fatfsbody);
+    if (ramfs)
+        xramfs_deinit(ramfs);
+    if (ramfs2)
+        xramfs_deinit(ramfs2);
+    if (fatfs)
+    {
+        f_mount(NULL, "0:", 0);
+        xfatfs_deinit(fatfs);
+    }
+    if (fatfs2)
+    {
+        f_mount(NULL, "1:", 0);
+        xfatfs_deinit(fatfs2);
+    }
+    X_SAFE_FREE(ramfs);
+    X_SAFE_FREE(vramfs);
+    X_SAFE_FREE(ramfs2);
+    X_SAFE_FREE(vramfs2);
+    X_SAFE_FREE(fatfs);
+    X_SAFE_FREE(vfatfs);
+    X_SAFE_FREE(fatfs2);
+    X_SAFE_FREE(vfatfs2);
+    X_SAFE_FREE(fatfsbody);
+    X_SAFE_FREE(fatfsbody2);
+    disk_deinit(0);
+    disk_deinit(1);
 }
 
 
@@ -124,6 +168,7 @@ TEST(xfs, open_read)
     err = xfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
     TEST_ASSERT_NULL(fp);
+    xfs_close(fp);
 
     err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
@@ -649,9 +694,8 @@ bool PrintTree(void* userptr, const char* path, const XStat* statbuf, const XDir
     X_UNUSED(userptr);
     X_UNUSED(statbuf);
     X_UNUSED(dirent);
-    printf("%s\n", path);
-
-    // printf("%s\n", dirent->name);
+    X_UNUSED(path);
+    // printf("%s\n", path);
 
     return true;
 }
@@ -660,9 +704,6 @@ bool PrintTree(void* userptr, const char* path, const XStat* statbuf, const XDir
 TEST(xfs, copytree)
 {
     XError err;
-#if 0
-    char name[] = "foo";
-    XStat statbuf;
 
     err = xfs_mkdir("foo");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
@@ -676,20 +717,101 @@ TEST(xfs, copytree)
     err = xfs_copytree("foo", "hoge");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    // err = xfs_walktree("hoge", PrintTree, NULL);
-#endif
-    printf("\n");
-
-    XFile* fp;
-    err = xfs_open("/fatfs/hoge.txt", X_OPEN_MODE_WRITE, &fp);
+    err = xfs_copytree("foo", "/otherfs/tree");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    TEST_ASSERT_NOT_NULL(fp);
-    xfs_close(fp);
 
     err = xfs_walktree("/", PrintTree, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-#if 0
-#endif
+
+    err = xfs_walktree("/otherfs", PrintTree, NULL);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+}
+
+
+TEST(xfs, mount)
+{
+    XError err;
+    XFile* fp;
+    XDir*  dir;
+
+    xfs_deinit();
+
+    XRamFs rootfs;
+    XVirtualFs vramfs1;
+    XVirtualFs vramfs2;
+
+    xramfs_init(&rootfs, NULL, 2048);
+    xramfs_init_vfs(&rootfs, &vramfs1);
+    xramfs_init_vfs(&rootfs, &vramfs2);
+
+    err = xramfs_mkdir(&rootfs, "/mnt");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xramfs_mkdir(&rootfs, "/mnt/ramfs");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xramfs_mkdir(&rootfs, "/home");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xramfs_open(&rootfs, "/home/test.txt", X_OPEN_MODE_WRITE, &fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xramfs_close(fp);
+
+    err = xfs_mount(&vramfs1, "/", "/");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xfs_mount(&vramfs2, "/mnt", "/home");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xfs_open("/mnt/test.txt", X_OPEN_MODE_READ, &fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xfs_close(fp);
+
+    xfs_deinit();
+
+    err = xfs_mount(&vramfs1, "/", "/home");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xfs_open("/test.txt", X_OPEN_MODE_READ, &fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xfs_close(fp);
+
+    err = xfs_opendir("/", &dir);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xfs_closedir(dir);
+    xfs_deinit();
+
+
+    err = xfs_mount(&vramfs1, "/", "/");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xfs_mount(vfatfs, "/mnt", "0:/");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xfs_opendir("/mnt", &dir);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xfs_closedir(dir);
+
+    xfs_deinit();
+
+
+    /* "/", "/"
+     * "/tmp", "/"
+     * "/", "/tmp"
+     */
+}
+
+
+TEST(xfs, rmtree)
+{
+    XError err;
+
+    err = xfs_rmtree("/otherfs2/bar");
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    err = xfs_walktree("/", PrintTree, NULL);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 }
 
 
@@ -703,11 +825,9 @@ TEST_GROUP_RUNNER(xfs)
     RUN_TEST_CASE(xfs, tell);
     RUN_TEST_CASE(xfs, seek);
     RUN_TEST_CASE(xfs, flush);
-
     RUN_TEST_CASE(xfs, mkdir);
     RUN_TEST_CASE(xfs, opendir);
     RUN_TEST_CASE(xfs, readdir);
-
     RUN_TEST_CASE(xfs, remove);
     RUN_TEST_CASE(xfs, rename);
     RUN_TEST_CASE(xfs, open_write_plus);
@@ -716,4 +836,6 @@ TEST_GROUP_RUNNER(xfs)
     RUN_TEST_CASE(xfs, open_append_plus);
     RUN_TEST_CASE(xfs, copyfile);
     RUN_TEST_CASE(xfs, copytree);
+    RUN_TEST_CASE(xfs, rmtree);
+    RUN_TEST_CASE(xfs, mount);
 }

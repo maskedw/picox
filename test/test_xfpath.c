@@ -68,6 +68,16 @@ TEST(xfpath, resolove)
 
     TEST_ASSERT_EQUAL(X_ERR_NONE, xfpath_resolve(buf, cwd, "ABC/../DEF/bin", sizeof(buf)));
     TEST_ASSERT_EQUAL_STRING("/home/DEF/bin", buf);
+
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfpath_resolve(buf, cwd, "ABC/", sizeof(buf)));
+    TEST_ASSERT_EQUAL_STRING("/home/ABC", buf);
+}
+
+
+TEST(xfpath, resolove_drivelater)
+{
+    char buf[256];
+    char cwd[] = "/home";
 }
 
 
@@ -425,6 +435,7 @@ TEST_GROUP_RUNNER(xfpath)
     RUN_TEST_CASE(xfpath, join);
     RUN_TEST_CASE(xfpath, resolove_dot);
     RUN_TEST_CASE(xfpath, resolove);
+    RUN_TEST_CASE(xfpath, resolove_drivelater);
     RUN_TEST_CASE(xfpath, next);
     RUN_TEST_CASE(xfpath, rnext);
     RUN_TEST_CASE(xfpath, name);

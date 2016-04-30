@@ -12,6 +12,9 @@ extern "C" {
 
 
 void x_init_test(void);
+void x_test_init_fs();
+void x_test_deinit_fs();
+
 void x_escape_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line);
 
 #if 0

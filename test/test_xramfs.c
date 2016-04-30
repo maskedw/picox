@@ -73,6 +73,21 @@ TEST(xramfs, write)
     err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
 
     xramfs_close(fp);
 }
@@ -310,6 +325,12 @@ TEST(xramfs, rename)
     char name2[] = "bar";
 
     xramfs_open(fs, name, X_OPEN_MODE_WRITE, &fp);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xramfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+
     xramfs_close(fp);
 
     err = xramfs_stat(fs, name, &statbuf);

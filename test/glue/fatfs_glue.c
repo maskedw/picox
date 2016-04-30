@@ -7,16 +7,23 @@ typedef struct
     DSTATUS status;
     size_t  sz_sector;
     size_t  n_sectors;
-    FILE*   diskfp;
+    FILE*   fp;
 } FakeDiskIO;
 
 
 #define SZ_SECTOR (512)
-#define SZ_DISK   (1024 * 1024 * 100)
+#define SZ_DISK   (1024 * 1024 * 1)
 #define N_SECTORS (SZ_DISK / SZ_SECTOR)
 
-static FakeDiskIO fakeio = {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL};
-static FakeDiskIO* const priv = &fakeio;
+static FakeDiskIO fakeio[5] = {
+    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
+    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
+    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
+    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
+    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
+};
+
+static FakeDiskIO* const priv = fakeio;
 
 
 /*---------------------------------------------------------*/
@@ -43,26 +50,36 @@ DSTATUS disk_initialize (
     BYTE pdrv       /* Physical drive nmuber */
 )
 {
-    X_UNUSED(pdrv);
-    if (!priv->diskfp)
+    FakeDiskIO* disk = &priv[pdrv];
+
+    if (!disk->fp)
     {
-        FILE* fp = fopen("./fatdisk.img", "w+b");
+        char buf[128];
+        snprintf(buf, sizeof(buf), "./fatdisk%d.img", pdrv);
+        FILE* fp = fopen(buf, "w+b");
         X_ASSERT(fp);
-        priv->diskfp = fp;
+        fseek(fp, SZ_DISK - 1, SEEK_SET);
+        fwrite(buf, 1, 1, fp);
+        fseek(fp, 0, SEEK_SET);
+        disk->fp = fp;
     }
-    priv->status = 0;
+    disk->status = 0;
 
     return 0;
 }
 
-void disk_delete(void)
+
+void disk_deinit(BYTE pdrv)
 {
-    if (priv->diskfp)
-    {
-        fclose(priv->diskfp);
-        remove("./fatdisk.img");
-        priv->diskfp = NULL;
-    }
+    FakeDiskIO* disk = &priv[pdrv];
+    fclose(disk->fp);
+    disk->fp = NULL;
+    disk->status = STA_NOINIT;
+
+    char buf[128];
+    snprintf(buf, sizeof(buf), "./fatdisk%d.img", pdrv);
+    int err = remove(buf);
+    volatile int i = 0;
 }
 
 
@@ -72,7 +89,7 @@ DSTATUS disk_status (
 {
     X_UNUSED(pdrv);
 
-    return priv->status;
+    return priv[pdrv].status;
 }
 
 
@@ -83,13 +100,16 @@ DRESULT disk_read (
     UINT count          /* Number of sectors to read */
 )
 {
-    X_UNUSED(pdrv);
+
     int ret;
-    ret = fseek(priv->diskfp, priv->sz_sector * sector, SEEK_SET);
+    FakeDiskIO* disk = &priv[pdrv];
+    // printf("%s: fseek(%08X)\n", __func__, disk->sz_sector);
+    ret = fseek(disk->fp, disk->sz_sector * sector, SEEK_SET);
     X_ASSERT(ret != -1);
 
-    size_t readret = fread(buff, 1, priv->sz_sector * count, priv->diskfp);
-    X_ASSERT(readret == priv->sz_sector * count);
+    // printf("%s: fread(%08X)\n", __func__, disk->sz_sector * count);
+    size_t readret = fread(buff, 1, disk->sz_sector * count, disk->fp);
+    X_ASSERT(readret == disk->sz_sector * count);
     // printf("diskread {sec:%u} {cnt:%u}\n", sector, count);
 
     return RES_OK;
@@ -106,14 +126,16 @@ DRESULT disk_write (
     UINT count          /* Number of sectors to write */
 )
 {
-    X_UNUSED(pdrv);
+    FakeDiskIO* disk = &priv[pdrv];
 
     int ret;
-    ret = fseek(priv->diskfp, priv->sz_sector * sector, SEEK_SET);
+    // printf("%s: fseek(%08X)\n", __func__, disk->sz_sector);
+    ret = fseek(disk->fp, disk->sz_sector * sector, SEEK_SET);
     X_ASSERT(ret != -1);
 
-    size_t writeret = fwrite(buff, 1, priv->sz_sector * count, priv->diskfp);
-    X_ASSERT(writeret == priv->sz_sector * count);
+    // printf("%s: fwrite(%08X)\n", __func__, disk->sz_sector * count);
+    size_t writeret = fwrite(buff, 1, disk->sz_sector * count, disk->fp);
+    X_ASSERT(writeret == disk->sz_sector * count);
     // printf("diskwrite {sec:%u} {cnt:%u}\n", sector, count);
 
     return RES_OK;
@@ -129,26 +151,26 @@ DRESULT disk_ioctl (
     void *buff      /* Buffer to send/receive data block */
 )
 {
-    X_UNUSED(pdrv);
+    FakeDiskIO* disk = &priv[pdrv];
     DRESULT res = RES_PARERR;
 
 
-    if (priv->status & STA_NOINIT)
+    if (disk->status & STA_NOINIT)
         return RES_NOTRDY;
 
     switch (ctrl) {
     case CTRL_SYNC:         /* Nothing to do */
-        fflush(priv->diskfp);
+        fflush(disk->fp);
         res = RES_OK;
         break;
 
     case GET_SECTOR_COUNT:  /* Get number of sectors on the drive */
-        *(DWORD*)buff = priv->n_sectors;
+        *(DWORD*)buff = disk->n_sectors;
         res = RES_OK;
         break;
 
     case GET_SECTOR_SIZE:   /* Get size of sector to read/write */
-        *(WORD*)buff = priv->sz_sector;
+        *(WORD*)buff = disk->sz_sector;
         res = RES_OK;
         break;
 
