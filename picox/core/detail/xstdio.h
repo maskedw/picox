@@ -127,7 +127,7 @@ extern "C" {
  *  1文字をどこに出力するのかを関数ポインタで変更できるようにしておくと、UART等
  *  のデバイスや、RAMへの出力等、応用範囲が非常に広がります。
  */
-typedef void (*XCharPutFunc)(uint8_t c);
+typedef int (*XCharPutFunc)(int c);
 
 
 /** @brief 1文字出力関数ポインタです

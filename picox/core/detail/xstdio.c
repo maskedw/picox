@@ -49,10 +49,16 @@
 #define X__FLAG_SIZE_T          (X_BIT(3))
 #define X__FLAG_DOUBLE          (X_BIT(4))
 #define X__FLAG_NEGATIVE        (X_BIT(5))
-#define X__PUTC(c)              do { putc_func(context, c); len++; } while (0)
+#define X__PUTC(c)                          \
+        do                                  \
+        {                                   \
+            if (putc_func(context, c) < 0)  \
+                return -1;                  \
+            ++len;                          \
+        } while (0)
 
 
-typedef void (*X__Putc)(void* ptr, char c);
+typedef int (*X__Putc)(void* ptr, char c);
 typedef struct
 {
     void*   dst;
@@ -65,9 +71,9 @@ typedef struct
     XCharPutFunc char_put_func;
 } X__CharPutcContext;
 
-static void X__MemPutc(void* ptr, char c);
-static void X__StreamPutc(void* ptr, char c);
-static void X__SomewherePutc(void* ptr, char c);
+static int X__MemPutc(void* ptr, char c);
+static int X__StreamPutc(void* ptr, char c);
+static int X__SomewherePutc(void* ptr, char c);
 static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list args);
 XCharPutFunc x_putc_stdout;
 
@@ -76,8 +82,7 @@ int x_putc(int c)
 {
     if (!x_putc_stdout)
         return EOF;
-    x_putc_stdout((uint8_t)c);
-    return c;
+    return x_putc_stdout(c);
 }
 
 
@@ -87,9 +92,11 @@ int x_puts(const char* str)
         return EOF;
 
     while (*str)
-        x_putc_stdout((uint8_t)(*str++));
-    x_putc_stdout('\n');
-    return 0;
+    {
+        if (x_putc_stdout(*str++) < 0)
+            return -1;
+    }
+    return x_putc_stdout('\n');
 }
 
 
@@ -99,7 +106,10 @@ int x_puts2(const char* str)
         return EOF;
 
     while (*str)
-        x_putc_stdout((uint8_t)(*str++));
+    {
+        if (x_putc_stdout(*str++) < 0)
+            return -1;
+    }
     return 0;
 }
 
@@ -180,7 +190,7 @@ int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args)
 }
 
 
-static void X__MemPutc(void* ptr, char c)
+static int X__MemPutc(void* ptr, char c)
 {
     X__MemPutcContext* context = ptr;
     if (context->pos <  context->size)
@@ -188,20 +198,21 @@ static void X__MemPutc(void* ptr, char c)
         (*((char*)(context->dst) + context->pos)) = c;
         context->pos++;
     }
+    return 0;
 }
 
 
-static void X__StreamPutc(void* ptr, char c)
+static int X__StreamPutc(void* ptr, char c)
 {
     XStream* stream = ptr;
-    xstream_putc(stream, c);
+    return xstream_putc(stream, c);
 }
 
 
-static void X__SomewherePutc(void* ptr, char c)
+static int X__SomewherePutc(void* ptr, char c)
 {
     XCharPutFunc putc_func = ((X__CharPutcContext*)ptr)->char_put_func;
-    putc_func(c);
+    return putc_func(c);
 }
 
 
