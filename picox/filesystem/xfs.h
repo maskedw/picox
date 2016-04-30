@@ -432,6 +432,31 @@ XError xfs_is_directory(const char* path, bool* isdir);
 XError xfs_is_regular(const char* path, bool* isreg);
 
 
+int xfs_putc(XFile* fp, int c);
+int xfs_puts(XFile* fp, const char* str);
+int xfs_printf(XFile* fp, const char* fmt, ...);
+int xfs_vprintf(XFile* fp, const char* fmt, va_list args);
+
+
+/** @brief ファイルから1文字を読み込みます
+ */
+int xfs_getc(XFile* fp);
+
+
+/** @brief ファイルから1行を読み込みます
+ */
+XError xfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
+
+
+typedef struct
+{
+    XStream     stream;
+} XFsStream;
+#define X_FSSTREAM_TAG         (X_MAKE_TAG('X', 'F', 'S', 'S'))
+
+
+XStream* xfs_init_stream(XFsStream* stream, XFile* fp);
+
 
 /** @} end of addtogroup xfs
  *  @} end of addtogroup filesystem

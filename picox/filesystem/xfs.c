@@ -170,6 +170,7 @@ XError xfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
 
     XError err;
     char buf[X_PATH_MAX];
+    X__MountPoint* mp = NULL;
 
     if (!priv->m_curdir)
     {
@@ -224,7 +225,6 @@ XError xfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
     }
 
     /* マウントポイントオブジェクトを生成してリストに繋ぎ込む  */
-    X__MountPoint* mp = NULL;
     err = X__CreateMountPoint(vfs, buf, realpath, &mp);
     if (err)
         goto x__exit;
@@ -720,7 +720,7 @@ XError xfs_rmtree(const char* path)
     XError err = X_ERR_NONE;
 
     X__RmTreeWorkBuf* work = x_malloc(sizeof(X__RmTreeWorkBuf));
-    if (!err)
+    if (!work)
     {
         err = X_ERR_NO_MEMORY;
         goto x__exit;
@@ -847,15 +847,153 @@ XError xfs_is_regular(const char* path, bool* isreg)
 }
 
 
+int xfs_putc(XFile* fp, int c)
+{
+    uint8_t b = c;
+    const XError err = xvfs_write(fp, &b, sizeof(b), NULL);
+    return (err == X_ERR_NONE) ? c : EOF;
+}
+
+
+int xfs_puts(XFile* fp, const char* str)
+{
+    const XError err = xvfs_write(fp, str, strlen(str), NULL);
+    return (err == X_ERR_NONE) ? 0 : EOF;
+}
+
+
+int xfs_printf(XFile* fp, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    const int len = xfs_vprintf(fp, fmt, args);
+    va_end(args);
+
+    return len;
+}
+
+
+int xfs_vprintf(XFile* fp, const char* fmt, va_list args)
+{
+    XFsStream fstream;
+    xfs_init_stream(&fstream, fp);
+
+    return x_vprintf_to_stream(&fstream.stream, fmt, args);
+}
+
+
+int xfs_getc(XFile* fp)
+{
+    uint8_t b;
+    size_t nread;
+
+    const XError err = xvfs_read(fp, &b, sizeof(b), &nread);
+    return ((err == X_ERR_NONE) && (nread == sizeof(b))) ? b : EOF;
+}
+
+
+XError xfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow)
+{
+    X_ASSERT_SELF(fp);
+    X_ASSERT_NULL(dst);
+    X_ASSERT_NULL(result);
+
+    XError err = X_ERR_NONE;
+    size_t total = 0;
+    bool eof = false;
+    char c;
+
+    *result = NULL;
+    dst[0] = '\0';
+
+    while (total < size - 1)
+    {
+        size_t nread;
+        err = xvfs_read(fp, &c, 1, &nread);
+        if (err)
+            goto x__exit;
+
+        if (nread == 0)
+        {
+            eof = true;
+            break;
+        }
+
+        if (c == '\r')
+            continue;
+
+        if (c == '\n')
+            break;
+        dst[total++] = c;
+    }
+
+    dst[total] = '\0';
+    *result = (dst[0] != '\0') ? dst : NULL;
+    X_ASSIGN_NOT_NULL(overflow, ((c != '\n') && (!eof)));
+
+x__exit:
+    return err;
+}
+
+
+XStream* xfs_init_stream(XFsStream* fstream, XFile* fp)
+{
+    X_ASSERT_NULL(fstream);
+    X_ASSERT_NULL(fp);
+
+    xstream_init(&fstream->stream);
+    fstream->stream.driver = fp;
+    fstream->stream.tag = X_FSSTREAM_TAG;
+    fstream->stream.write_func = (XStreamWriteFunc)xfs_write;
+    fstream->stream.read_func = (XStreamReadFunc)xfs_read;
+    fstream->stream.seek_func = (XStreamSeekFunc)xfs_seek;
+    fstream->stream.tell_func = (XStreamTellFunc)xfs_tell;
+    return &fstream->stream;
+}
+
+
 static XError X__ToRealPath(const X__MountPoint* mp, char* vpath)
 {
     const size_t vl = strlen(mp->m_vpath);
     const size_t rl = strlen(mp->m_realpath);
     const size_t l = strlen(vpath);
+    const bool is_vroot = xfpath_is_root(mp->m_vpath);
+    const bool is_rroot = xfpath_is_root(mp->m_realpath);
+    char* p;
 
-    char* p = x_strreplace(vpath, X_PATH_MAX, l, vl, mp->m_realpath, rl);
+    /* xfsの仮想ファイルパスを、本当のファイルパスに変換したい。基本的には、
+     * vpath中の、mp->m_vpath部分を、mp->m_realpathに置き換えればいいのだが、
+     * いくつか例外があり、わかりづらい。
+     *
+     * (1)
+     * vpath "/foo/bar.txt"  mp->m_vpath "/" mp->m_realpath "/baz"
+     * これを単純に置き換えてしまうと、
+     *
+     * "/bazfoo/bar.txt"になってしまう。 "/baz/foo/bar.txt"にしたい。
+     * vl - 1とすると、 "/"の前に、mp->m_realpathが挿入される形になるので辻褄が
+     * あう。
+     *
+     * (2)
+     * vpath "/foo/bar.txt"  mp->m_vpath "/foo" mp->m_realpath "/"
+     * これを単純に置き換えてしまうと、
+     * "//bar.txt"になる。 連続するセパレータは認められるはずなので、まあこのま
+     * までもいいのだが、綺麗に"/bar.txt"としたい。
+     * vl + 1とすると、vpathのセパレータ部分も含めてmp->m_realpathに上書きされる
+     * ので辻褄が合う。
+     *
+     * (3)
+     * それ以外は普通に置き換えればよし。
+     */
+    if (is_vroot && !is_rroot) /* (1) */
+        p = x_strreplace(vpath, X_PATH_MAX, l, vl - 1, mp->m_realpath, rl);
+    else if ((!is_vroot) && (is_rroot) && (vl != l)) /* (2) */
+        p = x_strreplace(vpath, X_PATH_MAX, l, vl + 1, mp->m_realpath, rl);
+    else /* (3) */
+        p = x_strreplace(vpath, X_PATH_MAX, l, vl, mp->m_realpath, rl);
+
     if (!p)
         return X_ERR_NAME_TOO_LONG;
+
     return X_ERR_NONE;
 }
 
@@ -1172,6 +1310,80 @@ static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail)
     XError err = X_ERR_NONE;
     XDir* dir = NULL;
     X__MountPoint* mp = NULL;
+    int len = 0;
+
+    err = X__DoStat(work->vpath, &work->statbuf, work->realpath);
+    if (err)
+        goto x__exit;
+
+    err = X__FindMountPoint3(work->realpath, work->vpath, &mp, &work->allmatch);
+    if (err)
+        goto x__exit;
+    if (work->allmatch)
+    {
+        err = X_ERR_BUSY;
+        goto x__exit;
+    }
+
+    if (!XSTAT_IS_DIRECTORY(work->statbuf.mode))
+    {
+        err = xvfs_remove(mp->m_vfs, work->realpath);
+        if (err)
+            goto x__exit;
+    }
+    else
+    {
+        err = xvfs_opendir(mp->m_vfs, work->realpath, &dir);
+        if (err)
+            goto x__exit;
+
+        for (;;)
+        {
+            err = xvfs_readdir(dir, &work->direntbuf, &work->dirent);
+            if (err)
+                goto x__exit;
+
+            if (!work->dirent)
+                break;
+
+            if (x_strequal(".", work->dirent->name) ||
+                x_strequal("..", work->dirent->name))
+                continue;
+
+            len = x_snprintf(work->vpath + tail, X_PATH_MAX - tail,
+                             "/%s", work->dirent->name);
+
+            /* 再帰呼出し */
+            err = X__DoRmTree(work, tail + len);
+            if (err)
+                goto x__exit;
+        }
+
+        err = xvfs_closedir(dir);
+        if (err)
+        {
+            dir = NULL;
+            goto x__exit;
+        }
+
+        dir = NULL;
+        work->vpath[tail] = '\0';
+        work->realpath[strlen(work->realpath) - len] = '\0';
+        err = xvfs_remove(mp->m_vfs, work->realpath);
+    }
+
+x__exit:
+    if (dir)
+        xvfs_closedir(dir);
+
+    return err;
+}
+#if 0
+static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail)
+{
+    XError err = X_ERR_NONE;
+    XDir* dir = NULL;
+    X__MountPoint* mp = NULL;
     int len;
 
     err = X__DoStat(work->vpath, &work->statbuf, work->realpath);
@@ -1239,6 +1451,7 @@ x__exit:
 
     return err;
 }
+#endif
 
 
 static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail)
