@@ -479,6 +479,21 @@ typedef enum
 } XOpenMode;
 
 
+/** @see X_CONF_FILE_PATH_MAX
+ */
+#define X_PATH_MAX (X_CONF_FILE_PATH_MAX)
+
+
+/** @see X_CONF_FILE_NAME_MAX
+ */
+#define X_NAME_MAX (X_CONF_FILE_NAME_MAX)
+
+
+/** @see X_CONF_LINE_MAX
+ */
+#define X_LINE_MAX (X_CONF_LINE_MAX)
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
