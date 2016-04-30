@@ -111,7 +111,7 @@ typedef int (*XStreamSeekFunc)(void* driver, XOffset offset, XSeekMode mode);
 
 /** @brief ストリームの現在位置を取得する関数ポインタ型です
  */
-typedef int (*XStreamPosFunc)(void* driver, XSize* pos);
+typedef int (*XStreamTellFunc)(void* driver, XSize* pos);
 
 
 /** @brief ストリームのバイト数を取得する関数ポインタ型です
@@ -170,7 +170,7 @@ typedef struct XStream
     XStreamCloseFunc        close_func;
     XStreamFlushFunc        flush_func;
     XStreamSeekFunc         seek_func;
-    XStreamPosFunc          pos_func;
+    XStreamTellFunc         tell_func;
     XStreamErrorStringFunc  error_string_func;
 } XStream;
 

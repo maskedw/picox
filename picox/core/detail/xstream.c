@@ -43,7 +43,7 @@
 static int X__MemStreamWrite(XMemStream* self, const void* src, size_t size, size_t* nwritten);
 static int X__MemStreamRead(XMemStream* self, void* dst, size_t size, size_t* nread);
 static int X__MemStreamSeek(XMemStream* self, XOffset offset, XSeekMode mode);
-static int X__MemStreamPos(XMemStream* self, XSize* pos);
+static int X__MemStreamTell(XMemStream* self, XSize* pos);
 static int X__GenericRead(void* ptr, void* dst, size_t size, size_t* nread);
 static int X__GenericWrite(void* ptr, const void* src, size_t size, size_t* nwritten);
 static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode);
@@ -64,8 +64,7 @@ void xstream_init(XStream* self)
     self->close_func = X__GenericClose;
     self->flush_func = X__GenericFlush;
     self->seek_func = X__GenericSeek;
-    self->pos_func = X__GenericPos;
-    self->size_func = X__GenericSize;
+    self->tell_func = X__GenericPos;
     self->error_string_func = X__GenericErrorString;
 }
 
@@ -124,17 +123,7 @@ int xstream_pos(XStream* self, XSize* pos)
 {
     X_ASSERT(self);
     X_ASSERT(pos);
-    const int ret = self->pos_func(self->driver, pos);
-    self->error = ret;
-    return ret;
-}
-
-
-int xstream_size(XStream* self, XSize* size)
-{
-    X_ASSERT(self);
-    X_ASSERT(size);
-    const int ret = self->size_func(self->driver, size);
+    const int ret = self->tell_func(self->driver, pos);
     self->error = ret;
     return ret;
 }
@@ -239,8 +228,7 @@ void xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity)
     self->stream.write_func = (XStreamWriteFunc)X__MemStreamWrite;
     self->stream.read_func = (XStreamReadFunc)X__MemStreamRead;
     self->stream.seek_func = (XStreamSeekFunc)X__MemStreamSeek;
-    self->stream.pos_func = (XStreamPosFunc)X__MemStreamPos;
-    self->stream.size_func = (XStreamSizeFunc)X__MemStreamSize;
+    self->stream.tell_func = (XStreamTellFunc)X__MemStreamTell;
     self->mem = mem;
     self->pos = 0;
     self->size = size;
@@ -298,16 +286,9 @@ static int X__MemStreamSeek(XMemStream* self, XOffset pos, XSeekMode mode)
 }
 
 
-static int X__MemStreamPos(XMemStream* self, XSize* pos)
+static int X__MemStreamTell(XMemStream* self, XSize* pos)
 {
     *pos = self->pos;
-    return 0;
-}
-
-
-static int X__MemStreamSize(XMemStream* self, XSize* size)
-{
-    *size = self->size;
     return 0;
 }
 
@@ -345,14 +326,6 @@ static int X__GenericPos(void* ptr, XSize* pos)
 {
     X_UNUSED(ptr);
     *pos = 0;
-    return true;
-}
-
-
-static int X__GenericSize(void* ptr, XSize* size)
-{
-    X_UNUSED(ptr);
-    *size = 0;
     return true;
 }
 
