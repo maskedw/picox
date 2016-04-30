@@ -119,7 +119,7 @@ void* xpalloc_allocate(XPicoAllocator* self, size_t size)
     char* ptr;
 
     /* サイズ情報確保用の領域を余分に確保する。 */
-    size = x_roundup_multiple(size + X__HEADER_SIZE, X__ALIGN);
+    size = x_roundup_multiple(size + X__HEADER_SIZE + 1, X__ALIGN);
     ptr = X__Allocate(self, size);
 
     X_ASSERT_MALLOC_NULL(ptr);
