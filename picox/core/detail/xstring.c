@@ -741,8 +741,12 @@ char* x_strreplace(char* dst, size_t size, size_t len, size_t dn, const char* sr
             return NULL;
     }
 
+    if (sn == 0)
+        return dst;
+
     memmove(dst + sn, dst + dn, len - dn + 1);
     memcpy(dst, src, sn);
+
     return dst;
 }
 
