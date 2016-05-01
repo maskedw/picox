@@ -37,7 +37,7 @@ TEST(xstring, equal)
 }
 
 
-TEST(xstring, case_equal)
+TEST(xstring, caseequal)
 {
     const char* expected = "Hello";
     TEST_ASSERT_TRUE(x_strcaseequal("Hello", expected));
@@ -47,7 +47,7 @@ TEST(xstring, case_equal)
 }
 
 
-TEST(xstring, case_compare)
+TEST(xstring, casecmp)
 {
     TEST_ASSERT_TRUE(x_strcasecmp("ABC", "ABC") == 0);
     TEST_ASSERT_TRUE(x_strcasecmp("ABC", "BBC") < 0);
@@ -71,7 +71,7 @@ TEST(xstring, case_compare)
 }
 
 
-TEST(xstring, ncase_compare)
+TEST(xstring, ncasecmp)
 {
     TEST_ASSERT_TRUE(x_strncasecmp("ABC", "ABC", 3) == 0);
     TEST_ASSERT_TRUE(x_strncasecmp("ABC", "ABC", 3) == 0);
@@ -95,7 +95,7 @@ TEST(xstring, ncase_compare)
 }
 
 
-TEST(xstring, case_search_substring)
+TEST(xstring, casestr)
 {
     const char* str = "Hello World!";
 
@@ -105,7 +105,7 @@ TEST(xstring, case_search_substring)
 }
 
 
-TEST(xstring, duplicate)
+TEST(xstring, dup)
 {
     const char* str = "Hello World!";
     char* dup;
@@ -116,7 +116,7 @@ TEST(xstring, duplicate)
 }
 
 
-TEST(xstring, duplicate2)
+TEST(xstring, dup2)
 {
     const char* str = "Hello World!";
     char* dup;
@@ -127,7 +127,7 @@ TEST(xstring, duplicate2)
 }
 
 
-TEST(xstring, nduplicate)
+TEST(xstring, ndup)
 {
     const char* str = "Hello World!";
     char* dup;
@@ -142,7 +142,7 @@ TEST(xstring, nduplicate)
 }
 
 
-TEST(xstring, nduplicate2)
+TEST(xstring, ndup2)
 {
     const char* str = "Hello World!";
     char* dup;
@@ -177,7 +177,7 @@ TEST(xstring, strip)
 }
 
 
-TEST(xstring, strip_left)
+TEST(xstring, lstrip)
 {
     char str1[] = "  abc  ";
     char str2[] = "@|]abc ^^`";
@@ -187,7 +187,7 @@ TEST(xstring, strip_left)
 }
 
 
-TEST(xstring, strip_right)
+TEST(xstring, rstrip)
 {
     char str1[] = "  abc  ";
     char str2[] = "@|]abc ^^`";
@@ -197,7 +197,7 @@ TEST(xstring, strip_right)
 }
 
 
-TEST(xstring, to_int)
+TEST(xstring, toint32)
 {
     bool ok;
 
@@ -225,7 +225,7 @@ TEST(xstring, to_int)
 }
 
 
-TEST(xstring, to_uint)
+TEST(xstring, touint32)
 {
     bool ok;
 
@@ -273,7 +273,7 @@ TEST(xstring, to_uint)
 }
 
 
-TEST(xstring, to_float)
+TEST(xstring, tofloat)
 {
     bool ok;
 
@@ -288,7 +288,7 @@ TEST(xstring, to_float)
 }
 
 
-TEST(xstring, to_double)
+TEST(xstring, todouble)
 {
     bool ok;
 
@@ -303,7 +303,7 @@ TEST(xstring, to_double)
 }
 
 
-TEST(xstring, to_bool)
+TEST(xstring, tobool)
 {
     bool ok;
     TEST_ASSERT_TRUE(x_strtobool("Y", false, &ok));
@@ -339,7 +339,7 @@ TEST(xstring, rpbrk)
 }
 
 
-TEST(xstring, case_pbrk)
+TEST(xstring, topbrk)
 {
     TEST_ASSERT_NULL(x_strcasepbrk("ABC", "DE"));
     TEST_ASSERT_EQUAL_STRING("bcBc", x_strcasepbrk("AbcBc", "B"));
@@ -349,7 +349,7 @@ TEST(xstring, case_pbrk)
 }
 
 
-TEST(xstring, case_rpbrk)
+TEST(xstring, caserpbrk)
 {
     TEST_ASSERT_NULL(x_strcaserpbrk("ABC", "DE"));
     TEST_ASSERT_EQUAL_STRING("BC", x_strcaserpbrk("ABCBC", "b"));
@@ -359,14 +359,14 @@ TEST(xstring, case_rpbrk)
 }
 
 
-TEST(xstring, to_lower)
+TEST(xstring, tolower)
 {
     char str[] = "Hello world";
     TEST_ASSERT_EQUAL_STRING("hello world", x_strtolower(str));
 }
 
 
-TEST(xstring, to_upper)
+TEST(xstring, toupper)
 {
     char str[] = "Hello world";
     TEST_ASSERT_EQUAL_STRING("HELLO WORLD", x_strtoupper(str));
@@ -415,27 +415,27 @@ TEST(xstring, replace)
 TEST_GROUP_RUNNER(xstring)
 {
     RUN_TEST_CASE(xstring, equal);
-    RUN_TEST_CASE(xstring, case_equal);
-    RUN_TEST_CASE(xstring, case_compare);
-    RUN_TEST_CASE(xstring, ncase_compare);
-    RUN_TEST_CASE(xstring, case_search_substring);
-    RUN_TEST_CASE(xstring, duplicate);
-    RUN_TEST_CASE(xstring, duplicate2);
-    RUN_TEST_CASE(xstring, nduplicate);
-    RUN_TEST_CASE(xstring, nduplicate2);
+    RUN_TEST_CASE(xstring, caseequal);
+    RUN_TEST_CASE(xstring, casecmp);
+    RUN_TEST_CASE(xstring, ncasecmp);
+    RUN_TEST_CASE(xstring, casestr);
+    RUN_TEST_CASE(xstring, dup);
+    RUN_TEST_CASE(xstring, dup2);
+    RUN_TEST_CASE(xstring, ndup);
+    RUN_TEST_CASE(xstring, ndup2);
     RUN_TEST_CASE(xstring, reverse);
     RUN_TEST_CASE(xstring, strip);
-    RUN_TEST_CASE(xstring, strip_left);
-    RUN_TEST_CASE(xstring, strip_right);
-    RUN_TEST_CASE(xstring, to_int);
-    RUN_TEST_CASE(xstring, to_uint);
-    RUN_TEST_CASE(xstring, to_float);
-    RUN_TEST_CASE(xstring, to_double);
-    RUN_TEST_CASE(xstring, to_bool);
+    RUN_TEST_CASE(xstring, lstrip);
+    RUN_TEST_CASE(xstring, rstrip);
+    RUN_TEST_CASE(xstring, toint32);
+    RUN_TEST_CASE(xstring, touint32);
+    RUN_TEST_CASE(xstring, tofloat);
+    RUN_TEST_CASE(xstring, todouble);
+    RUN_TEST_CASE(xstring, tobool);
     RUN_TEST_CASE(xstring, rpbrk);
-    RUN_TEST_CASE(xstring, case_pbrk);
-    RUN_TEST_CASE(xstring, case_rpbrk);
-    RUN_TEST_CASE(xstring, to_lower);
-    RUN_TEST_CASE(xstring, to_upper);
+    RUN_TEST_CASE(xstring, topbrk);
+    RUN_TEST_CASE(xstring, caserpbrk);
+    RUN_TEST_CASE(xstring, tolower);
+    RUN_TEST_CASE(xstring, toupper);
     RUN_TEST_CASE(xstring, replace);
 }
