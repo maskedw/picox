@@ -4,6 +4,9 @@
 
 #include <picox/core/xcore.h>
 #include <setjmp.h>
+#include <unity.h>
+#include <unity_fixture.h>
+
 
 
 #ifdef __cplusplus

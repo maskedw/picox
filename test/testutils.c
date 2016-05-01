@@ -7,12 +7,7 @@
 
 jmp_buf     g_xjmp;
 static XRamFs* ramfs;
-static XPosixFs* posixfs;
-static XFatFs* fatfs;
-static FATFS* fatfsbody;
-static XVirtualFs* vposixfs;
 static XVirtualFs* vramfs;
-static XVirtualFs* vfatfs;
 
 
 void x_escape_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line)
@@ -40,32 +35,6 @@ void x_init_test(void)
 }
 
 
-#if 0
-void x_test_init_fs()
-{
-    posixfs = x_malloc(sizeof(*posixfs));
-    vposixfs = x_malloc(sizeof(*vposixfs));
-    X_ASSERT(posixfs);
-    X_ASSERT(vposixfs);
-
-    xposixfs_init(posixfs);
-    xposixfs_init_vfs(posixfs, vposixfs);
-    xfs_init();
-
-    int err = xfs_mount(vposixfs, "/", "/tmp/");
-    X_ASSERT(err == X_ERR_NONE);
-}
-
-
-void x_test_deinit_fs()
-{
-    xfs_deinit();
-    xposixfs_deinit(posixfs);
-    x_free(vposixfs);
-    x_free(posixfs);
-}
-#endif
-#if 1
 void x_test_init_fs()
 {
     ramfs = x_malloc(sizeof(*ramfs));
@@ -87,37 +56,3 @@ void x_test_deinit_fs()
     x_free(vramfs);
     x_free(ramfs);
 }
-#endif
-
-
-#if 0
-void x_test_init_fs()
-{
-    fatfsbody = x_malloc(sizeof(*fatfsbody));
-    fatfs = x_malloc(sizeof(*fatfs));
-    vfatfs = x_malloc(sizeof(*vfatfs));
-    X_ASSERT(fatfs);
-    X_ASSERT(vfatfs);
-
-    FRESULT res;
-    res = f_mount(fatfsbody, "0:", 0);
-    TEST_ASSERT_EQUAL(FR_OK, res);
-    res = f_mkfs("0:", 0, 0);
-    TEST_ASSERT_EQUAL(FR_OK, res);
-    xfatfs_init(fatfs);
-    xfatfs_init_vfs(fatfs, vfatfs);
-    xfs_init();
-    X_ASSERT(xfs_mount(vfatfs, "/", "0:/") == X_ERR_NONE);
-}
-
-
-void x_test_deinit_fs()
-{
-    xfs_deinit();
-    xfatfs_deinit(fatfs);
-    f_mount(NULL, "0:", 0);
-    x_free(vfatfs);
-    x_free(fatfs);
-    x_free(fatfsbody);
-}
-#endif

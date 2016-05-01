@@ -6,28 +6,16 @@ set(CMAKE_BUILD_TYPE    Debug)
 set(CMAKE_CXX_COMPILER  g++)
 set(CMAKE_C_COMPILER    gcc)
 
-set(picox_dir           "../picox")
-set(external_dir        "../picox_external")
-set(config_dir          "config")
-set(unity_dir           ${external_dir}/Unity/port_picox)
-set(fatfs_dir           ${external_dir}/fatfs/port_picox)
-set(spiffs_dir          ${external_dir}/spiffs/port_picox)
-set(sds_dir             ${external_dir}/sds/port_picox)
-set(uthash_dir          ${external_dir}/uthash/port_picox)
-set(minIni_dir          ${external_dir}/minIni/port_picox)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/..)
+include(mod_picox)
 
+set(config_dir ${CMAKE_SOURCE_DIR}/config)
 
-include_directories("./")
-include_directories("../")
-include_directories(${config_dir})
-include_directories(${unity_dir})
-include_directories(${fatfs_dir})
-include_directories(${spiffs_dir})
-include_directories(${sds_dir})
-include_directories(${minIni_dir})
+include_directories(./)
+include_directories(./config)
+include_directories(${CMAKE_SOURCE_DIR})
+set(CMAKE_C_FLAGS "-std=c99 -Og -Wall -Wextra -Wpedantic -Wchar-subscripts")
 
-set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wpedantic -Wchar-subscripts")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include unity.h -include unity_fixture.h")
 add_definitions(
     -DX_CONF_USE_USER_CONFIG=1
     -D_POSIX_C_SOURCE=200112L
@@ -35,8 +23,8 @@ add_definitions(
     -DUNITY_INCLUDE_DOUBLE
 )
 
-add_executable(alltests
-    alltests.c
+set(test_sources
+    picox_tests.c
     testutils.c
     test_xstack_allocator.c
     test_xpico_allocator.c
@@ -61,43 +49,20 @@ add_executable(alltests
     test_xstream.c
     test_minIni.c
     glue/fatfs_glue.c
-    ${picox_dir}/core/detail/xdebug.c
-    ${picox_dir}/core/detail/xstdio.c
-    ${picox_dir}/core/detail/xstream.c
-    ${picox_dir}/core/detail/xstring.c
-    ${picox_dir}/core/detail/xrandom.c
-    ${picox_dir}/filesystem/xposixfs.c
-    ${picox_dir}/filesystem/xfatfs.c
-    ${picox_dir}/filesystem/xramfs.c
-    ${picox_dir}/filesystem/xvfs.c
-    ${picox_dir}/filesystem/xfs.c
-    ${picox_dir}/filesystem/xfpath.c
-    ${picox_dir}/filesystem/xspiffs.c
-    ${picox_dir}/allocator/xstack_allocator.c
-    ${picox_dir}/allocator/xfixed_allocator.c
-    ${picox_dir}/allocator/xpico_allocator.c
-    ${picox_dir}/string/xdynamic_string.c
-    ${picox_dir}/misc/xtokenizer.c
-    ${picox_dir}/misc/xargparser.c
-    ${sds_dir}/sds.c
-    ${fatfs_dir}/ff.c
-    ${spiffs_dir}/spiffs_cache.c
-    ${spiffs_dir}/spiffs_check.c
-    ${spiffs_dir}/spiffs_gc.c
-    ${spiffs_dir}/spiffs_hydrogen.c
-    ${spiffs_dir}/spiffs_nucleus.c
-    ${uthash_dir}/libut.c
-    ${uthash_dir}/ringbuf.c
-    ${uthash_dir}/utmm.c
-    ${uthash_dir}/utvector.c
-    ${minIni_dir}/minIni.c
-    ${minIni_dir}/minGlue.c
-    ${unity_dir}/unity.c
-    ${unity_dir}/unity_fixture.c
 )
 
-add_custom_target(run_tests ALL DEPENDS alltests)
+
+add_library(picox STATIC ${picox_sources})
+add_executable(picox_tests ${test_sources})
+target_link_libraries(picox_tests picox)
+
+# add_custom_command(TARGET picox_tests POST_BUILD
+#     COMMAND size ./picox_tests
+#     COMMAND ./picox_tests
+#     )
+
+add_custom_target(run_tests ALL DEPENDS picox_tests)
 add_custom_command(TARGET run_tests POST_BUILD
-    COMMAND size ./alltests
-    COMMAND ./alltests
+    COMMAND size ./picox_tests
+    COMMAND ./picox_tests
     )
