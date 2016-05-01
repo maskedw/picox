@@ -829,7 +829,7 @@ static void X__DestoryEntry(XRamFs* fs, X__Entry* ent)
 
     if (ent->m_type == X__TYPE_FILE)
     {
-        X__FileEntry* fp = (X__FileEntry*)fp;
+        X__FileEntry* fp = (X__FileEntry*)ent;
         X__Free(fs, fp->m_data);
     }
     X__Free(fs, ent);
