@@ -1275,7 +1275,7 @@ static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail)
                 continue;
 
             len = x_snprintf(work->vpath + tail,
-                             X_PATH_MAX - len,
+                             X_PATH_MAX - tail,
                              "/%s",
                              work->dirent->name);
 
@@ -1378,80 +1378,6 @@ x__exit:
 
     return err;
 }
-#if 0
-static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail)
-{
-    XError err = X_ERR_NONE;
-    XDir* dir = NULL;
-    X__MountPoint* mp = NULL;
-    int len;
-
-    err = X__DoStat(work->vpath, &work->statbuf, work->realpath);
-    if (err)
-        goto x__exit;
-
-    err = X__FindMountPoint3(work->realpath, work->vpath, &mp, &work->allmatch);
-    if (err)
-        goto x__exit;
-    if (work->allmatch)
-    {
-        err = X_ERR_BUSY;
-        goto x__exit;
-    }
-
-    if (!XSTAT_IS_DIRECTORY(work->statbuf.mode))
-    {
-        err = xvfs_remove(mp->m_vfs, work->realpath);
-        if (err)
-            goto x__exit;
-    }
-    else
-    {
-        err = xvfs_opendir(mp->m_vfs, work->realpath, &dir);
-        if (err)
-            goto x__exit;
-
-        for (;;)
-        {
-            err = xvfs_readdir(dir, &work->direntbuf, &work->dirent);
-            if (err)
-                goto x__exit;
-
-            if (!work->dirent)
-                break;
-
-            if (x_strequal(".", work->dirent->name) ||
-                x_strequal("..", work->dirent->name))
-                continue;
-
-            len = x_snprintf(work->vpath + tail, X_PATH_MAX - tail,
-                             "/%s", work->dirent->name);
-
-            /* 再帰呼出し */
-            err = X__DoRmTree(work, tail + len);
-            if (err)
-                goto x__exit;
-        }
-
-        err = xvfs_closedir(dir);
-        if (err)
-        {
-            dir = NULL;
-            goto x__exit;
-        }
-
-        dir = NULL;
-        work->vpath[tail] = '\0';
-        err = xvfs_remove(mp->m_vfs, work->realpath);
-    }
-
-x__exit:
-    if (dir)
-        xvfs_closedir(dir);
-
-    return err;
-}
-#endif
 
 
 static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail)
@@ -1496,14 +1422,14 @@ static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail)
             if (tail == 1)
             {
                 len = x_snprintf(work->vpath + tail,
-                                 X_PATH_MAX - len,
+                                 X_PATH_MAX - tail,
                                  "%s",
                                  work->dirent->name);
             }
             else
             {
                 len = x_snprintf(work->vpath + tail,
-                                 X_PATH_MAX - len,
+                                 X_PATH_MAX - tail,
                                  "/%s",
                                  work->dirent->name);
             }
