@@ -5,14 +5,15 @@ execute_process(COMMAND git rev-parse --show-toplevel
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 OUTPUT_VARIABLE root_dir)
 
-file(TO_CMAKE_PATH ${root_dir}/picox                    picox_dir)
-file(TO_CMAKE_PATH ${root_dir}/picox_external           external_dir)
-file(TO_CMAKE_PATH ${external_dir}/Unity/port_picox     unity_dir)
-file(TO_CMAKE_PATH ${external_dir}/fatfs/port_picox     fatfs_dir)
-file(TO_CMAKE_PATH ${external_dir}/spiffs/port_picox    spiffs_dir)
-file(TO_CMAKE_PATH ${external_dir}/sds/port_picox       sds_dir)
-file(TO_CMAKE_PATH ${external_dir}/uthash/port_picox    uthash_dir)
-file(TO_CMAKE_PATH ${external_dir}/minIni/port_picox    minIni_dir)
+file(TO_CMAKE_PATH ${root_dir}/picox                        picox_dir)
+file(TO_CMAKE_PATH ${root_dir}/picox_external               external_dir)
+file(TO_CMAKE_PATH ${external_dir}/Unity/port_picox         unity_dir)
+file(TO_CMAKE_PATH ${external_dir}/fatfs/port_picox         fatfs_dir)
+file(TO_CMAKE_PATH ${external_dir}/spiffs/port_picox        spiffs_dir)
+file(TO_CMAKE_PATH ${external_dir}/sds/port_picox           sds_dir)
+file(TO_CMAKE_PATH ${external_dir}/uthash/port_picox        uthash_dir)
+file(TO_CMAKE_PATH ${external_dir}/minIni/port_picox        minIni_dir)
+file(TO_CMAKE_PATH ${external_dir}/libfixmath/port_picox    libfixmath_dir)
 
 include_directories(${root_dir})
 include_directories(${unity_dir})
@@ -20,6 +21,7 @@ include_directories(${fatfs_dir})
 include_directories(${spiffs_dir})
 include_directories(${sds_dir})
 include_directories(${minIni_dir})
+include_directories(${libfixmath_dir})
 
 set(picox_sources
     ${picox_dir}/core/detail/xdebug.c
@@ -55,4 +57,11 @@ set(picox_sources
     ${minIni_dir}/minGlue.c
     ${unity_dir}/unity.c
     ${unity_dir}/unity_fixture.c
+    ${libfixmath_dir}/fix16.c
+    ${libfixmath_dir}/fix16_exp.c
+    ${libfixmath_dir}/fix16_sqrt.c
+    ${libfixmath_dir}/fix16_str.c
+    ${libfixmath_dir}/fix16_trig.c
+    ${libfixmath_dir}/fract32.c
+    ${libfixmath_dir}/uint32.c
 )

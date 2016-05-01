@@ -24,6 +24,7 @@ void x_escape_assertion_failed(const char* expr, const char* msg, const char* fu
 
 static void X__PostAssertionFailed(void)
 {
+    fflush(stdout);
     while (1);
 }
 

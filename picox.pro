@@ -3,18 +3,21 @@
 TEMPLATE = lib
 CONFIG += staticlib
 
-root_dir      = $$system(git rev-parse --show-toplevel)
-picox_dir     = $$root_dir/picox
-external_dir  = $$root_dir/picox_external
-unity_dir     = $$external_dir/Unity/port_picox
-fatfs_dir     = $$external_dir/fatfs/port_picox
-spiffs_dir    = $$external_dir/spiffs/port_picox
-sds_dir       = $$external_dir/sds/port_picox
-uthash_dir    = $$external_dir/uthash/port_picox
-minIni_dir    = $$external_dir/minIni/port_picox
+root_dir            = $$system(git rev-parse --show-toplevel)
+picox_dir           = $$root_dir/picox
+external_dir        = $$root_dir/picox_external
+external_config_dir = $$external_dir/config
+unity_dir           = $$external_dir/Unity/port_picox
+fatfs_dir           = $$external_dir/fatfs/port_picox
+spiffs_dir          = $$external_dir/spiffs/port_picox
+sds_dir             = $$external_dir/sds/port_picox
+uthash_dir          = $$external_dir/uthash/port_picox
+minIni_dir          = $$external_dir/minIni/port_picox
+libfixmath_dir      = $$external_dir/libfixmath/port_picox
 
 INCLUDEPATH += $$root_dir
 INCLUDEPATH += $$external_dir
+INCLUDEPATH += $$external_config_dir
 INCLUDEPATH += $$config_dir
 INCLUDEPATH += $$unity_dir
 INCLUDEPATH += $$fatfs_dir
@@ -22,6 +25,7 @@ INCLUDEPATH += $$spiffs_dir
 INCLUDEPATH += $$sds_dir
 INCLUDEPATH += $$uthash_dir
 INCLUDEPATH += $$minIni_dir
+INCLUDEPATH += $$libfixmath_dir
 
 SOURCES += $$picox_dir/core/detail/xdebug.c
 SOURCES += $$picox_dir/core/detail/xstdio.c
@@ -56,6 +60,13 @@ SOURCES += $$minIni_dir/minIni.c
 SOURCES += $$minIni_dir/minGlue.c
 SOURCES += $$unity_dir/unity.c
 SOURCES += $$unity_dir/unity_fixture.c
+SOURCES += $$libfixmath_dir/fix16.c
+SOURCES += $$libfixmath_dir/fix16_exp.c
+SOURCES += $$libfixmath_dir/fix16_sqrt.c
+SOURCES += $$libfixmath_dir/fix16_str.c
+SOURCES += $$libfixmath_dir/fix16_trig.c
+SOURCES += $$libfixmath_dir/fract32.c
+SOURCES += $$libfixmath_dir/uint32.c
 
 HEADERS += $$picox_dir/allocator/xfixed_allocator.h
 HEADERS += $$picox_dir/allocator/xpico_allocator.h

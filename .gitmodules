@@ -16,3 +16,6 @@
 [submodule "picox_external/minIni"]
 	path = picox_external/minIni
 	url = https://github.com/maskedw/minIni.git
+[submodule "picox_external/libfixmath"]
+	path = picox_external/libfixmath
+	url = https://github.com/maskedw/libfixmath.git
