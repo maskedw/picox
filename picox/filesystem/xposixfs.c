@@ -301,6 +301,7 @@ XError xposixfs_opendir(XPosixFs* fs, const char* path, XDir** o_dir)
 
     *o_dir = NULL;
     XError err = X_ERR_NONE;
+    X__DirStorage* buf = NULL;
     DIR* realdir = opendir(path);
     if (! realdir)
     {
@@ -308,7 +309,7 @@ XError xposixfs_opendir(XPosixFs* fs, const char* path, XDir** o_dir)
         goto x__exit;
     }
 
-    X__DirStorage* buf = x_malloc(sizeof(X__DirStorage));
+    buf = x_malloc(sizeof(X__DirStorage));
     if (! buf)
     {
         err = X_ERR_NO_MEMORY;

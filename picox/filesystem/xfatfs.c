@@ -127,6 +127,8 @@ XError xfatfs_open(XFatFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
     FRESULT fres;
     XError err = X_ERR_NONE;
     BYTE fsmode = 0;
+    FIL* filehandle = NULL;
+
 
     switch (mode)
     {
@@ -149,7 +151,7 @@ XError xfatfs_open(XFatFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
     X__File* infp = x_malloc(sizeof(X__File));
     X__EXIT_IF(!infp, X_ERR_NO_MEMORY);
 
-    FIL* filehandle = X__GET_FILE_HANDLE(infp);
+    filehandle = X__GET_FILE_HANDLE(infp);
     fres = f_open(filehandle, path, fsmode);
 
     X__EXIT_IF(fres != FR_OK, X__ToXError(fres));

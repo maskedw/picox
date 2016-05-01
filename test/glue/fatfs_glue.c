@@ -78,8 +78,8 @@ void disk_deinit(BYTE pdrv)
 
     char buf[128];
     snprintf(buf, sizeof(buf), "./fatdisk%d.img", pdrv);
-    int err = remove(buf);
-    volatile int i = 0;
+    const int err = remove(buf);
+    X_ASSERT(err == 0);
 }
 
 

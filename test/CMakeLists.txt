@@ -15,6 +15,7 @@ include_directories(./)
 include_directories(./config)
 include_directories(${CMAKE_SOURCE_DIR})
 set(CMAKE_C_FLAGS "-std=c99 -Og -Wall -Wextra -Wpedantic -Wchar-subscripts")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
 
 add_definitions(
     -DX_CONF_USE_USER_CONFIG=1

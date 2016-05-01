@@ -76,8 +76,6 @@ TEST(xfpath, resolove)
 
 TEST(xfpath, resolove_drivelater)
 {
-    char buf[256];
-    char cwd[] = "/home";
 }
 
 

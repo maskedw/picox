@@ -1,6 +1,5 @@
-#include <unity.h>
-#include <unity_fixture.h>
 #include <minIni.h>
+#include "testutils.h"
 
 
 TEST_GROUP(minIni);
@@ -41,8 +40,6 @@ TEST(minIni, minIni)
 {
     char str[100];
     long n;
-    int s, k;
-    char section[50];
 
     XFile* fp;
     TEST_ASSERT_EQUAL(X_ERR_NONE, xfs_open(inifile, X_OPEN_MODE_WRITE, &fp));

@@ -301,10 +301,8 @@ double x_strtodouble(const char* str, double def, bool* ok)
 bool x_strtobool(const char* str, bool def, bool* ok)
 {
     bool v;
-    bool sub;
-    if (! ok) ok = &sub;
 
-    *ok = true;
+    X_ASSIGN_NOT_NULL(ok, true);
     if (x_strcaseequal(str, "y")       ||
         x_strcaseequal(str, "yes")     ||
         x_strcaseequal(str, "true")    ||
@@ -320,11 +318,12 @@ bool x_strtobool(const char* str, bool def, bool* ok)
         v = false;
     }
     else
-        *ok = false;
+    {
+        v = def;
+        X_ASSIGN_NOT_NULL(ok, false);
+    }
 
-    const bool ret = *ok ? v : def;
-
-    return ret;
+    return v;
 }
 
 
@@ -364,24 +363,29 @@ char* x_strcasepbrk(const char* str, const char* accept)
     if (str[0] == '\0')
         return NULL;
 
+    const char* p = str;
     const char* c;
-    while (*str)
+
+    for (;;)
     {
         for (c = accept; *c; c++)
         {
-            if (toupper((int)*str) == toupper((int)*c))
+            if (toupper((int)*p) == toupper((int)*c))
                 break;
         }
 
         if (*c)
             break;
-        str++;
+        if (!*p)
+            break;
+
+        ++p;
     }
 
     if (*c == '\0')
-        str = NULL;
+        p = NULL;
 
-    return (char*)str;
+    return (char*)p;
 }
 
 
