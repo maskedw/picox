@@ -80,6 +80,11 @@ void xfs_init();
 void xfs_deinit();
 
 
+/** @brief ファイルストリームを初期化します
+ */
+XStream* xfs_init_stream(XStream* stream, XFile* fp);
+
+
 /** @brief 仮想ファイルシステムをディレクトリツリーに接続します
  *
  *  @param vfs      初期化済みの有効なXVirtualFsオブジェクト
@@ -432,9 +437,23 @@ XError xfs_is_directory(const char* path, bool* isdir);
 XError xfs_is_regular(const char* path, bool* isreg);
 
 
+/** @brief ファイルに1文字を書き込みます
+ */
 int xfs_putc(XFile* fp, int c);
+
+
+/** @brief ファイルに文字列を書き込みます
+ */
 int xfs_puts(XFile* fp, const char* str);
+
+
+/** @brief ファイルにprintf形式で文字列を書き込みます
+ */
 int xfs_printf(XFile* fp, const char* fmt, ...);
+
+
+/** @brief ファイルにvprintf形式で文字列を書き込みます
+ */
 int xfs_vprintf(XFile* fp, const char* fmt, va_list args);
 
 
@@ -446,16 +465,6 @@ int xfs_getc(XFile* fp);
 /** @brief ファイルから1行を読み込みます
  */
 XError xfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
-
-
-typedef struct
-{
-    XStream     stream;
-} XFsStream;
-#define X_FSSTREAM_TAG         (X_MAKE_TAG('X', 'F', 'S', 'S'))
-
-
-XStream* xfs_init_stream(XFsStream* stream, XFile* fp);
 
 
 /** @} end of addtogroup xfs

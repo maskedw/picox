@@ -57,3 +57,34 @@ void x_test_deinit_fs()
     x_free(vramfs);
     x_free(ramfs);
 }
+
+
+void x_test_stream(XStream* stream)
+{
+    char buf[128];
+    size_t n;
+    XSize pos;
+    char data[] = "Hello World";
+
+    memset(buf, '@', sizeof(buf));
+    TEST_ASSERT_EQUAL(0, xstream_write(stream, data, sizeof(data), &n));
+    TEST_ASSERT_EQUAL(n, sizeof(data));
+
+    TEST_ASSERT_EQUAL(0, xstream_tell(stream, &pos));
+    TEST_ASSERT_EQUAL(sizeof(data), pos);
+
+    TEST_ASSERT_EQUAL(0, xstream_seek(stream, 0, X_SEEK_SET));
+    TEST_ASSERT_EQUAL(0, xstream_read(stream, buf, n, &n));
+    TEST_ASSERT_EQUAL(n, sizeof(data));
+    buf[n] = '\0';
+    TEST_ASSERT_EQUAL_STRING(buf, data);
+    TEST_ASSERT_EQUAL(0, xstream_seek(stream, 0, X_SEEK_SET));
+
+    const int ret = xstream_printf(stream, "%s %s\n", "hello", "world");
+    TEST_ASSERT_EQUAL(ret, (int)strlen("hello world\n"));
+    TEST_ASSERT_EQUAL(0, xstream_seek(stream, 0, X_SEEK_SET));
+    TEST_ASSERT_EQUAL(0, xstream_read_line(stream, buf, sizeof(buf), NULL, NULL));
+    TEST_ASSERT_EQUAL_STRING(buf, "hello world");
+}
+
+

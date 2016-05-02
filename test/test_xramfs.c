@@ -558,6 +558,24 @@ TEST(xramfs, open_append_plus)
 }
 
 
+TEST(xramfs, stream)
+{
+    XFile* fp;
+    XError err;
+    XStream st;
+    const char name[] = "foo.txt";
+
+    err = xramfs_open(fs, name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xramfs_init_stream(&st, fp);
+    x_test_stream(&st);
+
+    xramfs_close(fp);
+}
+
+
 TEST_GROUP_RUNNER(xramfs)
 {
     fs = x_malloc(sizeof(XRamFs));
@@ -581,6 +599,7 @@ TEST_GROUP_RUNNER(xramfs)
     RUN_TEST_CASE(xramfs, open_read_plus);
     RUN_TEST_CASE(xramfs, open_append);
     RUN_TEST_CASE(xramfs, open_append_plus);
+    RUN_TEST_CASE(xramfs, stream);
 
     x_free(fs);
 }

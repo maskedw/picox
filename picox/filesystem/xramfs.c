@@ -191,6 +191,23 @@ void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs)
 }
 
 
+XStream* xramfs_init_stream(XStream* stream, XFile* fp)
+{
+    X_ASSERT_NULL(stream);
+    X_ASSERT_NULL(fp);
+
+    xstream_init(stream);
+    stream->driver = fp;
+    stream->tag = X_RAMFS_TAG;
+    stream->write_func = (XStreamWriteFunc)xramfs_write;
+    stream->read_func = (XStreamReadFunc)xramfs_read;
+    stream->seek_func = (XStreamSeekFunc)xramfs_seek;
+    stream->tell_func = (XStreamTellFunc)xramfs_tell;
+
+    return stream;
+}
+
+
 XError xramfs_open(XRamFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 {
     X_ASSERT_SELF(fs);

@@ -1,6 +1,4 @@
 #include <picox/core/xcore.h>
-#include <unity.h>
-#include <unity_fixture.h>
 #include "testutils.h"
 
 
@@ -40,26 +38,8 @@ TEST_TEAR_DOWN(xstream)
 TEST(xstream, main)
 {
     XStream* stream = CreateStream();
-    char buf[128];
-    size_t n;
-    memset(buf, '@', sizeof(buf));
-
-    TEST_ASSERT_TRUE(xstream_write(stream, "Hello World", strlen("Hello World"), &n) == 0);
-    TEST_ASSERT_EQUAL(n, strlen("Hello World"));
-    TEST_ASSERT_TRUE(xstream_seek(stream, 0, X_SEEK_SET) == 0);
-    TEST_ASSERT_TRUE(xstream_read(stream, buf, n, &n) == 0);
-    TEST_ASSERT_EQUAL(n, strlen("Hello World"));
-    buf[n] = '\0';
-    TEST_ASSERT_EQUAL_STRING(buf, "Hello World");
-    TEST_ASSERT_TRUE(xstream_seek(stream, 0, X_SEEK_SET) == 0);
-
-    const int ret = xstream_printf(stream, "%s %s\n", "hello", "world");
-    TEST_ASSERT_EQUAL(ret, (int)strlen("hello world\n"));
-    TEST_ASSERT_TRUE(xstream_seek(stream, 0, X_SEEK_SET) == 0);
-    TEST_ASSERT_TRUE(xstream_read_line(stream, buf, sizeof(buf), NULL, NULL) == 0);
-    TEST_ASSERT_EQUAL_STRING(buf, "hello world");
-
-    DestoryStream(stream);;
+    x_test_stream(stream);
+    DestoryStream(stream);
 }
 
 TEST_GROUP_RUNNER(xstream)

@@ -72,7 +72,7 @@ extern "C" {
  */
 
 
-#define X_RAMFS_TAG     (X_MAKE_TAG('R', 'A', 'F', 'S'))
+#define X_RAMFS_TAG     (X_MAKE_TAG('X', 'R', 'A', 'F'))
 typedef struct
 {
 /** @privatesection */
@@ -114,7 +114,7 @@ void xramfs_deinit(XRamFs* fs);
  */
 void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs);
 
-
+XStream* xramfs_init_stream(XStream* stream, XFile* fp);
 XError xramfs_open(XRamFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xramfs_close(XFile* fp);
 XError xramfs_read(XFile* fp, void* dst, size_t size, size_t* nread);

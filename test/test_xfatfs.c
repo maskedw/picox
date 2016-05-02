@@ -552,6 +552,24 @@ TEST(xfatfs, open_append_plus)
 }
 
 
+TEST(xfatfs, stream)
+{
+    XFile* fp;
+    XError err;
+    XStream st;
+    const char name[] = "foo.txt";
+
+    err = xfatfs_open(fs, name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xfatfs_init_stream(&st, fp);
+    x_test_stream(&st);
+
+    xfatfs_close(fp);
+}
+
+
 TEST_GROUP_RUNNER(xfatfs)
 {
     RUN_TEST_CASE(xfatfs, open_write);
@@ -571,4 +589,5 @@ TEST_GROUP_RUNNER(xfatfs)
     RUN_TEST_CASE(xfatfs, open_read_plus);
     RUN_TEST_CASE(xfatfs, open_append);
     RUN_TEST_CASE(xfatfs, open_append_plus);
+    RUN_TEST_CASE(xfatfs, stream);
 }

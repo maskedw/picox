@@ -815,6 +815,249 @@ TEST(xfs, rmtree)
 }
 
 
+TEST(xfs, stream)
+{
+    XFile* fp;
+    XError err;
+    XStream st;
+    const char name[] = "foo.txt";
+
+    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xfs_init_stream(&st, fp);
+    x_test_stream(&st);
+
+    xfs_close(fp);
+}
+
+
+TEST(xfs, putc)
+{
+    XFile* fp;
+    XError err;
+    const char name[] = "foo.txt";
+
+    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    int i;
+    const char data[] = "Hello World";
+
+    for (i = 0; i < (int)sizeof(data); i++)
+    {
+        TEST_ASSERT_EQUAL(data[i], xfs_putc(fp, data[i]));
+    }
+
+    xfs_close(fp);
+
+    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    char buf[X_LINE_MAX];
+    char* result;
+
+    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    TEST_ASSERT_EQUAL_STRING(data, buf);
+
+    xfs_close(fp);
+}
+
+
+TEST(xfs, puts)
+{
+    XFile* fp;
+    XError err;
+    const char name[] = "foo.txt";
+
+    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    int i;
+    const char* data[] = {
+        "Hello World",
+        "FooBar World",
+        "HogeHoge World premium"
+    };
+
+    for (i = 0; i < (int)X_COUNT_OF(data); i++)
+    {
+        TEST_ASSERT_EQUAL(0, xfs_puts(fp, data[i]));
+        xfs_putc(fp, '\n');
+    }
+
+    xfs_close(fp);
+
+    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    char buf[X_LINE_MAX];
+    char* result;
+
+    for (i = 0; i < (int)X_COUNT_OF(data); i++)
+    {
+        xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+        TEST_ASSERT_EQUAL_STRING(data[i], buf);
+    }
+
+    xfs_close(fp);
+}
+
+
+TEST(xfs, printf)
+{
+    XFile* fp;
+    XError err;
+    const char name[] = "foo.txt";
+
+    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    int i;
+    for (i = 0; i < 3; i++)
+    {
+        TEST_ASSERT_TRUE(xfs_printf(fp, "Hello world %d\n", i) >= 0);
+    }
+
+    xfs_close(fp);
+
+    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    char buf[X_LINE_MAX];
+    char* result;
+
+    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    TEST_ASSERT_EQUAL_STRING("Hello world 0", buf);
+
+    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    TEST_ASSERT_EQUAL_STRING("Hello world 1", buf);
+
+    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    TEST_ASSERT_EQUAL_STRING("Hello world 2", buf);
+
+    xfs_close(fp);
+}
+
+
+TEST(xfs, exists)
+{
+    XFile* fp;
+    const char name[] = "foo.txt";
+    bool exists;
+
+    xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    xfs_close(fp);
+    xfs_exists(name, &exists);
+    TEST_ASSERT_TRUE(exists);
+
+    xfs_remove(name);
+    xfs_exists(name, &exists);
+    TEST_ASSERT_FALSE(exists);
+
+    xfs_mkdir(name);
+    xfs_exists(name, &exists);
+    TEST_ASSERT_TRUE(exists);
+}
+
+
+TEST(xfs, is_regular)
+{
+    XFile* fp;
+    const char name[] = "foo.txt";
+    bool is_regular;
+
+    xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    xfs_close(fp);
+    xfs_is_regular(name, &is_regular);
+    TEST_ASSERT_TRUE(is_regular);
+
+    xfs_remove(name);
+    xfs_is_regular(name, &is_regular);
+    TEST_ASSERT_FALSE(is_regular);
+
+    xfs_mkdir(name);
+    xfs_is_regular(name, &is_regular);
+    TEST_ASSERT_FALSE(is_regular);
+}
+
+
+TEST(xfs, is_directory)
+{
+    XFile* fp;
+    const char name[] = "foo.txt";
+    bool is_directory;
+
+    xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    xfs_close(fp);
+    xfs_is_directory(name, &is_directory);
+    TEST_ASSERT_FALSE(is_directory);
+
+    xfs_remove(name);
+    xfs_is_directory(name, &is_directory);
+    TEST_ASSERT_FALSE(is_directory);
+
+    xfs_mkdir(name);
+    xfs_is_directory(name, &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+}
+
+
+TEST(xfs, makedirs)
+{
+    const char name[] = "makedirs/bar/baz";
+    XError err;
+    bool is_directory;
+
+    err = xfs_makedirs(name, false);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xfs_is_directory("makedirs", &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+    xfs_is_directory("makedirs/bar", &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+    xfs_is_directory("makedirs/bar/baz", &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+
+    err = xfs_makedirs(name, false);
+    TEST_ASSERT_EQUAL(X_ERR_EXIST, err);
+
+    err = xfs_makedirs(name, true);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+}
+
+
+TEST(xfs, makedirs2)
+{
+    const char name[] = "/makedirs/bar/baz";
+    XError err;
+    bool is_directory;
+
+    err = xfs_makedirs(name, false);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xfs_is_directory("makedirs", &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+    xfs_is_directory("makedirs/bar", &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+    xfs_is_directory("makedirs/bar/baz", &is_directory);
+    TEST_ASSERT_TRUE(is_directory);
+
+    err = xfs_makedirs(name, false);
+    TEST_ASSERT_EQUAL(X_ERR_EXIST, err);
+
+    err = xfs_makedirs(name, true);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+}
+
+
 TEST_GROUP_RUNNER(xfs)
 {
     RUN_TEST_CASE(xfs, open_write);
@@ -838,4 +1081,13 @@ TEST_GROUP_RUNNER(xfs)
     RUN_TEST_CASE(xfs, copytree);
     RUN_TEST_CASE(xfs, rmtree);
     RUN_TEST_CASE(xfs, mount);
+    RUN_TEST_CASE(xfs, stream);
+    RUN_TEST_CASE(xfs, putc);
+    RUN_TEST_CASE(xfs, puts);
+    RUN_TEST_CASE(xfs, printf);
+    RUN_TEST_CASE(xfs, exists);
+    RUN_TEST_CASE(xfs, is_regular);
+    RUN_TEST_CASE(xfs, is_directory);
+    RUN_TEST_CASE(xfs, makedirs);
+    RUN_TEST_CASE(xfs, makedirs2);
 }

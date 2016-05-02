@@ -39,6 +39,23 @@
 #include <picox/filesystem/xvfs.h>
 
 
+XStream* xvfs_init_stream(XStream* stream, XFile* fp)
+{
+    X_ASSERT_NULL(stream);
+    X_ASSERT_NULL(fp);
+
+    xstream_init(stream);
+    stream->driver = fp;
+    stream->tag = X_VFS_TAG;
+    stream->write_func = (XStreamWriteFunc)xvfs_write;
+    stream->read_func = (XStreamReadFunc)xvfs_read;
+    stream->seek_func = (XStreamSeekFunc)xvfs_seek;
+    stream->tell_func = (XStreamTellFunc)xvfs_tell;
+
+    return stream;
+}
+
+
 XError xvfs_open(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp)
 {
     X_ASSERT_SELF(vfs);

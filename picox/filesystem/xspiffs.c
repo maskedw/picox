@@ -122,6 +122,23 @@ void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs)
 }
 
 
+XStream* xspiffs_init_stream(XStream* stream, XFile* fp)
+{
+    X_ASSERT_NULL(stream);
+    X_ASSERT_NULL(fp);
+
+    xstream_init(stream);
+    stream->driver = fp;
+    stream->tag = X_SPIFFS_TAG;
+    stream->write_func = (XStreamWriteFunc)xspiffs_write;
+    stream->read_func = (XStreamReadFunc)xspiffs_read;
+    stream->seek_func = (XStreamSeekFunc)xspiffs_seek;
+    stream->tell_func = (XStreamTellFunc)xspiffs_tell;
+
+    return stream;
+}
+
+
 XError xspiffs_open(XSpiFFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 {
     X_ASSERT_SELF(fs);

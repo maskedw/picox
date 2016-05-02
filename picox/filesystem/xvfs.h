@@ -68,6 +68,9 @@ extern "C" {
  */
 
 
+#define X_VFS_TAG     (X_MAKE_TAG('X', 'V', 'I', 'F'))
+
+XStream* xvfs_init_stream(XStream* stream, XFile* fp);
 XError xvfs_open(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xvfs_close(XFile* fp);
 XError xvfs_read(XFile* fp, void* dst, size_t size, size_t* nread);

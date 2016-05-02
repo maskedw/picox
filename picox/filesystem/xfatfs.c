@@ -116,6 +116,23 @@ void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs)
 }
 
 
+XStream* xfatfs_init_stream(XStream* stream, XFile* fp)
+{
+    X_ASSERT_NULL(stream);
+    X_ASSERT_NULL(fp);
+
+    xstream_init(stream);
+    stream->driver = fp;
+    stream->tag = X_FATFS_TAG;
+    stream->write_func = (XStreamWriteFunc)xfatfs_write;
+    stream->read_func = (XStreamReadFunc)xfatfs_read;
+    stream->seek_func = (XStreamSeekFunc)xfatfs_seek;
+    stream->tell_func = (XStreamTellFunc)xfatfs_tell;
+
+    return stream;
+}
+
+
 XError xfatfs_open(XFatFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 {
     X_ASSERT(fs);

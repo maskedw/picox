@@ -49,7 +49,7 @@ extern "C" {
  */
 
 
-#define X_SPIFFS_TAG    (X_MAKE_TAG('S', 'P', 'F', 'S'))
+#define X_SPIFFS_TAG    (X_MAKE_TAG('X', 'S', 'P', 'F'))
 typedef struct
 {
 /** @privatesection */
@@ -88,6 +88,7 @@ void xspiffs_deinit(XSpiFFs* fs);
  *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
  */
 void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs);
+XStream* xspiffs_init_stream(XStream* stream, XFile* fp);
 XError xspiffs_open(XSpiFFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xspiffs_close(XFile* fp);
 XError xspiffs_read(XFile* fp, void* dst, size_t size, size_t* nread);

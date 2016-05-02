@@ -162,6 +162,12 @@ void xfs_deinit()
 }
 
 
+XStream* xfs_init_stream(XStream* stream, XFile* fp)
+{
+    return xvfs_init_stream(stream, fp);
+}
+
+
 XError xfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
 {
     X_ASSERT(vfs);
@@ -740,21 +746,17 @@ XError xfs_makedirs(const char* path, bool exist_ok)
 {
     XError err = X_ERR_NONE;
     char buf[X_PATH_MAX];
-    char* p = buf;
-    const char* next = path;
-    const char* o_end;
+    const char* next;
+    const char* endptr = path;
 
     if (strlen(path) >= X_PATH_MAX)
         return X_ERR_NAME_TOO_LONG;
 
-    memset(p, 0, X_PATH_MAX);
-    if (path[0] == '/')
-        *p++ = '/';
-
-    while ((next = xfpath_top(next, (char**)&o_end)))
+    while ((next = xfpath_top(endptr, (char**)&endptr)))
     {
-        memcpy(p, next, o_end - next);
-        p += o_end - next;
+        memcpy(buf, path, endptr - path);
+        buf[endptr - path] = '\0';
+
         err = xfs_mkdir(buf);
         if ((err != X_ERR_NONE) && (err != X_ERR_EXIST))
             goto x__exit;
@@ -875,10 +877,10 @@ int xfs_printf(XFile* fp, const char* fmt, ...)
 
 int xfs_vprintf(XFile* fp, const char* fmt, va_list args)
 {
-    XFsStream fstream;
+    XStream fstream;
     xfs_init_stream(&fstream, fp);
 
-    return x_vprintf_to_stream(&fstream.stream, fmt, args);
+    return x_vprintf_to_stream(&fstream, fmt, args);
 }
 
 
@@ -933,22 +935,6 @@ XError xfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* over
 
 x__exit:
     return err;
-}
-
-
-XStream* xfs_init_stream(XFsStream* fstream, XFile* fp)
-{
-    X_ASSERT_NULL(fstream);
-    X_ASSERT_NULL(fp);
-
-    xstream_init(&fstream->stream);
-    fstream->stream.driver = fp;
-    fstream->stream.tag = X_FSSTREAM_TAG;
-    fstream->stream.write_func = (XStreamWriteFunc)xfs_write;
-    fstream->stream.read_func = (XStreamReadFunc)xfs_read;
-    fstream->stream.seek_func = (XStreamSeekFunc)xfs_seek;
-    fstream->stream.tell_func = (XStreamTellFunc)xfs_tell;
-    return &fstream->stream;
 }
 
 

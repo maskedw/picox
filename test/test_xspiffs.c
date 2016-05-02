@@ -711,6 +711,23 @@ TEST(xspiffs, open_append_plus)
 }
 
 
+TEST(xspiffs, stream)
+{
+    XFile* fp;
+    XError err;
+    XStream st;
+    const char name[] = "foo.txt";
+
+    err = xspiffs_open(fs, name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    TEST_ASSERT_NOT_NULL(fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+
+    xspiffs_init_stream(&st, fp);
+    x_test_stream(&st);
+
+    xspiffs_close(fp);
+}
+
 
 TEST_GROUP_RUNNER(xspiffs)
 {
@@ -730,4 +747,5 @@ TEST_GROUP_RUNNER(xspiffs)
     RUN_TEST_CASE(xspiffs, open_read_plus);
     RUN_TEST_CASE(xspiffs, open_append);
     RUN_TEST_CASE(xspiffs, open_append_plus);
+    RUN_TEST_CASE(xspiffs, stream);
 }

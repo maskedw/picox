@@ -67,7 +67,8 @@ extern "C" {
  */
 
 
-#define X_FATFS_TAG     (X_MAKE_TAG('F', 'A', 'F', 'S'))
+#define X_FATFS_TAG     (X_MAKE_TAG('X', 'F', 'A', 'F'))
+
 typedef struct
 {
 /** @privatesection */
@@ -102,6 +103,7 @@ void xfatfs_deinit(XFatFs* fs);
  *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
  */
 void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs);
+XStream* xfatfs_init_stream(XStream* stream, XFile* fp);
 XError xfatfs_open(XFatFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xfatfs_close(XFile* fp);
 XError xfatfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
