@@ -47,7 +47,7 @@ static int X__MemStreamTell(XMemStream* self, XSize* pos);
 static int X__GenericRead(void* ptr, void* dst, size_t size, size_t* nread);
 static int X__GenericWrite(void* ptr, const void* src, size_t size, size_t* nwritten);
 static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode);
-static int X__GenericPos(void* ptr, XSize* pos);
+static int X__GenericTell(void* ptr, XSize* pos);
 static int X__GenericFlush(void* ptr);
 static int X__GenericClose(void* ptr);
 static const char* X__GenericErrorString(int errcode);
@@ -64,7 +64,7 @@ void xstream_init(XStream* self)
     self->close_func = X__GenericClose;
     self->flush_func = X__GenericFlush;
     self->seek_func = X__GenericSeek;
-    self->tell_func = X__GenericPos;
+    self->tell_func = X__GenericTell;
     self->error_string_func = X__GenericErrorString;
 }
 
@@ -119,7 +119,7 @@ int xstream_seek(XStream* self, XOffset offset, XSeekMode mode)
 }
 
 
-int xstream_pos(XStream* self, XSize* pos)
+int xstream_tell(XStream* self, XSize* pos)
 {
     X_ASSERT(self);
     X_ASSERT(pos);
@@ -322,7 +322,7 @@ static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode)
 }
 
 
-static int X__GenericPos(void* ptr, XSize* pos)
+static int X__GenericTell(void* ptr, XSize* pos)
 {
     X_UNUSED(ptr);
     *pos = 0;

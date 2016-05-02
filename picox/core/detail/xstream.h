@@ -246,12 +246,12 @@ int xstream_flush(XStream* self);
 int xstream_seek(XStream* self, XOffset offset, XSeekMode mode);
 
 
-/** @brief ストリームの現在位置をposにセットします
+/** @brief ストリームの現在位置をposに格納します
  *
  *  @retval == 0 正常終了
  *  @retval != 0 エラー
  */
-int xstream_pos(XStream* self, XSize* pos);
+int xstream_tell(XStream* self, XSize* pos);
 
 
 /** @brief 最後のエラー値を返します
