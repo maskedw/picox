@@ -244,7 +244,7 @@ char* x_strtolower(char* str);
 char* x_strtoupper(char* str);
 
 
-/** @brief srcから最大n - 1バイトをdstにコピーします
+/** @brief srcから最大でn - 1バイトをdstにコピーします
  *
  *  最大サイズを指定する標準の文字列コピー関数strncpy()は、最大サイズを超えた場
  *  合にNULL終端されないという扱いにくい仕様があります。この問題に対処するために
@@ -261,11 +261,22 @@ char* x_strtoupper(char* str);
 size_t x_strlcpy(char* dst, const char* src, size_t n);
 
 
-/** @brief srcから最大n - 1バイトをdstに連結します
+/** @brief srcから最大でdsize - strlen(dst) - 1バイトの文字列をdstに連結します
  *
- *  strcpy()に対するstrlcp()と同様の振る舞いをするstrcat()です。
+ *  x_strlcpy()と同じく、BSD拡張の移植です。strncat()との違いがわかりづらいです
+ *  が、以下リンク先にstrlcpy()の振る舞いについての記述があります。
+ *
+ *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/strcat.3.html
+ *  + https://ja.wikipedia.org/wiki/Strlcat
+ *
+ *  要点は以下の通りです。
+ *
+ *  + 戻り値はstrlen(src) + min(dsize, strlen(dst))
+ *  + strncpy()はsrcから何バイトをコピーするかを指定する。strlcpy()はdstの領域の
+ *    サイズを指定する
+ *  + retval >= dsizeの時はデータが切り詰められたことを意味する
  */
-size_t x_strlcat(char* dst, const char* src, size_t n);
+size_t x_strlcat(char* dst, const char* src, size_t dsize);
 
 
 /** @brief a,bを比較し、一致するバイト数を返します
@@ -364,12 +375,12 @@ void x_memreverse(void *p, size_t size, size_t n);
 
 /** @brief sizeバイトの要素n個からなる配列pの要素を右方向にshift個分回転移動させます。
  */
-void x_memrotate_right(void *p, size_t shift, size_t size, size_t n);
+void x_memrrot(void *p, size_t shift, size_t size, size_t n);
 
 
 /** @brief sizeバイトの要素n個からなる配列pの要素を左方向にshift個分回転移動させます。
  */
-void x_memrotate_left(void *p, size_t shift, size_t size, size_t n);
+void x_memlrot(void *p, size_t shift, size_t size, size_t n);
 
 
 /** @brief srcからdstにメモリの矩形コピーを行います。

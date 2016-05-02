@@ -460,18 +460,32 @@ size_t x_strlcpy(char* dst, const char* src, size_t n)
 }
 
 
-size_t x_strlcat(char* dst, const char* src, size_t n)
+size_t x_strlcat(char * dst, const char * src, size_t dsize)
 {
-    if (n == 0)
-        return 0;
+    const char *odst = dst;
+    const char *osrc = src;
+    size_t n = dsize;
+    size_t dlen;
 
-    const size_t len = strlen(src);
-    const size_t size = (n > len) ? len : n - 1;
-    dst += strlen(dst);
-    memcpy(dst, src, size);
-    dst[size] = '\0';
+    while (n-- != 0 && *dst != '\0')
+        dst++;
+    dlen = dst - odst;
+    n = dsize - dlen;
 
-    return len;
+    if (n-- == 0)
+        return dlen + strlen(src);
+    while (*src != '\0')
+    {
+        if (n != 0)
+        {
+            *dst++ = *src;
+            n--;
+        }
+        src++;
+    }
+    *dst = '\0';
+
+    return dlen + (src - osrc);
 }
 
 
@@ -571,7 +585,7 @@ void x_memreverse(void *p, size_t size, size_t n)
 }
 
 
-void x_memrotate_right(void *p, size_t shift, size_t size, size_t n)
+void x_memrrot(void *p, size_t shift, size_t size, size_t n)
 {
     x_memreverse(p,                      size, n);          // 012345678 -> 876543210
     x_memreverse(p,                      size, shift);      // 876543210 -> 678543210
@@ -579,7 +593,7 @@ void x_memrotate_right(void *p, size_t shift, size_t size, size_t n)
 }
 
 
-void x_memrotate_left(void *p, size_t shift, size_t size, size_t n)
+void x_memlrot(void *p, size_t shift, size_t size, size_t n)
 {
     x_memreverse(p,                      size, shift);      // 012345678 -> 210345678
     x_memreverse((char*)p+(size*shift),  size, n-shift);    // 210345678 -> 210876543
@@ -629,8 +643,8 @@ char* x_stprcpy(char* dst, const char* src)
     const char* p = src + len - 1;
     do
     {
-        *dst++ = *p;
-    } while (p-- >= src);
+        *dst++ = *p--;
+    } while (p >= src);
 
     *dst = '\0';
     return dst;
@@ -650,6 +664,7 @@ char* x_stpncpy(char* dst, const char* src, size_t n)
             return ret;
         }
     }
+    *dst = '\0';
     return dst;
 }
 
@@ -662,6 +677,7 @@ char* x_stpncpy2(char* dst, const char* src, size_t n)
         if (!(*dst = *src))
             return dst;
     }
+    *dst = '\0';
     return dst;
 }
 
@@ -705,7 +721,7 @@ XOpenMode x_strtomode(const char* strmode)
     const size_t len = strlen(strmode);
     XOpenMode mode = X_OPEN_MODE_UNKNOWN;
 
-    if (len == 0 || len >= 3)
+    if (len == 0 || len > 3)
         return mode;
 
     char buf[4];

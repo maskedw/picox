@@ -683,82 +683,6 @@ TEST(xutils, byteorder)
 }
 
 
-TEST(xutils, memswap)
-{
-    char hello[] = "Hello";
-    char world[] = "World";
-
-    x_memswap(hello, world, sizeof(hello));
-    TEST_ASSERT_EQUAL_STRING(hello, "World");
-    TEST_ASSERT_EQUAL_STRING(world, "Hello");
-}
-
-
-TEST(xutils, memreverse)
-{
-    int a[10];
-    int b[10];
-
-    size_t i;
-    for (i = 0; i < X_COUNT_OF(a); i++)
-    {
-        a[i] = i;
-        b[X_COUNT_OF(a) - 1 - i] = i;
-    }
-
-    x_memreverse(a, sizeof(a[0]), X_COUNT_OF(a));
-    TEST_ASSERT_EQUAL_MEMORY_ARRAY(a, b, sizeof(a[0]), X_COUNT_OF(a));
-}
-
-
-TEST(xutils, memrotate_right)
-{
-    int a[5] = {0, 1, 2, 3, 4};
-    int b[5] = {3, 4, 0, 1, 2};
-
-    x_memrotate_right(a, 2, sizeof(a[0]), X_COUNT_OF(a));
-    TEST_ASSERT_EQUAL_MEMORY_ARRAY(a, b, sizeof(a[0]), X_COUNT_OF(a));
-}
-
-
-TEST(xutils, memrotate_left)
-{
-    int a[5] = {0, 1, 2, 3, 4};
-    int b[5] = {2, 3, 4, 0, 1};
-
-    x_memrotate_left(a, 2, sizeof(a[0]), X_COUNT_OF(a));
-    TEST_ASSERT_EQUAL_MEMORY_ARRAY(a, b, sizeof(a[0]), X_COUNT_OF(a));
-}
-
-
-TEST(xutils, memblt)
-{
-    int dst[5][4] = { {0} };
-    int src[5][5] = {
-        {1, 2, 3, 0, 0},
-        {4, 5, 6, 0, 0},
-        {7, 8, 9, 0, 0},
-        {0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0}};
-
-    int expected[5][4] = {
-        { 0, 0, 0, 0},
-        { 0, 1, 2, 3},
-        { 0, 4, 5, 6},
-        { 0, 7, 8, 9},
-        { 0, 0, 0, 0}};
-
-    x_memblt(((uint8_t*)dst) + (sizeof(int) * X_COUNT_OF_COL(dst) * 1 + sizeof(int)),
-             src,
-             sizeof(int) * 3,                       // linesize
-             3,                                     // height
-             sizeof(int) * X_COUNT_OF_COL(dst),     // dstride
-             sizeof(int) * X_COUNT_OF_COL(src));    // sstride
-
-    TEST_ASSERT_EQUAL_MEMORY_ARRAY(expected, dst, sizeof(int), X_COUNT_OF_2D(dst));
-}
-
-
 TEST_GROUP_RUNNER(xutils)
 {
     RUN_TEST_CASE(xutils, sizeof_mem);
@@ -797,9 +721,4 @@ TEST_GROUP_RUNNER(xutils)
     RUN_TEST_CASE(xutils, count_bits);
     RUN_TEST_CASE(xutils, reverse_bytes);
     RUN_TEST_CASE(xutils, byteorder);
-    RUN_TEST_CASE(xutils, memswap);
-    RUN_TEST_CASE(xutils, memreverse);
-    RUN_TEST_CASE(xutils, memrotate_right);
-    RUN_TEST_CASE(xutils, memrotate_left);
-    RUN_TEST_CASE(xutils, memblt);
 }
