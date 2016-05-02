@@ -74,95 +74,6 @@ TEST(xfpath, resolove)
 }
 
 
-TEST(xfpath, resolove_drivelater)
-{
-}
-
-
-#if 0
-TEST(xfpath, next)
-{
-    char buf[256];
-    const char* next;
-    const char* endptr;
-    char name[32];
-
-    BUF_SET("/foo/bar/baz");
-    printf("do next\n");
-    next = buf;
-    while ((next = xfpath_top(next, (char**)&endptr)))
-    {
-        memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
-        printf("name => '%s'\n", name);
-        next = endptr;
-    }
-
-    BUF_SET("foo/bar/baz");
-    printf("do next\n");
-    next = buf;
-    while ((next = xfpath_top(next, (char**)&endptr)))
-    {
-        memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
-        printf("name => '%s'\n", name);
-        next = endptr;
-    }
-
-    BUF_SET("foo/bar/baz///");
-    printf("do next\n");
-    next = buf;
-    while ((next = xfpath_top(next, (char**)&endptr)))
-    {
-        memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
-        printf("name => '%s'\n", name);
-        next = endptr;
-    }
-}
-
-
-TEST(xfpath, rnext)
-{
-    char buf[256];
-    const char* next;
-    const char* endptr;
-    char name[32];
-
-    BUF_SET("/foo/bar/baz");
-    printf("do rnext\n");
-    next = NULL;
-    while ((next = xfpath_tail(buf, next, (char**)&endptr)))
-    {
-        memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
-        printf("name => '%s'\n", name);
-    }
-
-    BUF_SET("foo/bar/baz");
-    printf("do rnext\n");
-    next = NULL;
-    while ((next = xfpath_tail(buf, next, (char**)&endptr)))
-    {
-        memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
-        printf("name => '%s'\n", name);
-    }
-
-
-    BUF_SET("/////foo/bar/baz////");
-    printf("do rnext\n");
-    next = NULL;
-    while ((next = xfpath_tail(buf, next, (char**)&endptr)))
-    {
-        memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
-        printf("name => '%s'\n", name);
-    }
-
-}
-#endif
-
 TEST(xfpath, next)
 {
     char buf[256];
@@ -204,7 +115,7 @@ TEST(xfpath, next)
 }
 
 
-TEST(xfpath, rnext)
+TEST(xfpath, tail)
 {
     char buf[256];
     const char* next;
@@ -428,16 +339,56 @@ TEST(xfpath, parent)
 }
 
 
+TEST(xfpath, drive)
+{
+    TEST_ASSERT_EQUAL('\0', xfpath_drive("/Hello/World"));
+    TEST_ASSERT_EQUAL('a', xfpath_drive("a:/Hello/World"));
+    TEST_ASSERT_EQUAL('C', xfpath_drive("C:/Hello/World"));
+    TEST_ASSERT_EQUAL('0', xfpath_drive("0:/Hello/World"));
+}
+
+
+TEST(xfpath, is_root)
+{
+    TEST_ASSERT_TRUE(xfpath_is_root("/"));
+    TEST_ASSERT_TRUE(xfpath_is_root("C:/"));
+    TEST_ASSERT_FALSE(xfpath_is_root("C:/foo"));
+}
+
+
+TEST(xfpath, is_absolute)
+{
+    TEST_ASSERT_TRUE(xfpath_is_absolute("/"));
+    TEST_ASSERT_TRUE(xfpath_is_absolute("C:/"));
+    TEST_ASSERT_TRUE(xfpath_is_absolute("C:/foo"));
+    TEST_ASSERT_FALSE(xfpath_is_absolute("foo"));
+    TEST_ASSERT_FALSE(xfpath_is_absolute("foo/bar"));
+}
+
+
+TEST(xfpath, is_relative)
+{
+    TEST_ASSERT_FALSE(xfpath_is_relative("/"));
+    TEST_ASSERT_FALSE(xfpath_is_relative("C:/"));
+    TEST_ASSERT_FALSE(xfpath_is_relative("C:/foo"));
+    TEST_ASSERT_TRUE(xfpath_is_relative("foo"));
+    TEST_ASSERT_TRUE(xfpath_is_relative("foo/bar"));
+}
+
+
 TEST_GROUP_RUNNER(xfpath)
 {
     RUN_TEST_CASE(xfpath, join);
     RUN_TEST_CASE(xfpath, resolove_dot);
     RUN_TEST_CASE(xfpath, resolove);
-    RUN_TEST_CASE(xfpath, resolove_drivelater);
     RUN_TEST_CASE(xfpath, next);
-    RUN_TEST_CASE(xfpath, rnext);
+    RUN_TEST_CASE(xfpath, tail);
     RUN_TEST_CASE(xfpath, name);
     RUN_TEST_CASE(xfpath, suffix);
     RUN_TEST_CASE(xfpath, stem);
     RUN_TEST_CASE(xfpath, parent);
+    RUN_TEST_CASE(xfpath, drive);
+    RUN_TEST_CASE(xfpath, is_root);
+    RUN_TEST_CASE(xfpath, is_absolute);
+    RUN_TEST_CASE(xfpath, is_relative);
 }
