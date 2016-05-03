@@ -349,6 +349,11 @@ size_t x_strnlen(const char* s, size_t n);
 XOpenMode x_strtomode(const char* modestr);
 
 
+/** @brief 文字列sの先頭にcが続く間読み飛ばし、そのポインタを返します
+ */
+char* x_strskipchr(const char* s, int c);
+
+
 /** @brief n1バイトの大きさを持つp1からn2バイトのp2が最初に現れた位置のポインタを返します
  *
  *  + https://linuxjm.osdn.jp/html/LDP_man-pages/man3/memmem.3.html

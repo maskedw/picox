@@ -747,6 +747,14 @@ XOpenMode x_strtomode(const char* strmode)
 }
 
 
+char* x_strskipchr(const char* s, int c)
+{
+    while (*s == c)
+        ++s;
+    return (char*)s;
+}
+
+
 char* x_strreplace(char* dst, size_t size, size_t len, size_t dn, const char* src, size_t sn)
 {
     if (dn == sn)
