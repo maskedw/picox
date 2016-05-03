@@ -160,7 +160,7 @@ void xromfs_deinit(XRomFs* fs)
 
 void xromfs_init_vfs(XRomFs* fs, XVirtualFs* vfs)
 {
-    memset(vfs, 0, sizeof(*vfs));
+    xvfs_init(vfs);
     vfs->m_realfs           = fs;
     vfs->m_open_func        = (XVirtualFsOpenFunc)xromfs_open;
     vfs->m_close_func       = (XVirtualFsCloseFunc)xromfs_close;

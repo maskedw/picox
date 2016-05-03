@@ -94,7 +94,7 @@ void xfatfs_deinit(XFatFs* fs)
 
 void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs)
 {
-    memset(vfs, 0, sizeof(*vfs));
+    xvfs_init(vfs);
     vfs->m_realfs           = fs;
     vfs->m_open_func        = (XVirtualFsOpenFunc)xfatfs_open;
     vfs->m_close_func       = (XVirtualFsCloseFunc)xfatfs_close;

@@ -392,15 +392,6 @@ XError xfs_rmtree(const char* path);
 XError xfs_makedirs(const char* path, bool exist_ok);
 
 
-/** @brief xfs_walktree()が呼び出すコールバック関数型です
- *
- *  @retval true    ディレクトリ走査を続行する
- *  @retval false   ディレクトリ走査を中止する
- *
- */
-typedef bool (*XFsTreeWalker)(void* userptr, const char* path, const XStat* statbuf, const XDirEnt* dirent);
-
-
 /** @brief ディレクトリツリーを走査します
  *
  *  @pre

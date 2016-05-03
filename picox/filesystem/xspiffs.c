@@ -103,7 +103,7 @@ void xspiffs_deinit(XSpiFFs* fs)
 
 void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs)
 {
-    memset(vfs, 0, sizeof(*vfs));
+    xvfs_init(vfs);
     vfs->m_realfs           = fs;
     vfs->m_open_func        = (XVirtualFsOpenFunc)xspiffs_open;
     vfs->m_close_func       = (XVirtualFsCloseFunc)xspiffs_close;

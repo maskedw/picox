@@ -115,6 +115,15 @@ typedef struct
 } XDirEnt;
 
 
+/** @brief ディレクトリ探索関数が呼び出すコールバック関数型です
+ *
+ *  @retval true    ディレクトリ走査を続行する
+ *  @retval false   ディレクトリ走査を中止する
+ *
+ */
+typedef bool (*XFsTreeWalker)(void* userptr, const char* path, const XStat* statbuf, const XDirEnt* dirent);
+
+
 /** @name filemode
  *  @brief ファイルの属性情報を判定するインターフェースを提供します
  *
@@ -193,6 +202,15 @@ struct XVirtualFs
     XVirtualFsStatFunc          m_stat_func;
     XVirtualFsUtimeFunc         m_utime_func;
 };
+
+
+/** 仮想ファイルシステムを初期化します
+ *
+ *  関数テーブルにデフォルト関数をセットします。各ファイルシステムモジュール内の
+ *  、vfs初期化関数で使用することを想定しているため、通常はユーザーが自身で呼び
+ *  出す必要のない関数です。
+ */
+void xvfs_init(XVirtualFs* vfs);
 
 
 /** @} end of name virtual filesystem interface

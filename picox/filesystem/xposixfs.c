@@ -84,7 +84,7 @@ void xposixfs_deinit(XPosixFs* fs)
 
 void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs)
 {
-    memset(vfs, 0, sizeof(*vfs));
+    xvfs_init(vfs);
     vfs->m_realfs           = fs;
     vfs->m_open_func        = (XVirtualFsOpenFunc)xposixfs_open;
     vfs->m_close_func       = (XVirtualFsCloseFunc)xposixfs_close;
