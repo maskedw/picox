@@ -800,7 +800,7 @@ XError xfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
     char* endptr;
     xfpath_resolve(tmp, priv->m_curdir, path, X_PATH_MAX);
 
-    if (x_strequal(tmp, "/"))
+    if (xfpath_is_root(tmp))
         strcpy(work->dirent->name, tmp);
     else
     {
@@ -1053,7 +1053,7 @@ static XError X__DoStat(const char* path, XStat* statbuf, char* workbuf)
         }
     }
 
-    err= X__ToRealPath(mp, workbuf);
+    err = X__ToRealPath(mp, workbuf);
     if (err)
         goto x__exit;
 
@@ -1109,14 +1109,14 @@ static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail)
                 break;
 
             err = xvfs_close(work->dstfp);
+            work->dstfp = NULL;
             if (err)
                 break;
-            work->dstfp = NULL;
 
             err = xvfs_close(work->srcfp);
+            work->srcfp = NULL;
             if (err)
                 break;
-            work->srcfp = NULL;
         } while (0);
 
         if (work->dstfp)
@@ -1184,13 +1184,9 @@ static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail)
         }
 
         err = xvfs_closedir(dir);
-        if (err)
-        {
-            dir = NULL;
-            goto x__exit;
-        }
-
         dir = NULL;
+        if (err)
+            goto x__exit;
         work->vpath[tail] = '\0';
     }
 
@@ -1257,13 +1253,9 @@ static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail)
         }
 
         err = xvfs_closedir(dir);
-        if (err)
-        {
-            dir = NULL;
-            goto x__exit;
-        }
-
         dir = NULL;
+        if (err)
+            goto x__exit;
         work->vpath[tail] = '\0';
         work->realpath[strlen(work->realpath) - len] = '\0';
         err = xvfs_remove(mp->m_vfs, work->realpath);
@@ -1336,13 +1328,9 @@ static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail)
         }
 
         err = xvfs_closedir(dir);
-        if (err)
-        {
-            dir = NULL;
-            goto x__exit;
-        }
-
         dir = NULL;
+        if (err)
+            goto x__exit;
         work->vpath[tail] = '\0';
     }
 
