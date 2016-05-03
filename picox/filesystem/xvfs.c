@@ -39,41 +39,52 @@
 #include <picox/filesystem/xvfs.h>
 
 
-static XError X__DefaultOpen(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp)
+typedef struct
 {
-    X_UNUSED(vfs);
-    X_UNUSED(path);
-    X_UNUSED(mode);
+    XVirtualFs*     vfs;
+    char            path[X_PATH_MAX];
+    const char*     srcdir;
+    const char*     dstdir;
+    int             dstdirlen;
+    int             srcdirlen;
+    XStat           statbuf;
+    XDirEnt         direntbuf;
+    XDirEnt*        dirent;
+    XFile*          srcfp;
+    XFile*          dstfp;
+    int             depth;
+} X__CopyTreeWorkBuf;
 
-    X_ASSERT_NULL(o_fp);
-    *o_fp = NULL;
-    return X_ERR_NOT_SUPPORTED;
-}
 
-static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
+typedef struct
 {
-    X_UNUSED(vfs);
-    X_UNUSED(path);
+    XVirtualFs* vfs;
+    char        path[X_PATH_MAX];
+    XStat       statbuf;
+    XDirEnt     direntbuf;
+    XDirEnt*    dirent;
+} X__RmTreeWorkBuf;
 
-    X_ASSERT_NULL(o_dir);
-    *o_dir = NULL;
-    return X_ERR_NOT_SUPPORTED;
-}
 
-static XError X__DefaultFunc()
+typedef struct
 {
-    return X_ERR_NOT_SUPPORTED;
-}
+    XVirtualFs*     vfs;
+    char            path[X_PATH_MAX];
+    XStat           statbuf;
+    XDirEnt         direntbuf;
+    XDirEnt*        dirent;
+    XFsTreeWalker   walker;
+    void*           userptr;
+} X__WalkTreeWorkBuf;
 
 
-static XError X__DefaultFlush()
-{
-    /* フラッシュ関数は特にやることがないということも多いので非登録にデフォルト
-     * 関すは常に正常終了を返す
-     */
-    return X_ERR_NONE;
-}
-
+static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail);
+static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail);
+static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail);
+static XError X__DefaultOpen(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp);
+static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir);
+static XError X__DefaultFunc();
+static XError X__DefaultFlush();
 
 void xvfs_init(XVirtualFs* vfs)
 {
@@ -398,5 +409,523 @@ XError xvfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* ove
     X_ASSIGN_NOT_NULL(overflow, ((c != '\n') && (!eof)));
 
 x__exit:
+    return err;
+}
+
+
+XError xvfs_copyfile(XVirtualFs* vfs, const char* src, const char* dst)
+{
+    XError err;
+    XFile* sfp = NULL;
+    XFile* dfp = NULL;
+
+    err = xvfs_open(vfs, src, X_OPEN_MODE_READ, &sfp);
+    if (err)
+        goto x__exit;
+
+    err = xvfs_open(vfs, dst, X_OPEN_MODE_WRITE, &dfp);
+    if (err)
+        goto x__exit;
+
+    err = xvfs_copyfile2(sfp, dfp);
+
+x__exit:
+    xvfs_close(sfp);
+    xvfs_close(dfp);
+
+    return err;
+}
+
+
+XError xvfs_copyfile2(XFile* src, XFile* dst)
+{
+    X_ASSERT_NULL(dst);
+    X_ASSERT_NULL(src);
+
+    const size_t X__BLOCK_SIZE = 512;
+
+    XError err;
+    uint8_t* buf = x_malloc(X__BLOCK_SIZE);
+    if (!buf)
+    {
+        err = X_ERR_NO_MEMORY;
+        goto x__exit;
+    }
+
+
+    for (;;)
+    {
+        size_t nread;
+        size_t nwritten;
+
+        err = xvfs_read(src, buf, X__BLOCK_SIZE, &nread);
+        if (err)
+            goto x__exit;
+
+        if (nread == 0)
+            break;
+
+        err = xvfs_write(dst, buf, nread, &nwritten);
+            goto x__exit;
+
+        if (nread != nwritten)
+        {
+            err = X_ERR_NO_SPACE;
+            goto x__exit;
+        }
+    }
+
+    err = xvfs_flush(dst);
+
+x__exit:
+    x_free(buf);
+
+    return err;
+}
+
+
+XError xvfs_copytree(XVirtualFs* vfs, const char* src, const char* dst)
+{
+    X_ASSERT_ARG(dst);
+    X_ASSERT_ARG(src);
+
+    X__CopyTreeWorkBuf* work = x_malloc(sizeof(X__CopyTreeWorkBuf));
+    if (!work)
+        return X_ERR_NO_MEMORY;
+
+    XError err = X_ERR_NONE;
+    memset(work, 0, sizeof(*work));
+    work->vfs = vfs;
+    work->srcdir = src;
+    work->dstdir = dst;
+    work->srcdirlen = strlen(src);
+    work->dstdirlen = strlen(dst);
+    work->depth = 0;
+
+    /* srcはディレクトリでなければならない */
+    err = xvfs_stat(work->vfs, src, &work->statbuf);
+    if (err)
+        goto x__exit;
+    if (!XSTAT_IS_DIRECTORY(work->statbuf.mode))
+    {
+        err = X_ERR_NOT_DIRECTORY;
+        goto x__exit;
+    }
+
+    /* dstはディレクトリとして作成可能でなければならない */
+    err = xvfs_mkdir(work->vfs, dst);
+    if (err)
+        goto x__exit;
+
+    /* コピー処理本体 */
+    x_strlcpy(work->path, src, X_PATH_MAX);
+    err = X__DoCopyTree(work, strlen(work->path));
+
+x__exit:
+    if (work)
+        x_free(work);
+
+    return err;
+}
+
+
+XError xvfs_rmtree(XVirtualFs* vfs, const char* path)
+{
+    X_ASSERT_ARG(path);
+
+    XError err = X_ERR_NONE;
+
+    X__RmTreeWorkBuf* work = x_malloc(sizeof(X__RmTreeWorkBuf));
+    if (!work)
+    {
+        err = X_ERR_NO_MEMORY;
+        goto x__exit;
+    }
+
+    work->vfs = vfs;
+    x_strlcpy(work->path, path, X_PATH_MAX);
+    err = X__DoRmTree(work, strlen(work->path));
+
+x__exit:
+    x_free(work);
+
+    return err;
+}
+
+
+XError xvfs_makedirs(XVirtualFs* vfs, const char* path, bool exist_ok)
+{
+    XError err = X_ERR_NONE;
+    char buf[X_PATH_MAX];
+    const char* next;
+    const char* endptr = path;
+
+    if (strlen(path) >= X_PATH_MAX)
+        return X_ERR_NAME_TOO_LONG;
+
+    while ((next = xfpath_top(endptr, (char**)&endptr)))
+    {
+        memcpy(buf, path, endptr - path);
+        buf[endptr - path] = '\0';
+
+        err = xvfs_mkdir(vfs, buf);
+        if ((err != X_ERR_NONE) && (err != X_ERR_EXIST))
+            goto x__exit;
+    }
+
+    if ((err == X_ERR_EXIST) && exist_ok)
+        err = X_ERR_NONE;
+
+x__exit:
+    return err;
+}
+
+
+XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, void* userptr)
+{
+    X_ASSERT_ARG(path);
+    X_ASSERT_ARG(walker);
+
+    X__WalkTreeWorkBuf* work = x_malloc(sizeof(X__WalkTreeWorkBuf));
+    if (!work)
+        return X_ERR_NO_MEMORY;
+
+    XError err = X_ERR_NONE;
+    memset(work, 0, sizeof(*work));
+    work->vfs = vfs;
+    work->walker = walker;
+    work->userptr = userptr;
+    work->dirent = &work->direntbuf;
+
+    err = xvfs_stat(vfs, path, &work->statbuf);
+    if (err)
+        goto x__exit;
+    if (!XSTAT_IS_DIRECTORY(work->statbuf.mode))
+    {
+        err = X_ERR_NOT_DIRECTORY;
+        goto x__exit;
+    }
+
+    err = xvfs_getcwd(vfs, work->path, X_PATH_MAX);
+    if (err)
+        goto x__exit;
+
+    char tmp[X_PATH_MAX];
+    xfpath_resolve(tmp, work->path, path, X_PATH_MAX);
+    if (xfpath_is_root(tmp))
+        strcpy(work->dirent->name, tmp);
+    else
+    {
+        char* endptr;
+        char* p = xfpath_name(tmp, &endptr);
+        memcpy(work->dirent->name, p, endptr - p);
+        work->dirent->name[endptr - p] = '\0';
+    }
+
+    x_strlcpy(work->path, path, X_PATH_MAX);
+    err = X__DoWalkTree(work, strlen(work->path));
+
+x__exit:
+    if (work)
+        x_free(work);
+
+    return err;
+
+}
+
+
+static XError X__DefaultOpen(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp)
+{
+    X_UNUSED(vfs);
+    X_UNUSED(path);
+    X_UNUSED(mode);
+
+    X_ASSERT_NULL(o_fp);
+    *o_fp = NULL;
+    return X_ERR_NOT_SUPPORTED;
+}
+
+static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
+{
+    X_UNUSED(vfs);
+    X_UNUSED(path);
+
+    X_ASSERT_NULL(o_dir);
+    *o_dir = NULL;
+    return X_ERR_NOT_SUPPORTED;
+}
+
+static XError X__DefaultFunc()
+{
+    return X_ERR_NOT_SUPPORTED;
+}
+
+
+static XError X__DefaultFlush()
+{
+    /* フラッシュ関数は特にやることがないということも多いので非登録にデフォルト
+     * 関すは常に正常終了を返す
+     */
+    return X_ERR_NONE;
+}
+
+
+static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail)
+{
+    XError err = X_ERR_NONE;
+    XDir* dir = NULL;
+    int len;
+
+    err = xvfs_stat(work->vfs, work->path, &work->statbuf);
+    if (err)
+        goto x__exit;
+
+    if (!XSTAT_IS_DIRECTORY(work->statbuf.mode))
+    {
+        /* ファイルコピー */
+        work->srcfp = NULL;
+        work->dstfp = NULL;
+        do
+        {
+            err = xvfs_open(work->vfs, work->path, X_OPEN_MODE_READ, &work->srcfp);
+            if (err)
+                break;
+
+            /* パスをdst側に置き換える */
+            if (!x_strreplace(work->path, X_PATH_MAX, strlen(work->path),
+                              work->srcdirlen, work->dstdir, work->dstdirlen))
+            {
+                err = X_ERR_NAME_TOO_LONG;
+                break;
+            }
+
+            err = xvfs_open(work->vfs, work->path, X_OPEN_MODE_WRITE, &work->dstfp);
+            if (err)
+                break;
+
+            err = xvfs_copyfile2(work->srcfp, work->dstfp);
+            if (err)
+                break;
+
+            err = xvfs_close(work->dstfp);
+            if (err)
+                break;
+            work->dstfp = NULL;
+
+            err = xvfs_close(work->srcfp);
+            if (err)
+                break;
+            work->srcfp = NULL;
+
+            /* パスをsrc基準に戻す。成功するのは確定しているからエラーチェックは不要だ  */
+            x_strreplace(work->path, X_PATH_MAX, strlen(work->path),
+                         work->dstdirlen, work->srcdir, work->srcdirlen);
+        } while (0);
+
+        if (work->dstfp)
+            xvfs_close(work->dstfp);
+        if (work->srcfp)
+            xvfs_close(work->srcfp);
+    }
+    else
+    {
+        /* ディレクトリコピー */
+        err = xvfs_opendir(work->vfs, work->path, &dir);
+        if (err)
+            goto x__exit;
+
+        /* パスをdst側に置き換える */
+        if (!x_strreplace(work->path, X_PATH_MAX, strlen(work->path),
+                          work->srcdirlen, work->dstdir, work->dstdirlen))
+        {
+            err = X_ERR_NAME_TOO_LONG;
+            goto x__exit;
+        }
+
+
+        /* 1階層目のディレクトリは作成済みであることが前提 */
+        if (work->depth != 0)
+        {
+            err = xvfs_mkdir(work->vfs, work->path);
+            if (err)
+                goto x__exit;
+        }
+
+        /* パスをsrc基準に戻す。成功するのは確定しているからエラーチェックは不要だ  */
+        x_strreplace(work->path, X_PATH_MAX, strlen(work->path),
+                     work->dstdirlen, work->srcdir, work->srcdirlen);
+
+        for (;;)
+        {
+            err = xvfs_readdir(dir, &work->direntbuf, &work->dirent);
+            if (err)
+                goto x__exit;
+
+            if (!work->dirent)
+                break;
+
+            if (x_strequal(".", work->dirent->name))
+                continue;
+
+            if (x_strequal("..", work->dirent->name))
+                continue;
+
+            len = x_snprintf(work->path + tail,
+                             X_PATH_MAX - tail,
+                             "/%s",
+                             work->dirent->name);
+
+            /* 再帰呼出し */
+            work->depth += 1;
+            err = X__DoCopyTree(work, tail + len);
+            if (err)
+                goto x__exit;
+        }
+
+        err = xvfs_closedir(dir);
+        if (err)
+        {
+            dir = NULL;
+            goto x__exit;
+        }
+
+        dir = NULL;
+        work->path[tail] = '\0';
+    }
+
+x__exit:
+    if (dir)
+        xvfs_closedir(dir);
+
+    return err;
+}
+
+
+static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail)
+{
+    XError err = X_ERR_NONE;
+    XDir* dir = NULL;
+    int len = 0;
+
+    err = xvfs_stat(work->vfs, work->path, &work->statbuf);
+    if (err)
+        goto x__exit;
+
+    if (!XSTAT_IS_DIRECTORY(work->statbuf.mode))
+    {
+        err = xvfs_remove(work->vfs, work->path);
+        if (err)
+            goto x__exit;
+    }
+    else
+    {
+        err = xvfs_opendir(work->vfs, work->path, &dir);
+        if (err)
+            goto x__exit;
+
+        for (;;)
+        {
+            err = xvfs_readdir(dir, &work->direntbuf, &work->dirent);
+            if (err)
+                goto x__exit;
+
+            if (!work->dirent)
+                break;
+
+            if (x_strequal(".", work->dirent->name) ||
+                x_strequal("..", work->dirent->name))
+                continue;
+
+            len = x_snprintf(work->path + tail, X_PATH_MAX - tail,
+                             "/%s", work->dirent->name);
+
+            /* 再帰呼出し */
+            err = X__DoRmTree(work, tail + len);
+            if (err)
+                goto x__exit;
+        }
+
+        err = xvfs_closedir(dir);
+        dir = NULL;
+        if (err)
+            goto x__exit;
+
+        work->path[tail] = '\0';
+        err = xvfs_remove(work->vfs, work->path);
+    }
+
+x__exit:
+    if (dir)
+        xvfs_closedir(dir);
+
+    return err;
+}
+
+
+static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail)
+{
+    XError err = X_ERR_NONE;
+    XDir* dir = NULL;
+    int len;
+
+    err = xvfs_stat(work->vfs, work->path, &work->statbuf);
+    if (err)
+        goto x__exit;
+
+    /* コールバック呼び出し */
+    if (!work->walker(work->userptr, work->path, &work->statbuf, work->dirent))
+        goto x__exit;
+
+    if (XSTAT_IS_DIRECTORY(work->statbuf.mode))
+    {
+        err = xvfs_opendir(work->vfs, work->path, &dir);
+        if (err)
+            goto x__exit;
+
+        for (;;)
+        {
+            err = xvfs_readdir(dir, &work->direntbuf, &work->dirent);
+            if (err)
+                goto x__exit;
+
+            if (!work->dirent)
+                break;
+
+            if (x_strequal(".", work->dirent->name))
+                continue;
+
+            if (x_strequal("..", work->dirent->name))
+                continue;
+
+            if (tail == 1)
+            {
+                len = x_snprintf(work->path + tail,
+                                 X_PATH_MAX - tail,
+                                 "%s",
+                                 work->dirent->name);
+            }
+            else
+            {
+                len = x_snprintf(work->path + tail,
+                                 X_PATH_MAX - tail,
+                                 "/%s",
+                                 work->dirent->name);
+            }
+            err = X__DoWalkTree(work, tail + len);
+            if (err)
+                goto x__exit;
+        }
+
+        err = xvfs_closedir(dir);
+        dir = NULL;
+        if (err)
+            goto x__exit;
+        work->path[tail] = '\0';
+    }
+
+x__exit:
+    if (dir)
+        xvfs_closedir(dir);
+
     return err;
 }
