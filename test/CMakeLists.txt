@@ -40,6 +40,7 @@ set(test_sources
     test_xramfs.c
     test_xromfs.c
     test_xvfs.c
+    test_xsinglefs.c
     test_xfs.c
     test_xfatfs.c
     test_xspiffs.c

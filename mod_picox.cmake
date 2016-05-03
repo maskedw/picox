@@ -33,6 +33,7 @@ set(picox_sources
     ${picox_dir}/filesystem/xfatfs.c
     ${picox_dir}/filesystem/xramfs.c
     ${picox_dir}/filesystem/xromfs.c
+    ${picox_dir}/filesystem/xsinglefs.c
     ${picox_dir}/filesystem/xvfs.c
     ${picox_dir}/filesystem/xfs.c
     ${picox_dir}/filesystem/xfpath.c
