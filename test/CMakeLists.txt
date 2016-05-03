@@ -6,7 +6,9 @@ set(CMAKE_BUILD_TYPE    Debug)
 set(CMAKE_CXX_COMPILER  g++)
 set(CMAKE_C_COMPILER    gcc)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/..)
+set(rootdir ${CMAKE_SOURCE_DIR}/..)
+set(tooldir ${rootdir}/tools)
+set(CMAKE_MODULE_PATH ${rootdir})
 include(mod_picox)
 
 set(config_dir ${CMAKE_SOURCE_DIR}/config)
@@ -14,6 +16,7 @@ set(config_dir ${CMAKE_SOURCE_DIR}/config)
 include_directories(./)
 include_directories(./config)
 include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_BINARY_DIR})
 set(CMAKE_C_FLAGS "-std=c99 -Og -Wall -Wextra -Wpedantic -Wchar-subscripts")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
 
@@ -35,6 +38,7 @@ set(test_sources
     test_xargparser.c
     test_xposixfs.c
     test_xramfs.c
+    test_xromfs.c
     test_xvfs.c
     test_xfs.c
     test_xfatfs.c
@@ -49,13 +53,23 @@ set(test_sources
     test_xdynamic_string.c
     test_xstream.c
     test_minIni.c
+    romfsimg.c
     glue/fatfs_glue.c
 )
-
 
 add_library(picox STATIC ${picox_sources})
 add_executable(picox_tests ${test_sources})
 target_link_libraries(picox_tests picox)
+
+add_custom_command(OUTPUT romfsimg.c romfsimg.h
+    COMMAND ${tooldir}/xromfs_builder.py -o romfs.img ${CMAKE_SOURCE_DIR}/romfs
+    COMMAND ${tooldir}/xbin2c.py -o romfsimg romfs.img
+)
+
+add_custom_target(generate_romfs DEPENDS romfsimg.c romfsimg.h)
+add_dependencies(picox_tests generate_romfs)
+add_dependencies(picox_tests picox)
+
 
 # add_custom_command(TARGET picox_tests POST_BUILD
 #     COMMAND size ./picox_tests
