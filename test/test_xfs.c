@@ -95,7 +95,7 @@ TEST_SETUP(xfs)
 
     err = xramfs_mkdir(ramfs2, "/foo");
     X_ASSERT(err == X_ERR_NONE);
-    err = xramfs_open(ramfs, "/foo/bar.txt", X_OPEN_MODE_WRITE, &fp);
+    err = xramfs_open(ramfs2, "/foo/bar.txt", X_OPEN_MODE_WRITE, &fp);
     X_ASSERT(err == X_ERR_NONE);
     xramfs_close(fp);
     err = xramfs_mkdir(ramfs2, "/foo/bar");
@@ -689,7 +689,7 @@ TEST(xfs, copyfile)
 }
 
 
-bool PrintTree(void* userptr, const char* path, const XStat* statbuf, const XDirEnt* dirent)
+static bool PrintTree(void* userptr, const char* path, const XStat* statbuf, const XDirEnt* dirent)
 {
     X_UNUSED(userptr);
     X_UNUSED(statbuf);
