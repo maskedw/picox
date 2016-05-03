@@ -430,32 +430,32 @@ XError xfs_is_regular(const char* path, bool* isreg);
 
 /** @brief ファイルに1文字を書き込みます
  */
-int xfs_putc(XFile* fp, int c);
+#define xfs_putc        xvfs_putc
 
 
 /** @brief ファイルに文字列を書き込みます
  */
-int xfs_puts(XFile* fp, const char* str);
+#define xfs_puts        xvfs_puts
 
 
 /** @brief ファイルにprintf形式で文字列を書き込みます
  */
-int xfs_printf(XFile* fp, const char* fmt, ...);
+#define xfs_printf      xvfs_printf
 
 
 /** @brief ファイルにvprintf形式で文字列を書き込みます
  */
-int xfs_vprintf(XFile* fp, const char* fmt, va_list args);
+#define xfs_vprintf     xvfs_vprintf
 
 
 /** @brief ファイルから1文字を読み込みます
  */
-int xfs_getc(XFile* fp);
+#define xfs_getc        xvfs_getc
 
 
 /** @brief ファイルから1行を読み込みます
  */
-XError xfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
+#define xfs_readline    xvfs_readline
 
 
 /** @} end of addtogroup xfs

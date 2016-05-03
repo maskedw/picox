@@ -88,7 +88,15 @@ XError xvfs_remove(XVirtualFs* vfs, const char* path);
 XError xvfs_rename(XVirtualFs* vfs, const char* oldpath, const char* newpath);
 XError xvfs_stat(XVirtualFs* vfs, const char* path, XStat* statbuf);
 XError xvfs_utime(XVirtualFs* vfs, const char* path, XTime time);
-
+XError xvfs_exists(XVirtualFs* vfs, const char* path, bool* exists);
+XError xvfs_is_directory(XVirtualFs* vfs, const char* path, bool* isdir);
+XError xvfs_is_regular(XVirtualFs* vfs, const char* path, bool* isreg);
+int xvfs_putc(XFile* fp, int c);
+int xvfs_puts(XFile* fp, const char* str);
+int xvfs_printf(XFile* fp, const char* fmt, ...);
+int xvfs_vprintf(XFile* fp, const char* fmt, va_list args);
+int xvfs_getc(XFile* fp);
+XError xvfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
 
 
 /** @} end of addtogroup xvfs

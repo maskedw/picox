@@ -821,7 +821,7 @@ x__exit:
 
 XError xfs_exists(const char* path, bool* exists)
 {
-    X_ASSERT_ARG(exists);
+    X_ASSERT_NULL(exists);
     XStat statbuf;
     const XError err = xfs_stat(path, &statbuf);
     *exists = (err == X_ERR_NONE);
@@ -831,7 +831,7 @@ XError xfs_exists(const char* path, bool* exists)
 
 XError xfs_is_directory(const char* path, bool* isdir)
 {
-    X_ASSERT_ARG(isdir);
+    X_ASSERT_NULL(isdir);
     XStat statbuf;
     const XError err = xfs_stat(path, &statbuf);
     *isdir = ((err == X_ERR_NONE) && (XSTAT_IS_DIRECTORY(statbuf.mode)));
@@ -841,99 +841,10 @@ XError xfs_is_directory(const char* path, bool* isdir)
 
 XError xfs_is_regular(const char* path, bool* isreg)
 {
-    X_ASSERT_ARG(isreg);
+    X_ASSERT_NULL(isreg);
     XStat statbuf;
     const XError err = xfs_stat(path, &statbuf);
     *isreg = ((err == X_ERR_NONE) && (XSTAT_IS_REGULAR(statbuf.mode)));
-    return err;
-}
-
-
-int xfs_putc(XFile* fp, int c)
-{
-    uint8_t b = c;
-    const XError err = xvfs_write(fp, &b, sizeof(b), NULL);
-    return (err == X_ERR_NONE) ? c : EOF;
-}
-
-
-int xfs_puts(XFile* fp, const char* str)
-{
-    const XError err = xvfs_write(fp, str, strlen(str), NULL);
-    return (err == X_ERR_NONE) ? 0 : EOF;
-}
-
-
-int xfs_printf(XFile* fp, const char* fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    const int len = xfs_vprintf(fp, fmt, args);
-    va_end(args);
-
-    return len;
-}
-
-
-int xfs_vprintf(XFile* fp, const char* fmt, va_list args)
-{
-    XStream fstream;
-    xfs_init_stream(&fstream, fp);
-
-    return x_vprintf_to_stream(&fstream, fmt, args);
-}
-
-
-int xfs_getc(XFile* fp)
-{
-    uint8_t b;
-    size_t nread;
-
-    const XError err = xvfs_read(fp, &b, sizeof(b), &nread);
-    return ((err == X_ERR_NONE) && (nread == sizeof(b))) ? b : EOF;
-}
-
-
-XError xfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow)
-{
-    X_ASSERT_SELF(fp);
-    X_ASSERT_NULL(dst);
-    X_ASSERT_NULL(result);
-
-    XError err = X_ERR_NONE;
-    size_t total = 0;
-    bool eof = false;
-    char c;
-
-    *result = NULL;
-    dst[0] = '\0';
-
-    while (total < size - 1)
-    {
-        size_t nread;
-        err = xvfs_read(fp, &c, 1, &nread);
-        if (err)
-            goto x__exit;
-
-        if (nread == 0)
-        {
-            eof = true;
-            break;
-        }
-
-        if (c == '\r')
-            continue;
-
-        if (c == '\n')
-            break;
-        dst[total++] = c;
-    }
-
-    dst[total] = '\0';
-    *result = (dst[0] != '\0') ? dst : NULL;
-    X_ASSIGN_NOT_NULL(overflow, ((c != '\n') && (!eof)));
-
-x__exit:
     return err;
 }
 
