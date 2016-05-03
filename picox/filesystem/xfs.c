@@ -39,15 +39,6 @@
 #include <picox/filesystem/xfs.h>
 #include <picox/container/xintrusive_list.h>
 
-/* stat, removeの時にマウントパスと完全一致なら上位muntpoint目線じゃないといかん
- * のか・・・。そんなんどうやって判定すんねん！！
- *
- * ていうか、removeの時はマウントパスの完全一致はどっちにしろ削除できひんから
- *
- * stat,utime,chmodが対象かな。
- * んで、親がわかれば、どうとでもリプレースできる！！
- */
-
 #define X__BLOCK_SIZE   (512)
 
 struct X__MountPoint;
