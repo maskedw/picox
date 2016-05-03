@@ -463,6 +463,7 @@ XError xramfs_opendir(XRamFs* fs, const char* path, XDir** o_dir)
     XError err;
     X__Entry* ent;
     char name[X_NAME_MAX];
+    *o_dir = NULL;
 
     err = X__FindEntry(fs, path, name, &ent, NULL);
     if (err != X_ERR_NONE)
