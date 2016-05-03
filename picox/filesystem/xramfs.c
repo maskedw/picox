@@ -759,9 +759,15 @@ static XError X__FindEntry(const XRamFs* fs, const char* path, char* name,
             }
         }
 
-        X__EXIT_IF(!ent, X_ERR_NO_ENTRY);
+        endptr = x_strskipchr(endptr, '/');
+        if (!ent)
+        {
+            if (*endptr != '\0')
+                dir = NULL;
+            err = X_ERR_NO_ENTRY;
+            goto x__exit;
+        }
 
-        while (*endptr == '/') ++endptr;
         if (*endptr != '\0')
         {
             /* 次の要素があるなら、エントリはディレクトリでなければおかしい */
