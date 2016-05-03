@@ -339,22 +339,6 @@ XError xfs_utime(const char* path, XTime time);
 XError xfs_copyfile(const char* src, const char* dst);
 
 
-/** @brief ファイルをコピーします
- *
- *  @pre
- *  + src      != NULL
- *  + dst      != NULL
- *
- *  パスからではなく、ファイルオブジェクトからコピーを行います。
- *
- *  srcは読み込み可能、dstは書き込み可能である必要があります。
- *
- *  srcやdstの読み書きのスタート位置は0バイト目からではなく、引数として渡された
- *  時点の位置から終端に達するまでです。
- */
-XError xfs_copyfile2(XFile* src, XFile* dst);
-
-
 /** @brief ディレクトリツリーをコピーします
  *
  *  @pre
@@ -456,6 +440,24 @@ XError xfs_is_regular(const char* path, bool* isreg);
 /** @brief ファイルから1行を読み込みます
  */
 #define xfs_readline    xvfs_readline
+
+
+/** @brief ファイルをコピーします
+ *
+ *  @pre
+ *  + src      != NULL
+ *  + dst      != NULL
+ *
+ *  パスからではなく、ファイルオブジェクトからコピーを行います。
+ *
+ *  srcは読み込み可能、dstは書き込み可能である必要があります。
+ *
+ *  srcやdstの読み書きのスタート位置は0バイト目からではなく、引数として渡された
+ *  時点の位置から終端に達するまでです。
+ */
+#define xfs_copyfile2   xvfs_copyfile2
+
+
 
 
 /** @} end of addtogroup xfs

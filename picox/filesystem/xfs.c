@@ -39,7 +39,6 @@
 #include <picox/filesystem/xfs.h>
 #include <picox/container/xintrusive_list.h>
 
-#define X__BLOCK_SIZE   (512)
 
 struct X__MountPoint;
 typedef struct X__MountPoint X__MountPoint;
@@ -612,52 +611,6 @@ x__exit:
 
     return err;
 }
-
-
-XError xfs_copyfile2(XFile* src, XFile* dst)
-{
-    X_ASSERT_NULL(dst);
-    X_ASSERT_NULL(src);
-
-    XError err;
-    uint8_t* buf = x_malloc(X__BLOCK_SIZE);
-    if (!buf)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-
-    for (;;)
-    {
-        size_t nread;
-        size_t nwritten;
-
-        err = xvfs_read(src, buf, X__BLOCK_SIZE, &nread);
-        if (err)
-            goto x__exit;
-
-        if (nread == 0)
-            break;
-
-        err = xvfs_write(dst, buf, nread, &nwritten);
-            goto x__exit;
-
-        if (nread != nwritten)
-        {
-            err = X_ERR_NO_SPACE;
-            goto x__exit;
-        }
-    }
-
-    err = xvfs_flush(dst);
-
-x__exit:
-    x_free(buf);
-
-    return err;
-}
-
 
 
 XError xfs_copytree(const char* src, const char* dst)
