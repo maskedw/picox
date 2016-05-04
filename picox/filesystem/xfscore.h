@@ -152,10 +152,10 @@ typedef bool (*XFsTreeWalker)(void* userptr, const char* path, const XStat* stat
  *  @brief 仮想ファイルシステムのインターフェース定義です
  *
  *  これらの定義が要求するインターフェースを実装することで、どんなファイルシステ
- *  ムもxfsにマウントできるようになります。
+ *  ムもxunionfsにマウントできるようになります。
  *
  *  picoxで未提供のファイルシステムを仮想ファイルシステムのアダプトしたい場合、
- *  各関数の要求内容はxfsの関数説明を参照してください。
+ *  各関数の要求内容はxunionfsの関数説明を参照してください。
  *
  *  実装はxfatfs, xramfs等の実装を参考にしてください。
  */

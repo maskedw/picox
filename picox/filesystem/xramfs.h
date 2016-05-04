@@ -66,7 +66,7 @@ extern "C" {
  *  このファイルシステムははじめからRAMの特性に合わせて設計されているため、百
  *  バイトの極小のRAMファイルシステムを構築することも可能です。
  *
- *  @see xfs
+ *  @see xunionfs
  *  @see xvfs
  *  @{
  */
@@ -109,8 +109,6 @@ void xramfs_deinit(XRamFs* fs);
  *  @pre
  *  + fs    != NULL
  *  + vfs   != NULL
- *
- *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
  */
 void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs);
 

@@ -63,7 +63,7 @@ extern "C" {
  *  + ifdef等でxposixfsとxfatfs等の組込み向けファイルシステムと切替を行い、ホス
  *    トPC上でのデバッグを行いやすくする。
  *
- *  @see xfs
+ *  @see xunionfs
  *  @see xvfs
  *  @{
  */
@@ -98,8 +98,6 @@ void xposixfs_deinit(XPosixFs* fs);
  *  @pre
  *  + fs    != NULL
  *  + vfs   != NULL
- *
- *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
  */
 void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs);
 XError xposixfs_open(XPosixFs* fs, const char* path, XOpenMode mode, XFile** o_fp);

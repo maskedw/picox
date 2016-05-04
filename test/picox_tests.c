@@ -23,7 +23,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xromfs);
     RUN_TEST_GROUP(xvfs);
     RUN_TEST_GROUP(xsinglefs);
-    RUN_TEST_GROUP(xfs);
+    RUN_TEST_GROUP(xunionfs);
     RUN_TEST_GROUP(xfatfs);
     RUN_TEST_GROUP(xspiffs);
     RUN_TEST_GROUP(minIni);

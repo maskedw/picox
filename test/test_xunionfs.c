@@ -1,10 +1,10 @@
-#include <picox/filesystem/xfs.h>
+#include <picox/filesystem/xunionfs.h>
 #include <picox/filesystem/xramfs.h>
 #include <picox/filesystem/xfatfs.h>
 #include <ff.h>
 #include "testutils.h"
 
-TEST_GROUP(xfs);
+TEST_GROUP(xunionfs);
 
 static XRamFs* ramfs;
 static XVirtualFs* vramfs;
@@ -21,7 +21,7 @@ static const size_t WRITE_LEN = 11; // strlen WRITE_DATA
 void disk_deinit(BYTE pdrv);
 
 
-TEST_SETUP(xfs)
+TEST_SETUP(xunionfs)
 {
     XFile* fp;
     XError err;
@@ -104,20 +104,20 @@ TEST_SETUP(xfs)
     X_ASSERT(err == X_ERR_NONE);
     xramfs_close(fp);
 
-    xfs_init();
-    err = xfs_mount(vfatfs, "/", "0:/");
+    xunionfs_init();
+    err = xunionfs_mount(vfatfs, "/", "0:/");
     X_ASSERT(err == X_ERR_NONE);
-    err = xfs_mount(vramfs, "/otherfs", "/");
+    err = xunionfs_mount(vramfs, "/otherfs", "/");
     X_ASSERT(err == X_ERR_NONE);
-    err = xfs_mount(vramfs2, "/otherfs2", "/foo");
+    err = xunionfs_mount(vramfs2, "/otherfs2", "/foo");
     X_ASSERT(err == X_ERR_NONE);
-    err = xfs_mount(vfatfs2, "/otherfs3", "1:/hoge");
+    err = xunionfs_mount(vfatfs2, "/otherfs3", "1:/hoge");
     X_ASSERT(err == X_ERR_NONE);
 }
 
-TEST_TEAR_DOWN(xfs)
+TEST_TEAR_DOWN(xunionfs)
 {
-    xfs_deinit();
+    xunionfs_deinit();
     if (ramfs)
         xramfs_deinit(ramfs);
     if (ramfs2)
@@ -147,42 +147,42 @@ TEST_TEAR_DOWN(xfs)
 }
 
 
-TEST(xfs, open_write)
+TEST(xunionfs, open_write)
 {
     XFile* fp;
     XError err;
 
-    err = xfs_open("foo.txt", X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open("foo.txt", X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, open_read)
+TEST(xunionfs, open_read)
 {
     XFile* fp;
     XError err;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
     TEST_ASSERT_NULL(fp);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, write)
+TEST(xunionfs, write)
 {
     XFile* fp;
     XError err;
@@ -190,19 +190,19 @@ TEST(xfs, write)
     const char name[] = "foo.txt";
 
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, read)
+TEST(xunionfs, read)
 {
     XFile* fp;
     XError err;
@@ -210,150 +210,150 @@ TEST(xfs, read)
     size_t nread;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_read(fp, buf, WRITE_LEN, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN, &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nread);
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, stat)
+TEST(xunionfs, stat)
 {
     XFile* fp;
     XError err;
     XStat statbuf;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, statbuf.size);
 }
 
 
-TEST(xfs, tell)
+TEST(xunionfs, tell)
 {
     XFile* fp;
     XError err;
     XSize pos;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_tell(fp, &pos);
+    err = xunionfs_tell(fp, &pos);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(0, pos);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_tell(fp, &pos);
+    err = xunionfs_tell(fp, &pos);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, pos);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, seek)
+TEST(xunionfs, seek)
 {
     XFile* fp;
     XError err;
     char name[] = "foo.txt";
     XSize pos;
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_seek(fp, 10, X_SEEK_SET);
+    err = xunionfs_seek(fp, 10, X_SEEK_SET);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    TEST_ASSERT_EQUAL(10, (xfs_tell(fp, &pos), pos));
+    TEST_ASSERT_EQUAL(10, (xunionfs_tell(fp, &pos), pos));
 
-    err = xfs_seek(fp, 10, X_SEEK_CUR);
-    TEST_ASSERT_EQUAL(20, (xfs_tell(fp, &pos), pos));
+    err = xunionfs_seek(fp, 10, X_SEEK_CUR);
+    TEST_ASSERT_EQUAL(20, (xunionfs_tell(fp, &pos), pos));
 
-    err = xfs_seek(fp, 10, X_SEEK_END);
-    TEST_ASSERT_EQUAL(10, (xfs_tell(fp, &pos), pos));
+    err = xunionfs_seek(fp, 10, X_SEEK_END);
+    TEST_ASSERT_EQUAL(10, (xunionfs_tell(fp, &pos), pos));
 
 
-    err = xfs_seek(fp, 9, X_SEEK_END);
-    xfs_write(fp, "A", 1, NULL);
-    TEST_ASSERT_EQUAL(10, (xfs_tell(fp, &pos), pos));
+    err = xunionfs_seek(fp, 9, X_SEEK_END);
+    xunionfs_write(fp, "A", 1, NULL);
+    TEST_ASSERT_EQUAL(10, (xunionfs_tell(fp, &pos), pos));
 
-    err = xfs_seek(fp, 10, X_SEEK_CUR);
-    TEST_ASSERT_EQUAL(20, (xfs_tell(fp, &pos), pos));
+    err = xunionfs_seek(fp, 10, X_SEEK_CUR);
+    TEST_ASSERT_EQUAL(20, (xunionfs_tell(fp, &pos), pos));
 
-    err = xfs_seek(fp, -10, X_SEEK_CUR);
-    TEST_ASSERT_EQUAL(10, (xfs_tell(fp, &pos), pos));
+    err = xunionfs_seek(fp, -10, X_SEEK_CUR);
+    TEST_ASSERT_EQUAL(10, (xunionfs_tell(fp, &pos), pos));
 
-    err = xfs_seek(fp, -10, X_SEEK_CUR);
-    TEST_ASSERT_EQUAL(0, (xfs_tell(fp, &pos), pos));
+    err = xunionfs_seek(fp, -10, X_SEEK_CUR);
+    TEST_ASSERT_EQUAL(0, (xunionfs_tell(fp, &pos), pos));
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, flush)
+TEST(xunionfs, flush)
 {
     XFile* fp;
     XError err;
     char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_write(fp, "A", 1, NULL);
-    err = xfs_flush(fp);
+    xunionfs_write(fp, "A", 1, NULL);
+    err = xunionfs_flush(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, mkdir)
+TEST(xunionfs, mkdir)
 {
     XError err;
     char name[] = "foo";
     XStat statbuf;
 
-    err = xfs_mkdir(name);
+    err = xunionfs_mkdir(name);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 }
 
 
-TEST(xfs, opendir)
+TEST(xunionfs, opendir)
 {
     XDir* dir;
     XError err;
     char name[] = "foo";
 
-    xfs_mkdir(name);
-    err = xfs_opendir(name, &dir);
+    xunionfs_mkdir(name);
+    err = xunionfs_opendir(name, &dir);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(dir);
-    xfs_closedir(dir);
+    xunionfs_closedir(dir);
 }
 
 
-TEST(xfs, readdir)
+TEST(xunionfs, readdir)
 {
     XFile* fp;
     XDir* dir;
@@ -363,12 +363,12 @@ TEST(xfs, readdir)
     char name[] = "foo";
     char name2[] = "bar.txt";
 
-    xfs_mkdir(name);
-    xfs_open(name2, X_OPEN_MODE_WRITE, &fp);
-    xfs_close(fp);
-    xfs_opendir(name, &dir);
+    xunionfs_mkdir(name);
+    xunionfs_open(name2, X_OPEN_MODE_WRITE, &fp);
+    xunionfs_close(fp);
+    xunionfs_opendir(name, &dir);
 
-    while ((err = xfs_readdir(dir, &entbuf, &ent)), ent)
+    while ((err = xunionfs_readdir(dir, &entbuf, &ent)), ent)
     {
         if (strcmp(".", ent->name) == 0)
             continue;
@@ -378,48 +378,48 @@ TEST(xfs, readdir)
         TEST_ASSERT_EQUAL_STRING(name2, ent->name);
     }
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_closedir(dir);
+    xunionfs_closedir(dir);
 }
 
 
-TEST(xfs, remove)
+TEST(xunionfs, remove)
 {
     XFile* fp;
     XError err;
     XStat statbuf;
     char name[] = "foo";
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
 
-    xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_remove(name);
+    err = xunionfs_remove(name);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
 
-    err = xfs_mkdir(name);
+    err = xunionfs_mkdir(name);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_remove(name);
+    err = xunionfs_remove(name);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
 }
 
 
-TEST(xfs, rename)
+TEST(xunionfs, rename)
 {
     XFile* fp;
     XError err;
@@ -427,28 +427,28 @@ TEST(xfs, rename)
     char name[] = "foo";
     char name2[] = "bar";
 
-    xfs_open(name, X_OPEN_MODE_WRITE, &fp);
-    xfs_close(fp);
+    xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_stat(name2, &statbuf);
+    err = xunionfs_stat(name2, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
 
-    err = xfs_rename(name, name2);
+    err = xunionfs_rename(name, name2);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NO_ENTRY, err);
 
-    err = xfs_stat(name2, &statbuf);
+    err = xunionfs_stat(name2, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
 }
 
 
-TEST(xfs, open_write_plus)
+TEST(xunionfs, open_write_plus)
 {
     XFile* fp;
     XError err;
@@ -459,45 +459,45 @@ TEST(xfs, open_write_plus)
     const char name[] = "foo.txt";
 
     /* ファイルが存在しない場合は新規作成される */
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, statbuf.size);
 
     /* ファイルが存在している場合はサイズは0に切り詰められる */
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
-    xfs_close(fp);
-    err = xfs_stat(name, &statbuf);
+    xunionfs_close(fp);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(0, statbuf.size);
 
     /* 読み込みも可能 */
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
 
-    err = xfs_seek(fp, 0, X_SEEK_SET);
+    err = xunionfs_seek(fp, 0, X_SEEK_SET);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_read(fp, buf, WRITE_LEN, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN, &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nread);
     TEST_ASSERT_TRUE(memcmp(buf, WRITE_DATA, WRITE_LEN) == 0);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, open_read_plus)
+TEST(xunionfs, open_read_plus)
 {
     XFile* fp;
     XError err;
@@ -508,59 +508,59 @@ TEST(xfs, open_read_plus)
     const char name[] = "foo.txt";
 
     /* ファイルが存在しない場合はエラーになる。 */
-    err = xfs_open(name, X_OPEN_MODE_READ_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ_PLUS, &fp);
     TEST_ASSERT_NULL(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, statbuf.size);
 
     /* ファイルが存在している場合、サイズ0にはならない */
-    err = xfs_open(name, X_OPEN_MODE_READ_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
-    xfs_close(fp);
-    err = xfs_stat(name, &statbuf);
+    xunionfs_close(fp);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, statbuf.size);
 
     /* 読み書きできる */
-    err = xfs_open(name, X_OPEN_MODE_READ_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_read(fp, buf, WRITE_LEN, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN, &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nread);
     TEST_ASSERT_TRUE(memcmp(buf, WRITE_DATA, WRITE_LEN) == 0);
 
-    err = xfs_seek(fp, 0, X_SEEK_END);
+    err = xunionfs_seek(fp, 0, X_SEEK_END);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
 
-    err = xfs_seek(fp, 0, X_SEEK_SET);
+    err = xunionfs_seek(fp, 0, X_SEEK_SET);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_read(fp, buf, WRITE_LEN * 2, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN * 2, &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN * 2, nread);
     TEST_ASSERT_TRUE(memcmp(buf, WRITE_DATA, WRITE_LEN) == 0);
     TEST_ASSERT_TRUE(memcmp(buf + WRITE_LEN, WRITE_DATA, WRITE_LEN) == 0);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, open_append)
+TEST(xunionfs, open_append)
 {
     XFile* fp;
     XError err;
@@ -572,40 +572,40 @@ TEST(xfs, open_append)
     const char name[] = "foo.txt";
 
     /* ファイルが存在しない場合は新規作成される */
-    err = xfs_open(name, X_OPEN_MODE_APPEND, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_APPEND, &fp);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, statbuf.size);
 
     /* ファイルが存在している場合はファイルポインタは末尾にセットされる */
-    err = xfs_open(name, X_OPEN_MODE_APPEND, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_APPEND, &fp);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_tell(fp, &pos);
+    err = xunionfs_tell(fp, &pos);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, pos);
 
     /* 読み込みは不可 */
-    err = xfs_read(fp, buf, WRITE_LEN, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN, &nread);
     TEST_ASSERT_NOT_EQUAL(X_ERR_NONE, err);
 
     /* 書き込みは可 */
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, open_append_plus)
+TEST(xunionfs, open_append_plus)
 {
     XFile* fp;
     XError err;
@@ -617,45 +617,45 @@ TEST(xfs, open_append_plus)
     const char name[] = "foo.txt";
 
     /* ファイルが存在しない場合は新規作成される */
-    err = xfs_open(name, X_OPEN_MODE_APPEND_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_APPEND_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_stat(name, &statbuf);
+    err = xunionfs_stat(name, &statbuf);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, statbuf.size);
 
     /* ファイルが存在している場合はファイルポインタは先頭にセットされる */
-    err = xfs_open(name, X_OPEN_MODE_APPEND_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_APPEND_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_tell(fp, &pos);
+    err = xunionfs_tell(fp, &pos);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(0, pos);
 
     /* 読み書きできる */
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
 
-    err = xfs_seek(fp, 0, X_SEEK_SET);
+    err = xunionfs_seek(fp, 0, X_SEEK_SET);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_read(fp, buf, WRITE_LEN * 2, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN * 2, &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN * 2, nread);
     TEST_ASSERT_TRUE(memcmp(buf, WRITE_DATA, WRITE_LEN) == 0);
     TEST_ASSERT_TRUE(memcmp(buf + WRITE_LEN, WRITE_DATA, WRITE_LEN) == 0);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, copyfile)
+TEST(xunionfs, copyfile)
 {
     XFile* fp;
     XError err;
@@ -665,27 +665,27 @@ TEST(xfs, copyfile)
     const char name[] = "foo.txt";
     const char name2[] = "bar.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
+    err = xunionfs_write(fp, WRITE_DATA, WRITE_LEN, &nwritten);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nwritten);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_copyfile(name, name2);
+    err = xunionfs_copyfile(name, name2);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_NOT_NULL(fp);
 
-    err = xfs_read(fp, buf, WRITE_LEN, &nread);
+    err = xunionfs_read(fp, buf, WRITE_LEN, &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL(WRITE_LEN, nread);
     TEST_ASSERT_EQUAL(0, memcmp(buf, WRITE_DATA, WRITE_LEN));
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
@@ -701,40 +701,40 @@ static bool PrintTree(void* userptr, const char* path, const XStat* statbuf, con
 }
 
 
-TEST(xfs, copytree)
+TEST(xunionfs, copytree)
 {
     XError err;
 
-    err = xfs_mkdir("foo");
+    err = xunionfs_mkdir("foo");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_mkdir("foo/bar");
+    err = xunionfs_mkdir("foo/bar");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_mkdir("foo/baz");
+    err = xunionfs_mkdir("foo/baz");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_copytree("foo", "hoge");
+    err = xunionfs_copytree("foo", "hoge");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_copytree("foo", "/otherfs/tree");
+    err = xunionfs_copytree("foo", "/otherfs/tree");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_walktree("/", PrintTree, NULL);
+    err = xunionfs_walktree("/", PrintTree, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_walktree("/otherfs", PrintTree, NULL);
+    err = xunionfs_walktree("/otherfs", PrintTree, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 }
 
 
-TEST(xfs, mount)
+TEST(xunionfs, mount)
 {
     XError err;
     XFile* fp;
     XDir*  dir;
 
-    xfs_deinit();
+    xunionfs_deinit();
 
     XRamFs rootfs;
     XVirtualFs vramfs1;
@@ -758,42 +758,42 @@ TEST(xfs, mount)
 
     xramfs_close(fp);
 
-    err = xfs_mount(&vramfs1, "/", "/");
+    err = xunionfs_mount(&vramfs1, "/", "/");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_mount(&vramfs2, "/mnt", "/home");
+    err = xunionfs_mount(&vramfs2, "/mnt", "/home");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_open("/mnt/test.txt", X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open("/mnt/test.txt", X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    xfs_deinit();
+    xunionfs_deinit();
 
-    err = xfs_mount(&vramfs1, "/", "/home");
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-
-    err = xfs_open("/test.txt", X_OPEN_MODE_READ, &fp);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_close(fp);
-
-    err = xfs_opendir("/", &dir);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_closedir(dir);
-    xfs_deinit();
-
-
-    err = xfs_mount(&vramfs1, "/", "/");
+    err = xunionfs_mount(&vramfs1, "/", "/home");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_mount(vfatfs, "/mnt", "0:/");
+    err = xunionfs_open("/test.txt", X_OPEN_MODE_READ, &fp);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xunionfs_close(fp);
+
+    err = xunionfs_opendir("/", &dir);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xunionfs_closedir(dir);
+    xunionfs_deinit();
+
+
+    err = xunionfs_mount(&vramfs1, "/", "/");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_opendir("/mnt", &dir);
+    err = xunionfs_mount(vfatfs, "/mnt", "0:/");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
-    xfs_closedir(dir);
 
-    xfs_deinit();
+    err = xunionfs_opendir("/mnt", &dir);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    xunionfs_closedir(dir);
+
+    xunionfs_deinit();
 
 
     /* "/", "/"
@@ -803,43 +803,43 @@ TEST(xfs, mount)
 }
 
 
-TEST(xfs, rmtree)
+TEST(xunionfs, rmtree)
 {
     XError err;
 
-    err = xfs_rmtree("/otherfs2/bar");
+    err = xunionfs_rmtree("/otherfs2/bar");
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    err = xfs_walktree("/", PrintTree, NULL);
+    err = xunionfs_walktree("/", PrintTree, NULL);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 }
 
 
-TEST(xfs, stream)
+TEST(xunionfs, stream)
 {
     XFile* fp;
     XError err;
     XStream st;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    xfs_init_stream(&st, fp);
+    xunionfs_init_stream(&st, fp);
     x_test_stream(&st);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, putc)
+TEST(xunionfs, putc)
 {
     XFile* fp;
     XError err;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
@@ -848,32 +848,32 @@ TEST(xfs, putc)
 
     for (i = 0; i < (int)sizeof(data); i++)
     {
-        TEST_ASSERT_EQUAL(data[i], xfs_putc(fp, data[i]));
+        TEST_ASSERT_EQUAL(data[i], xunionfs_putc(fp, data[i]));
     }
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
     char buf[X_LINE_MAX];
     char* result;
 
-    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING(data, buf);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, puts)
+TEST(xunionfs, puts)
 {
     XFile* fp;
     XError err;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
@@ -886,13 +886,13 @@ TEST(xfs, puts)
 
     for (i = 0; i < (int)X_COUNT_OF(data); i++)
     {
-        TEST_ASSERT_EQUAL(0, xfs_puts(fp, data[i]));
-        xfs_putc(fp, '\n');
+        TEST_ASSERT_EQUAL(0, xunionfs_puts(fp, data[i]));
+        xunionfs_putc(fp, '\n');
     }
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
@@ -901,193 +901,193 @@ TEST(xfs, puts)
 
     for (i = 0; i < (int)X_COUNT_OF(data); i++)
     {
-        xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+        xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
         TEST_ASSERT_EQUAL_STRING(data[i], buf);
     }
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, printf)
+TEST(xunionfs, printf)
 {
     XFile* fp;
     XError err;
     const char name[] = "foo.txt";
 
-    err = xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
     int i;
     for (i = 0; i < 3; i++)
     {
-        TEST_ASSERT_TRUE(xfs_printf(fp, "Hello world %d\n", i) >= 0);
+        TEST_ASSERT_TRUE(xunionfs_printf(fp, "Hello world %d\n", i) >= 0);
     }
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 
-    err = xfs_open(name, X_OPEN_MODE_READ, &fp);
+    err = xunionfs_open(name, X_OPEN_MODE_READ, &fp);
     TEST_ASSERT_NOT_NULL(fp);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
     char buf[X_LINE_MAX];
     char* result;
 
-    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING("Hello world 0", buf);
 
-    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING("Hello world 1", buf);
 
-    xfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING("Hello world 2", buf);
 
-    xfs_close(fp);
+    xunionfs_close(fp);
 }
 
 
-TEST(xfs, exists)
+TEST(xunionfs, exists)
 {
     XFile* fp;
     const char name[] = "foo.txt";
     bool exists;
 
-    xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
-    xfs_close(fp);
-    xfs_exists(name, &exists);
+    xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    xunionfs_close(fp);
+    xunionfs_exists(name, &exists);
     TEST_ASSERT_TRUE(exists);
 
-    xfs_remove(name);
-    xfs_exists(name, &exists);
+    xunionfs_remove(name);
+    xunionfs_exists(name, &exists);
     TEST_ASSERT_FALSE(exists);
 
-    xfs_mkdir(name);
-    xfs_exists(name, &exists);
+    xunionfs_mkdir(name);
+    xunionfs_exists(name, &exists);
     TEST_ASSERT_TRUE(exists);
 }
 
 
-TEST(xfs, is_regular)
+TEST(xunionfs, is_regular)
 {
     XFile* fp;
     const char name[] = "foo.txt";
     bool is_regular;
 
-    xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
-    xfs_close(fp);
-    xfs_is_regular(name, &is_regular);
+    xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    xunionfs_close(fp);
+    xunionfs_is_regular(name, &is_regular);
     TEST_ASSERT_TRUE(is_regular);
 
-    xfs_remove(name);
-    xfs_is_regular(name, &is_regular);
+    xunionfs_remove(name);
+    xunionfs_is_regular(name, &is_regular);
     TEST_ASSERT_FALSE(is_regular);
 
-    xfs_mkdir(name);
-    xfs_is_regular(name, &is_regular);
+    xunionfs_mkdir(name);
+    xunionfs_is_regular(name, &is_regular);
     TEST_ASSERT_FALSE(is_regular);
 }
 
 
-TEST(xfs, is_directory)
+TEST(xunionfs, is_directory)
 {
     XFile* fp;
     const char name[] = "foo.txt";
     bool is_directory;
 
-    xfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
-    xfs_close(fp);
-    xfs_is_directory(name, &is_directory);
+    xunionfs_open(name, X_OPEN_MODE_WRITE_PLUS, &fp);
+    xunionfs_close(fp);
+    xunionfs_is_directory(name, &is_directory);
     TEST_ASSERT_FALSE(is_directory);
 
-    xfs_remove(name);
-    xfs_is_directory(name, &is_directory);
+    xunionfs_remove(name);
+    xunionfs_is_directory(name, &is_directory);
     TEST_ASSERT_FALSE(is_directory);
 
-    xfs_mkdir(name);
-    xfs_is_directory(name, &is_directory);
+    xunionfs_mkdir(name);
+    xunionfs_is_directory(name, &is_directory);
     TEST_ASSERT_TRUE(is_directory);
 }
 
 
-TEST(xfs, makedirs)
+TEST(xunionfs, makedirs)
 {
     const char name[] = "makedirs/bar/baz";
     XError err;
     bool is_directory;
 
-    err = xfs_makedirs(name, false);
+    err = xunionfs_makedirs(name, false);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    xfs_is_directory("makedirs", &is_directory);
+    xunionfs_is_directory("makedirs", &is_directory);
     TEST_ASSERT_TRUE(is_directory);
-    xfs_is_directory("makedirs/bar", &is_directory);
+    xunionfs_is_directory("makedirs/bar", &is_directory);
     TEST_ASSERT_TRUE(is_directory);
-    xfs_is_directory("makedirs/bar/baz", &is_directory);
+    xunionfs_is_directory("makedirs/bar/baz", &is_directory);
     TEST_ASSERT_TRUE(is_directory);
 
-    err = xfs_makedirs(name, false);
+    err = xunionfs_makedirs(name, false);
     TEST_ASSERT_EQUAL(X_ERR_EXIST, err);
 
-    err = xfs_makedirs(name, true);
+    err = xunionfs_makedirs(name, true);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 }
 
 
-TEST(xfs, makedirs2)
+TEST(xunionfs, makedirs2)
 {
     const char name[] = "/makedirs/bar/baz";
     XError err;
     bool is_directory;
 
-    err = xfs_makedirs(name, false);
+    err = xunionfs_makedirs(name, false);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 
-    xfs_is_directory("makedirs", &is_directory);
+    xunionfs_is_directory("makedirs", &is_directory);
     TEST_ASSERT_TRUE(is_directory);
-    xfs_is_directory("makedirs/bar", &is_directory);
+    xunionfs_is_directory("makedirs/bar", &is_directory);
     TEST_ASSERT_TRUE(is_directory);
-    xfs_is_directory("makedirs/bar/baz", &is_directory);
+    xunionfs_is_directory("makedirs/bar/baz", &is_directory);
     TEST_ASSERT_TRUE(is_directory);
 
-    err = xfs_makedirs(name, false);
+    err = xunionfs_makedirs(name, false);
     TEST_ASSERT_EQUAL(X_ERR_EXIST, err);
 
-    err = xfs_makedirs(name, true);
+    err = xunionfs_makedirs(name, true);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
 }
 
 
-TEST_GROUP_RUNNER(xfs)
+TEST_GROUP_RUNNER(xunionfs)
 {
-    RUN_TEST_CASE(xfs, open_write);
-    RUN_TEST_CASE(xfs, open_read);
-    RUN_TEST_CASE(xfs, write);
-    RUN_TEST_CASE(xfs, read);
-    RUN_TEST_CASE(xfs, stat);
-    RUN_TEST_CASE(xfs, tell);
-    RUN_TEST_CASE(xfs, seek);
-    RUN_TEST_CASE(xfs, flush);
-    RUN_TEST_CASE(xfs, mkdir);
-    RUN_TEST_CASE(xfs, opendir);
-    RUN_TEST_CASE(xfs, readdir);
-    RUN_TEST_CASE(xfs, remove);
-    RUN_TEST_CASE(xfs, rename);
-    RUN_TEST_CASE(xfs, open_write_plus);
-    RUN_TEST_CASE(xfs, open_read_plus);
-    RUN_TEST_CASE(xfs, open_append);
-    RUN_TEST_CASE(xfs, open_append_plus);
-    RUN_TEST_CASE(xfs, copyfile);
-    RUN_TEST_CASE(xfs, copytree);
-    RUN_TEST_CASE(xfs, rmtree);
-    RUN_TEST_CASE(xfs, mount);
-    RUN_TEST_CASE(xfs, stream);
-    RUN_TEST_CASE(xfs, putc);
-    RUN_TEST_CASE(xfs, puts);
-    RUN_TEST_CASE(xfs, printf);
-    RUN_TEST_CASE(xfs, exists);
-    RUN_TEST_CASE(xfs, is_regular);
-    RUN_TEST_CASE(xfs, is_directory);
-    RUN_TEST_CASE(xfs, makedirs);
-    RUN_TEST_CASE(xfs, makedirs2);
+    RUN_TEST_CASE(xunionfs, open_write);
+    RUN_TEST_CASE(xunionfs, open_read);
+    RUN_TEST_CASE(xunionfs, write);
+    RUN_TEST_CASE(xunionfs, read);
+    RUN_TEST_CASE(xunionfs, stat);
+    RUN_TEST_CASE(xunionfs, tell);
+    RUN_TEST_CASE(xunionfs, seek);
+    RUN_TEST_CASE(xunionfs, flush);
+    RUN_TEST_CASE(xunionfs, mkdir);
+    RUN_TEST_CASE(xunionfs, opendir);
+    RUN_TEST_CASE(xunionfs, readdir);
+    RUN_TEST_CASE(xunionfs, remove);
+    RUN_TEST_CASE(xunionfs, rename);
+    RUN_TEST_CASE(xunionfs, open_write_plus);
+    RUN_TEST_CASE(xunionfs, open_read_plus);
+    RUN_TEST_CASE(xunionfs, open_append);
+    RUN_TEST_CASE(xunionfs, open_append_plus);
+    RUN_TEST_CASE(xunionfs, copyfile);
+    RUN_TEST_CASE(xunionfs, copytree);
+    RUN_TEST_CASE(xunionfs, rmtree);
+    RUN_TEST_CASE(xunionfs, mount);
+    RUN_TEST_CASE(xunionfs, stream);
+    RUN_TEST_CASE(xunionfs, putc);
+    RUN_TEST_CASE(xunionfs, puts);
+    RUN_TEST_CASE(xunionfs, printf);
+    RUN_TEST_CASE(xunionfs, exists);
+    RUN_TEST_CASE(xunionfs, is_regular);
+    RUN_TEST_CASE(xunionfs, is_directory);
+    RUN_TEST_CASE(xunionfs, makedirs);
+    RUN_TEST_CASE(xunionfs, makedirs2);
 }

@@ -1,5 +1,5 @@
 /**
- *       @file  xfs.h
+ *       @file  xunionfs.h
  *      @brief
  *
  *    @details
@@ -36,8 +36,8 @@
  * SOFTWARE.
  */
 
-#ifndef picox_filesystem_xfs_h_
-#define picox_filesystem_xfs_h_
+#ifndef picox_filesystem_xunionfs_h_
+#define picox_filesystem_xunionfs_h_
 
 
 #include <picox/filesystem/xvfs.h>
@@ -50,7 +50,7 @@ extern "C" {
 
 /** @addtogroup filesystem
  *  @{
- *  @addtogroup  xfs
+ *  @addtogroup  xunionfs
  *  @brief 複数のファイルシステムを透過的に扱うインターフェースを提供します
  *
  *  Unix系のシステムが"/"以下に異なるファイルシステムを次々にマウントして、一つ
@@ -67,22 +67,22 @@ extern "C" {
  */
 
 
-/** @brief xfsの初期化を行います
+/** @brief xunionfsの初期化を行います
  *
- *  全てのxfs_xxx()の呼び出し前にこの関数を呼び出してください。
- *  xfs_deinit()による終了処理を行わずに、再度この関数を呼び出すことは禁止です。
+ *  全てのxunionfs_xxx()の呼び出し前にこの関数を呼び出してください。
+ *  xunionfs_deinit()による終了処理を行わずに、再度この関数を呼び出すことは禁止です。
  */
-void xfs_init();
+void xunionfs_init();
 
 
-/** @brief xfsの終了処理を行います。
+/** @brief xunionfsの終了処理を行います。
  */
-void xfs_deinit();
+void xunionfs_deinit();
 
 
 /** @brief ファイルストリームを初期化します
  */
-XStream* xfs_init_stream(XStream* stream, XFile* fp);
+XStream* xunionfs_init_stream(XStream* stream, XFile* fp);
 
 
 /** @brief 仮想ファイルシステムをディレクトリツリーに接続します
@@ -95,13 +95,13 @@ XStream* xfs_init_stream(XStream* stream, XFile* fp);
  *  + path      != NULL
  *  + realpath  != NULL
  *
- *  "/"以外のパスはすでにxfs内に存在しているディレクトリである必要があります。
+ *  "/"以外のパスはすでにxunionfs内に存在しているディレクトリである必要があります。
  *  そのため、必然的にはじめのマウントパスは"/"です。
  *
  *  マウント先にもともと存在するエントリは不可視となるため、通常は空のディレクト
  *  リに対してマウントを行います。
  */
-XError xfs_mount(XVirtualFs* vfs, const char* path, const char* realpath);
+XError xunionfs_mount(XVirtualFs* vfs, const char* path, const char* realpath);
 
 
 /** @brief ファイルシステムのマウントを解除(アンマウント)します
@@ -109,7 +109,7 @@ XError xfs_mount(XVirtualFs* vfs, const char* path, const char* realpath);
  *  @pre
  *  + path      != NULL
  */
-XError xfs_umount(const char* path);
+XError xunionfs_umount(const char* path);
 
 
 /** @brief ファイルをオープンします
@@ -122,7 +122,7 @@ XError xfs_umount(const char* path);
  *  場合は、*o_fpにはNULLがセットされます。
  *
  */
-XError xfs_open(const char* path, XOpenMode mode, XFile** o_fp);
+XError xunionfs_open(const char* path, XOpenMode mode, XFile** o_fp);
 
 
 /** @brief ファイルをクローズします
@@ -130,12 +130,12 @@ XError xfs_open(const char* path, XOpenMode mode, XFile** o_fp);
  *  クローズされたファイルは無効となり、以降のあらゆる操作は不正となります。
  *
  *  クローズに失敗した場合も、同様にファイルは無効となるため、書き込みを行ったフ
- *  ァイルはクローズの前にxfs_flush()によるバッファのフラッシュを行っておくほう
+ *  ァイルはクローズの前にxunionfs_flush()によるバッファのフラッシュを行っておくほう
  *  がエラー処理を行いやすいです。
  *
  *  fpがNULLを指す場合は何も処理をせずに正常終了を返します。
  */
-XError xfs_close(XFile* fp);
+XError xunionfs_close(XFile* fp);
 
 
 /** @brief ファイルからデータを読み込みます
@@ -151,7 +151,7 @@ XError xfs_close(XFile* fp);
  *  意味します。
  *
  */
-XError xfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
+XError xunionfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
 
 
 /** @brief ファイルにデータを書き込みます
@@ -164,7 +164,7 @@ XError xfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
  *  込みに成功したバイト数を格納します。
  *
  */
-XError xfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
+XError xunionfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
 
 
 /** @brief ファイル位置を変更します
@@ -184,7 +184,7 @@ XError xfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
  *  @see XSeekMode
  *  @see xvfs
  */
-XError xfs_seek(XFile* fp, XOffset offset, XSeekMode whence);
+XError xunionfs_seek(XFile* fp, XOffset offset, XSeekMode whence);
 
 
 /** @brief ファイル位置を取得します
@@ -195,7 +195,7 @@ XError xfs_seek(XFile* fp, XOffset offset, XSeekMode whence);
  *
  *  read, write, seek等で移動するファイル位置の現在値をposに格納します。
  */
-XError xfs_tell(XFile* fp, XSize* pos);
+XError xunionfs_tell(XFile* fp, XSize* pos);
 
 
 /** @brief バッファされたデータを出力します
@@ -211,7 +211,7 @@ XError xfs_tell(XFile* fp, XSize* pos);
  *
  *  クローズやシークの際には暗黙的にフラッシュが行われます。
  */
-XError xfs_flush(XFile* fp);
+XError xunionfs_flush(XFile* fp);
 
 
 /** @brief ディレクトリを作成します
@@ -221,7 +221,7 @@ XError xfs_flush(XFile* fp);
  *
  *  pathが示すディレクトリの作成を試みます。
  */
-XError xfs_mkdir(const char* path);
+XError xunionfs_mkdir(const char* path);
 
 
 /** @brief ディレクトリをオープンします
@@ -233,7 +233,7 @@ XError xfs_mkdir(const char* path);
  *  pathが示すディレクトリをオープンし、そのポインタを*o_dirにセットします。
  *  失敗した場合は、*o_dirにはNULLがセットされます。
  */
-XError xfs_opendir(const char* path, XDir** o_dir);
+XError xunionfs_opendir(const char* path, XDir** o_dir);
 
 
 /** @brief ディレクトリから要素を読み込みます
@@ -246,7 +246,7 @@ XError xfs_opendir(const char* path, XDir** o_dir);
  *  読み込みはdirentが指す領域に行われ、読み込みに成功すると、*resultにはdirent
  *  が格納されます。
  */
-XError xfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
+XError xunionfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
 
 
 /** @brief ディレクトリをクローズします
@@ -255,7 +255,7 @@ XError xfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
  *
  *  dirがNULLを指す場合は何も処理をせずに正常終了を返します。
  */
-XError xfs_closedir(XDir* dir);
+XError xunionfs_closedir(XDir* dir);
 
 
 /** @brief カレントディレクトリを変更します
@@ -263,7 +263,7 @@ XError xfs_closedir(XDir* dir);
  *  @pre
  *  +path   != NULL
  */
-XError xfs_chdir(const char* path);
+XError xunionfs_chdir(const char* path);
 
 
 /** @brief カレントディレクトリを取得します
@@ -273,7 +273,7 @@ XError xfs_chdir(const char* path);
  *
  *  カレントディレクトリパスがsizeバイトに収まらない場合はエラーとなります。
  */
-XError xfs_getcwd(char* buf, size_t size);
+XError xunionfs_getcwd(char* buf, size_t size);
 
 
 /** @brief エントリを削除します
@@ -283,7 +283,7 @@ XError xfs_getcwd(char* buf, size_t size);
  *
  *  パスが示すエントリをファイルシステムから削除します。
  */
-XError xfs_remove(const char* path);
+XError xunionfs_remove(const char* path);
 
 
 /** @brief エントリの名前や位置を変更します
@@ -301,7 +301,7 @@ XError xfs_remove(const char* path);
  *
  *  思わぬ高負荷の要因となることがあるため注意しましょう。
  */
-XError xfs_rename(const char* oldpath, const char* newpath);
+XError xunionfs_rename(const char* oldpath, const char* newpath);
 
 
 /** @brief エントリの状態を取得します
@@ -315,7 +315,7 @@ XError xfs_rename(const char* oldpath, const char* newpath);
  *  @ref
  *  XStat
  */
-XError xfs_stat(const char* path, XStat* statbuf);
+XError xunionfs_stat(const char* path, XStat* statbuf);
 
 
 /** @brief エントリのタイムスタンプを変更します
@@ -325,7 +325,7 @@ XError xfs_stat(const char* path, XStat* statbuf);
  *
  *  パスが示すエントリのタイムスタンプをtimeに変更します
  */
-XError xfs_utime(const char* path, XTime time);
+XError xunionfs_utime(const char* path, XTime time);
 
 
 /** @brief ファイルをコピーします
@@ -336,7 +336,7 @@ XError xfs_utime(const char* path, XTime time);
  *
  *  srcからdstにコピーを行います。
  */
-XError xfs_copyfile(const char* src, const char* dst);
+XError xunionfs_copyfile(const char* src, const char* dst);
 
 
 /** @brief ディレクトリツリーをコピーします
@@ -349,7 +349,7 @@ XError xfs_copyfile(const char* src, const char* dst);
  *
  *  失敗した場合でも、途中で作成されたファイルはそのまま残ります。
  */
-XError xfs_copytree(const char* src, const char* dst);
+XError xunionfs_copytree(const char* src, const char* dst);
 
 
 /** @brief ディレクトリツリーを削除します
@@ -359,7 +359,7 @@ XError xfs_copytree(const char* src, const char* dst);
  *
  *  失敗した場合でも、途中で削除されたファイルは元にはもどりません。
  */
-XError xfs_rmtree(const char* path);
+XError xunionfs_rmtree(const char* path);
 
 
 /** @brief ディレクトリを作成します
@@ -367,13 +367,13 @@ XError xfs_rmtree(const char* path);
  *  @pre
  *  + path  != NULL
  *
- *  xfs_mkdir()と違い、パスの末端のディレクトリを作成するために必要な中間のディ
+ *  xunionfs_mkdir()と違い、パスの末端のディレクトリを作成するために必要な中間のディ
  *  レクトリも作成します。
  *
  *  `exist_ok == true`の場合は、末端のディレクトリが既に存在していた場合も正常終
  *  了を返します。
  */
-XError xfs_makedirs(const char* path, bool exist_ok);
+XError xunionfs_makedirs(const char* path, bool exist_ok);
 
 
 /** @brief ディレクトリツリーを走査します
@@ -385,7 +385,7 @@ XError xfs_makedirs(const char* path, bool exist_ok);
  *  パスが示すディレクトリを再帰的にたどり、各エントリに対してwalker()を呼び出し
  *  ます。
  */
-XError xfs_walktree(const char* path, XFsTreeWalker walker, void* userptr);
+XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr);
 
 
 /** @brief パスが存在するかどうかを判定します
@@ -393,7 +393,7 @@ XError xfs_walktree(const char* path, XFsTreeWalker walker, void* userptr);
  *  @pre
  *  + path      != NULL
  */
-XError xfs_exists(const char* path, bool* exists);
+XError xunionfs_exists(const char* path, bool* exists);
 
 
 /** @brief パスがディレクトリかどうかを判定します
@@ -401,7 +401,7 @@ XError xfs_exists(const char* path, bool* exists);
  *  @pre
  *  + path      != NULL
  */
-XError xfs_is_directory(const char* path, bool* isdir);
+XError xunionfs_is_directory(const char* path, bool* isdir);
 
 
 /** @brief パスが通常ファイルかどうかを判定します
@@ -409,37 +409,37 @@ XError xfs_is_directory(const char* path, bool* isdir);
  *  @pre
  *  + path      != NULL
  */
-XError xfs_is_regular(const char* path, bool* isreg);
+XError xunionfs_is_regular(const char* path, bool* isreg);
 
 
 /** @brief ファイルに1文字を書き込みます
  */
-#define xfs_putc        xvfs_putc
+#define xunionfs_putc        xvfs_putc
 
 
 /** @brief ファイルに文字列を書き込みます
  */
-#define xfs_puts        xvfs_puts
+#define xunionfs_puts        xvfs_puts
 
 
 /** @brief ファイルにprintf形式で文字列を書き込みます
  */
-#define xfs_printf      xvfs_printf
+#define xunionfs_printf      xvfs_printf
 
 
 /** @brief ファイルにvprintf形式で文字列を書き込みます
  */
-#define xfs_vprintf     xvfs_vprintf
+#define xunionfs_vprintf     xvfs_vprintf
 
 
 /** @brief ファイルから1文字を読み込みます
  */
-#define xfs_getc        xvfs_getc
+#define xunionfs_getc        xvfs_getc
 
 
 /** @brief ファイルから1行を読み込みます
  */
-#define xfs_readline    xvfs_readline
+#define xunionfs_readline    xvfs_readline
 
 
 /** @brief ファイルをコピーします
@@ -455,12 +455,12 @@ XError xfs_is_regular(const char* path, bool* isreg);
  *  srcやdstの読み書きのスタート位置は0バイト目からではなく、引数として渡された
  *  時点の位置から終端に達するまでです。
  */
-#define xfs_copyfile2   xvfs_copyfile2
+#define xunionfs_copyfile2   xvfs_copyfile2
 
 
 
 
-/** @} end of addtogroup xfs
+/** @} end of addtogroup xunionfs
  *  @} end of addtogroup filesystem
  */
 
@@ -470,4 +470,4 @@ XError xfs_is_regular(const char* path, bool* isreg);
 #endif /* __cplusplus */
 
 
-#endif /* picox_filesystem_xfs_h_ */
+#endif /* picox_filesystem_xunionfs_h_ */

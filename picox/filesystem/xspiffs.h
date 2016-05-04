@@ -43,7 +43,7 @@ extern "C" {
  *  spiffsではフラットファイル構造が採用されているため、ディレクトリを持てないこ
  *  とに注意してください。
  *
- *  @see xfs
+ *  @see xunionfs
  *  @see xvfs
  *  @{
  */
@@ -84,8 +84,6 @@ void xspiffs_deinit(XSpiFFs* fs);
  *  @pre
  *  + fs    != NULL
  *  + vfs   != NULL
- *
- *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
  */
 void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs);
 XStream* xspiffs_init_stream(XStream* stream, XFile* fp);

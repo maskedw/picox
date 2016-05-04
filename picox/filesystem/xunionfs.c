@@ -1,5 +1,5 @@
 /**
- *       @file  xfs.h
+ *       @file  xunionfs.h
  *      @brief
  *
  *    @details
@@ -36,7 +36,7 @@
  * SOFTWARE.
  */
 
-#include <picox/filesystem/xfs.h>
+#include <picox/filesystem/xunionfs.h>
 #include <picox/container/xintrusive_list.h>
 
 
@@ -123,7 +123,7 @@ X__Fs  x_g_fs;
 static X__Fs* const priv = &x_g_fs;
 
 
-void xfs_init()
+void xunionfs_init()
 {
     xilist_init(&priv->m_mplist);
     priv->m_root = NULL;
@@ -132,7 +132,7 @@ void xfs_init()
 }
 
 
-void xfs_deinit()
+void xunionfs_deinit()
 {
     XIntrusiveNode* ite = xilist_front(&priv->m_mplist);
     XIntrusiveNode* const end = xilist_end(&priv->m_mplist);
@@ -152,13 +152,13 @@ void xfs_deinit()
 }
 
 
-XStream* xfs_init_stream(XStream* stream, XFile* fp)
+XStream* xunionfs_init_stream(XStream* stream, XFile* fp)
 {
     return xvfs_init_stream(stream, fp);
 }
 
 
-XError xfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
+XError xunionfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
 {
     X_ASSERT(vfs);
     X_ASSERT(vpath);
@@ -249,7 +249,7 @@ x__exit:
 }
 
 
-XError xfs_umount(const char* path)
+XError xunionfs_umount(const char* path)
 {
     X_ASSERT(path);
 
@@ -306,7 +306,7 @@ x__exit:
 }
 
 
-XError xfs_open(const char* path, XOpenMode mode, XFile** o_fp)
+XError xunionfs_open(const char* path, XOpenMode mode, XFile** o_fp)
 {
     XError err;
     char buf[X_PATH_MAX];
@@ -322,49 +322,49 @@ x__exit:
 }
 
 
-XError xfs_close(XFile* fp)
+XError xunionfs_close(XFile* fp)
 {
     const XError err = xvfs_close(fp);
     return err;
 }
 
 
-XError xfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
+XError xunionfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
 {
     const XError err = xvfs_write(fp, src, size, nwritten);
     return err;
 }
 
 
-XError xfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
+XError xunionfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
 {
     const XError err = xvfs_read(fp, dst, size, nread);
     return err;
 }
 
 
-XError xfs_seek(XFile* fp, XOffset offset, XSeekMode whence)
+XError xunionfs_seek(XFile* fp, XOffset offset, XSeekMode whence)
 {
     const XError err = xvfs_seek(fp, offset, whence);
     return err;
 }
 
 
-XError xfs_tell(XFile* fp, XSize* pos)
+XError xunionfs_tell(XFile* fp, XSize* pos)
 {
     const XError err = xvfs_tell(fp, pos);
     return err;
 }
 
 
-XError xfs_flush(XFile* fp)
+XError xunionfs_flush(XFile* fp)
 {
     const XError err = xvfs_flush(fp);
     return err;
 }
 
 
-XError xfs_mkdir(const char* path)
+XError xunionfs_mkdir(const char* path)
 {
     XError err;
     char buf[X_PATH_MAX];
@@ -380,7 +380,7 @@ x__exit:
 }
 
 
-XError xfs_opendir(const char* path, XDir** o_dir)
+XError xunionfs_opendir(const char* path, XDir** o_dir)
 {
     XError err;
     char buf[X_PATH_MAX];
@@ -396,21 +396,21 @@ x__exit:
 }
 
 
-XError xfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
+XError xunionfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
     const XError err = xvfs_readdir(dir, dirent, result);
     return err;
 }
 
 
-XError xfs_closedir(XDir* dir)
+XError xunionfs_closedir(XDir* dir)
 {
     const XError err = xvfs_closedir(dir);
     return err;
 }
 
 
-XError xfs_chdir(const char* path)
+XError xunionfs_chdir(const char* path)
 {
     XError err;
     char buf[X_PATH_MAX];
@@ -455,7 +455,7 @@ x__exit:
 }
 
 
-XError xfs_getcwd(char* buf, size_t size)
+XError xunionfs_getcwd(char* buf, size_t size)
 {
     const size_t len = strlen(priv->m_curdir);
     if (len >= size)
@@ -467,7 +467,7 @@ XError xfs_getcwd(char* buf, size_t size)
 }
 
 
-XError xfs_remove(const char* path)
+XError xunionfs_remove(const char* path)
 {
     XError err;
     char buf[X_PATH_MAX];
@@ -496,7 +496,7 @@ x__exit:
 }
 
 
-XError xfs_rename(const char* oldpath, const char* newpath)
+XError xunionfs_rename(const char* oldpath, const char* newpath)
 {
     char oldbuf[X_PATH_MAX];
     char newbuf[X_PATH_MAX];
@@ -534,10 +534,10 @@ XError xfs_rename(const char* oldpath, const char* newpath)
             goto x__exit;
         if (XSTAT_IS_DIRECTORY(statbuf.mode))
         {
-            err = xfs_copytree(oldpath, newpath);
+            err = xunionfs_copytree(oldpath, newpath);
             if (err)
                 goto x__exit;
-            err = xfs_rmtree(oldpath);
+            err = xunionfs_rmtree(oldpath);
         }
         else
         {
@@ -552,7 +552,7 @@ XError xfs_rename(const char* oldpath, const char* newpath)
             if (err)
                 goto x__cleanup;
 
-            err = xfs_copyfile2(oldfp, newfp);
+            err = xunionfs_copyfile2(oldfp, newfp);
             if (err)
                 goto x__cleanup;
 
@@ -568,14 +568,14 @@ x__exit:
 }
 
 
-XError xfs_stat(const char* path, XStat* statbuf)
+XError xunionfs_stat(const char* path, XStat* statbuf)
 {
     char buf[X_PATH_MAX];
     return X__DoStat(path, statbuf, buf);
 }
 
 
-XError xfs_utime(const char* path, XTime time)
+XError xunionfs_utime(const char* path, XTime time)
 {
     XError err;
     char buf[X_PATH_MAX];
@@ -589,21 +589,21 @@ XError xfs_utime(const char* path, XTime time)
 }
 
 
-XError xfs_copyfile(const char* src, const char* dst)
+XError xunionfs_copyfile(const char* src, const char* dst)
 {
     XError err;
     XFile* sfp = NULL;
     XFile* dfp = NULL;
 
-    err = xfs_open(src, X_OPEN_MODE_READ, &sfp);
+    err = xunionfs_open(src, X_OPEN_MODE_READ, &sfp);
     if (err)
         goto x__exit;
 
-    err = xfs_open(dst, X_OPEN_MODE_WRITE, &dfp);
+    err = xunionfs_open(dst, X_OPEN_MODE_WRITE, &dfp);
     if (err)
         goto x__exit;
 
-    err = xfs_copyfile2(sfp, dfp);
+    err = xunionfs_copyfile2(sfp, dfp);
 
 x__exit:
     xvfs_close(sfp);
@@ -613,7 +613,7 @@ x__exit:
 }
 
 
-XError xfs_copytree(const char* src, const char* dst)
+XError xunionfs_copytree(const char* src, const char* dst)
 {
     X_ASSERT_ARG(dst);
     X_ASSERT_ARG(src);
@@ -663,7 +663,7 @@ x__exit:
 }
 
 
-XError xfs_rmtree(const char* path)
+XError xunionfs_rmtree(const char* path)
 {
     X_ASSERT_ARG(path);
 
@@ -686,7 +686,7 @@ x__exit:
 }
 
 
-XError xfs_makedirs(const char* path, bool exist_ok)
+XError xunionfs_makedirs(const char* path, bool exist_ok)
 {
     XError err = X_ERR_NONE;
     char buf[X_PATH_MAX];
@@ -701,7 +701,7 @@ XError xfs_makedirs(const char* path, bool exist_ok)
         memcpy(buf, path, endptr - path);
         buf[endptr - path] = '\0';
 
-        err = xfs_mkdir(buf);
+        err = xunionfs_mkdir(buf);
         if ((err != X_ERR_NONE) && (err != X_ERR_EXIST))
             goto x__exit;
     }
@@ -714,7 +714,7 @@ x__exit:
 }
 
 
-XError xfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
+XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
 {
     X_ASSERT_ARG(path);
     X_ASSERT_ARG(walker);
@@ -763,31 +763,31 @@ x__exit:
 }
 
 
-XError xfs_exists(const char* path, bool* exists)
+XError xunionfs_exists(const char* path, bool* exists)
 {
     X_ASSERT_NULL(exists);
     XStat statbuf;
-    const XError err = xfs_stat(path, &statbuf);
+    const XError err = xunionfs_stat(path, &statbuf);
     *exists = (err == X_ERR_NONE);
     return err;
 }
 
 
-XError xfs_is_directory(const char* path, bool* isdir)
+XError xunionfs_is_directory(const char* path, bool* isdir)
 {
     X_ASSERT_NULL(isdir);
     XStat statbuf;
-    const XError err = xfs_stat(path, &statbuf);
+    const XError err = xunionfs_stat(path, &statbuf);
     *isdir = ((err == X_ERR_NONE) && (XSTAT_IS_DIRECTORY(statbuf.mode)));
     return err;
 }
 
 
-XError xfs_is_regular(const char* path, bool* isreg)
+XError xunionfs_is_regular(const char* path, bool* isreg)
 {
     X_ASSERT_NULL(isreg);
     XStat statbuf;
-    const XError err = xfs_stat(path, &statbuf);
+    const XError err = xunionfs_stat(path, &statbuf);
     *isreg = ((err == X_ERR_NONE) && (XSTAT_IS_REGULAR(statbuf.mode)));
     return err;
 }
@@ -802,7 +802,7 @@ static XError X__ToRealPath(const X__MountPoint* mp, char* vpath)
     const bool is_rroot = xfpath_is_root(mp->m_realpath);
     char* p;
 
-    /* xfsの仮想ファイルパスを、本当のファイルパスに変換したい。基本的には、
+    /* xunionfsの仮想ファイルパスを、本当のファイルパスに変換したい。基本的には、
      * vpath中の、mp->m_vpath部分を、mp->m_realpathに置き換えればいいのだが、
      * いくつか例外があり、わかりづらい。
      *
@@ -1048,7 +1048,7 @@ static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail)
             if (err)
                 break;
 
-            err = xfs_copyfile2(work->srcfp, work->dstfp);
+            err = xunionfs_copyfile2(work->srcfp, work->dstfp);
             if (err)
                 break;
 

@@ -42,13 +42,13 @@ TEST(minIni, minIni)
     long n;
 
     XFile* fp;
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfs_open(inifile, X_OPEN_MODE_WRITE, &fp));
-    TEST_ASSERT_TRUE(xfs_puts(fp, testdata1) >= 0);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfs_close(fp));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xunionfs_open(inifile, X_OPEN_MODE_WRITE, &fp));
+    TEST_ASSERT_TRUE(xunionfs_puts(fp, testdata1) >= 0);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xunionfs_close(fp));
 
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfs_open(inifile2, X_OPEN_MODE_WRITE, &fp));
-    TEST_ASSERT_TRUE(xfs_puts(fp, testdata2) >= 0);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfs_close(fp));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xunionfs_open(inifile2, X_OPEN_MODE_WRITE, &fp));
+    TEST_ASSERT_TRUE(xunionfs_puts(fp, testdata2) >= 0);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xunionfs_close(fp));
 
     /* string reading */
     n = ini_gets("first", "string", "dummy", str, sizearray(str), inifile);

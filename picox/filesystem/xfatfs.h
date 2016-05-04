@@ -61,7 +61,7 @@ extern "C" {
  *  ゲットへの移植時は、まずはFatFsを直接使用して、R/Wが正常に行えることを確認
  *  することからはじめてください。
  *
- *  @see xfs
+ *  @see xunionfs
  *  @see xvfs
  *  @{
  */
@@ -99,8 +99,6 @@ void xfatfs_deinit(XFatFs* fs);
  *  @pre
  *  + fs    != NULL
  *  + vfs   != NULL
- *
- *  初期化されたvfsオブジェクトは、xfsにマウント可能になります。
  */
 void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs);
 XStream* xfatfs_init_stream(XStream* stream, XFile* fp);

@@ -35,7 +35,7 @@ set(picox_sources
     ${picox_dir}/filesystem/xromfs.c
     ${picox_dir}/filesystem/xsinglefs.c
     ${picox_dir}/filesystem/xvfs.c
-    ${picox_dir}/filesystem/xfs.c
+    ${picox_dir}/filesystem/xunionfs.c
     ${picox_dir}/filesystem/xfpath.c
     ${picox_dir}/filesystem/xspiffs.c
     ${picox_dir}/allocator/xstack_allocator.c

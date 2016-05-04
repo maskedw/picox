@@ -495,7 +495,7 @@ XError xfatfs_getcwd(XFatFs* fs, char* buf, size_t size)
     X__ASSERT_TAG(fs);
 
 #if _VOLUMES == 1
-    /* ボリューム数が1の時は、f_getcwd()はボリュームラベルを付加しないが、xfsの
+    /* ボリューム数が1の時は、f_getcwd()はボリュームラベルを付加しないが、xunionfsの
      * 実装上、常にボリュームラベルがついているほうが都合がいい。
      */
     if (size < 3)
