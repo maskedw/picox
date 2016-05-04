@@ -197,7 +197,7 @@ int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* ove
 
     dst[total] = '\0';
     X_ASSIGN_NOT_NULL(result, (dst[0] != '\0') ? dst : NULL);
-    X_ASSIGN_NOT_NULL(overflow, (c != '\n'));
+    X_ASSIGN_NOT_NULL(overflow, (c != '\n') && (c != EOF));
 
     return self->error;
 }

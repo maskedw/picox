@@ -281,10 +281,43 @@ int xstream_getc(XStream* self);
 
 /** @brief ストリームから1行を取り出します
  *
- *  ストリームにはテキストデータが格納されていることが前提です。
- *  行サイズがsizeを超えてる場合は、size - 1までのデータが格納され(末尾は常に
- *  '\0'終端される)、overflowがセットされます。
- *  resultには正常終了時には、dst自身が、エラー時にはNULLがセットされます。
+ *  streamから最大でsize - 1バイトの文字をdstに格納します。読み込みはEOFまたは改
+ *  行文字('\n')まで行われます。
+ *
+ *  std::fgetsとは異なり、改行文字はバッファに含まれません。また、CR('\r')は読み
+ *  捨てするので、Mac形式の改行コードには対応していません。
+ *
+ *  + resultはEOFの時はNULLが、それ以外の時はdstがセットされます。
+ *  + overflowは1行がsizeを超えた時にtrueがセットされます。
+ *
+ *  result, overflowのセットが不要な場合はNULLを渡してください。
+ *
+ *  真面目に処理をする場合、以下の4つのパターンを適切に判定する必要があります。
+ *
+ *  + 正常終了       ((戻り値 0) && (result != NULL))
+ *  + EOF            ((戻り値 0) && (result == NULL))
+ *  + オーバーフロー ((戻り値 0) && (overflow == true))
+ *  + IOエラー       (戻り値 非0)
+ *
+ *   @code {.c}
+ *   // サンプルコード
+ *   for (;;)
+ *   {
+ *       err = xstream_gets(stream, buf, sizeof(buf), result, overflow);
+ *       X_BREAK_IF(err);
+ *       X_BREAK_IF(!result); // EOF
+ *       if (overflow)
+ *       {
+ *           do
+ *           {
+ *               // オーバーフローした行を読み捨てる。
+ *               err = xstream_gets(st, buf, sizeof(buf), result, overflow);
+ *               X_BREAK_IF(err);
+ *           } while (overflow);
+ *       }
+ *       X_BREAK_IF(err);
+ *   }
+ *   @endcode
  */
 int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* overflow);
 
