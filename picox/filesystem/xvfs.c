@@ -371,45 +371,9 @@ int xvfs_getc(XFile* fp)
 
 XError xvfs_gets(XFile* fp, char* dst, size_t size, char** result, bool* overflow)
 {
-    X_ASSERT_SELF(fp);
-    X_ASSERT_NULL(dst);
-    X_ASSERT_NULL(result);
-
-    XError err = X_ERR_NONE;
-    size_t total = 0;
-    bool eof = false;
-    char c;
-
-    *result = NULL;
-    dst[0] = '\0';
-
-    while (total < size - 1)
-    {
-        size_t nread;
-        err = xvfs_read(fp, &c, 1, &nread);
-        if (err)
-            goto x__exit;
-
-        if (nread == 0)
-        {
-            eof = true;
-            break;
-        }
-
-        if (c == '\r')
-            continue;
-
-        if (c == '\n')
-            break;
-        dst[total++] = c;
-    }
-
-    dst[total] = '\0';
-    *result = (dst[0] != '\0') ? dst : NULL;
-    X_ASSIGN_NOT_NULL(overflow, ((c != '\n') && (!eof)));
-
-x__exit:
-    return err;
+    XStream fstream;
+    xvfs_init_stream(&fstream, fp);
+    return xstream_gets(&fstream, dst, size, result, overflow);
 }
 
 
