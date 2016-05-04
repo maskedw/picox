@@ -107,18 +107,9 @@ XError xunionfs_mount(XVirtualFs* vfs, const char* path, const char* realpath);
 XError xunionfs_umount(const char* path);
 
 
-XStream* xunionfs_init_stream(XStream* stream, XFile* fp);
 XError xunionfs_open(const char* path, XOpenMode mode, XFile** o_fp);
-XError xunionfs_close(XFile* fp);
-XError xunionfs_read(XFile* fp, void* dst, size_t size, size_t* nread);
-XError xunionfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten);
-XError xunionfs_seek(XFile* fp, XOffset offset, XSeekMode whence);
-XError xunionfs_tell(XFile* fp, XSize* pos);
-XError xunionfs_flush(XFile* fp);
 XError xunionfs_mkdir(const char* path);
 XError xunionfs_opendir(const char* path, XDir** o_dir);
-XError xunionfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result);
-XError xunionfs_closedir(XDir* dir);
 XError xunionfs_chdir(const char* path);
 XError xunionfs_getcwd(char* buf, size_t size);
 XError xunionfs_remove(const char* path);
@@ -133,15 +124,23 @@ XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr);
 XError xunionfs_exists(const char* path, bool* exists);
 XError xunionfs_is_directory(const char* path, bool* isdir);
 XError xunionfs_is_regular(const char* path, bool* isreg);
-#define xunionfs_putc        xvfs_putc
-#define xunionfs_puts        xvfs_puts
-#define xunionfs_printf      xvfs_printf
-#define xunionfs_vprintf     xvfs_vprintf
-#define xunionfs_getc        xvfs_getc
-#define xunionfs_gets    xvfs_gets
-#define xunionfs_copyfile2   xvfs_copyfile2
 
-
+#define xunionfs_init_stream   xvfs_init_stream
+#define xunionfs_close         xvfs_close
+#define xunionfs_read          xvfs_read
+#define xunionfs_write         xvfs_write
+#define xunionfs_seek          xvfs_seek
+#define xunionfs_tell          xvfs_tell
+#define xunionfs_flush         xvfs_flush
+#define xunionfs_readdir       xvfs_readdir
+#define xunionfs_closedir      xvfs_closedir
+#define xunionfs_putc          xvfs_putc
+#define xunionfs_puts          xvfs_puts
+#define xunionfs_printf        xvfs_printf
+#define xunionfs_vprintf       xvfs_vprintf
+#define xunionfs_getc          xvfs_getc
+#define xunionfs_gets          xvfs_gets
+#define xunionfs_copyfile2     xvfs_copyfile2
 
 
 /** @} end of addtogroup xunionfs

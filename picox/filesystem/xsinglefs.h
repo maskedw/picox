@@ -106,7 +106,6 @@ XError xsinglefs_is_regular(const char* path, bool* isreg);
 #define xsinglefs_copyfile2     xvfs_copyfile2
 
 
-
 /** @} end of addtogroup xsinglefs
  *  @} end of addtogroup filesystem
  */

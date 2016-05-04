@@ -152,12 +152,6 @@ void xunionfs_deinit()
 }
 
 
-XStream* xunionfs_init_stream(XStream* stream, XFile* fp)
-{
-    return xvfs_init_stream(stream, fp);
-}
-
-
 XError xunionfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
 {
     X_ASSERT(vfs);
@@ -322,48 +316,6 @@ x__exit:
 }
 
 
-XError xunionfs_close(XFile* fp)
-{
-    const XError err = xvfs_close(fp);
-    return err;
-}
-
-
-XError xunionfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
-{
-    const XError err = xvfs_write(fp, src, size, nwritten);
-    return err;
-}
-
-
-XError xunionfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
-{
-    const XError err = xvfs_read(fp, dst, size, nread);
-    return err;
-}
-
-
-XError xunionfs_seek(XFile* fp, XOffset offset, XSeekMode whence)
-{
-    const XError err = xvfs_seek(fp, offset, whence);
-    return err;
-}
-
-
-XError xunionfs_tell(XFile* fp, XSize* pos)
-{
-    const XError err = xvfs_tell(fp, pos);
-    return err;
-}
-
-
-XError xunionfs_flush(XFile* fp)
-{
-    const XError err = xvfs_flush(fp);
-    return err;
-}
-
-
 XError xunionfs_mkdir(const char* path)
 {
     XError err;
@@ -392,20 +344,6 @@ XError xunionfs_opendir(const char* path, XDir** o_dir)
     err = xvfs_opendir(mp->m_vfs, buf, o_dir);
 
 x__exit:
-    return err;
-}
-
-
-XError xunionfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
-{
-    const XError err = xvfs_readdir(dir, dirent, result);
-    return err;
-}
-
-
-XError xunionfs_closedir(XDir* dir)
-{
-    const XError err = xvfs_closedir(dir);
     return err;
 }
 
