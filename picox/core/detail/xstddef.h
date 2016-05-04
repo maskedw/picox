@@ -494,6 +494,11 @@ typedef enum
 #define X_LINE_MAX (X_CONF_LINE_MAX)
 
 
+/** @see X_CONF_XFS_TYPE
+ */
+#define X_XFS_TYPE  (X_CONF_XFS_TYPE)
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

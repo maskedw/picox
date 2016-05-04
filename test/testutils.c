@@ -1,5 +1,5 @@
 #include "testutils.h"
-#include <picox/filesystem/xunionfs.h>
+#include <picox/filesystem/xfs.h>
 #include <picox/filesystem/xramfs.h>
 #include <picox/filesystem/xfatfs.h>
 #include <picox/filesystem/xposixfs.h>
@@ -45,14 +45,19 @@ void x_test_init_fs()
 
     X_ASSERT(xramfs_init(ramfs, NULL, 10 * 1024) == X_ERR_NONE);
     xramfs_init_vfs(ramfs, vramfs);
+
+#if X_XFS_TYPE == X_XFS_TYPE_UNION_FS
     xunionfs_init();
     X_ASSERT(xunionfs_mount(vramfs, "/", "/") == X_ERR_NONE);
+#else
+    xsinglefs_init(vramfs);
+#endif
 }
 
 
 void x_test_deinit_fs()
 {
-    xunionfs_deinit();
+    xfs_deinit();
     xramfs_deinit(ramfs);
     x_free(vramfs);
     x_free(ramfs);

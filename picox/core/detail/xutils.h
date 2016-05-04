@@ -60,11 +60,6 @@ extern "C" {
 #endif
 
 
-#define X_BYTE_ORDER_LITTLE    (0)
-#define X_BYTE_ORDER_BIG       (1)
-#define X_BYTE_ORDER_UNKNOWN   (2)
-
-
 #if (X_CONF_BYTE_ORDER != X_BYTE_ORDER_LITTLE) && \
     (X_CONF_BYTE_ORDER != X_BYTE_ORDER_BIG)    && \
     (X_CONF_BYTE_ORDER != X_BYTE_ORDER_UNKNOWN)

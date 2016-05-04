@@ -165,6 +165,11 @@ extern "C" {
 #endif
 
 
+#define X_BYTE_ORDER_LITTLE     (0)
+#define X_BYTE_ORDER_BIG        (1)
+#define X_BYTE_ORDER_UNKNOWN    (2)
+
+
 /** @def   X_CONF_BYTE_ORDER
  *  @brief CPUのバイトオーダーを指定します。
  *
@@ -364,6 +369,34 @@ extern "C" {
  */
 #ifndef X_CONF_PORT_GETTIMEOFDAY
 #define X_CONF_PORT_GETTIMEOFDAY (0)
+#endif
+
+
+#define X_XFS_TYPE_UNION_FS     (0)
+#define X_xFS_TYPE_SINGLE_FS    (1)
+
+
+/** @def   X_CONF_XFS_TYPE
+ *  @brief 標準のファイルシステムタイプを指定します
+ *
+ *  アプリケーションの特性に合わせて以下のどちらかを指定してください
+ *
+ *  + X_XFS_TYPE_UNION_FS (xunionfsを使用する)
+ *  + X_XFS_TYPE_SINGLE_FS (xsinglefsを使用する)
+ *
+ *  xunionfsとxsinglefsは初期化部分と一部の関数以外は共通のインターフェースをも
+ *  っています。例えばX_XFS_TYPE_UNION_FSを指定すると、xfs_open()は
+ *  xunionfs_open()ににdefineで置換されます。
+ *
+ *  xunionfsは複数の仮想ファイルシステムを共通のディレクトリツリーにマウントする
+ *  機能を提供しますが、余分な処理が増えるため、コードサイズや実行時間が増大しま
+ *  す。
+ *
+ *  xsinglefsは単一の仮想ファイルシステムだけを扱います。xunionfsに比べて低機能
+ *  ですが、余分なオーバーヘッドがありません。
+ */
+#ifndef X_CONF_XFS_TYPE
+#define X_CONF_XFS_TYPE     X_XFS_TYPE_UNION_FS
 #endif
 
 

@@ -39,6 +39,7 @@ set(test_sources
     test_xposixfs.c
     test_xramfs.c
     test_xromfs.c
+    test_xfs.c
     test_xvfs.c
     test_xsinglefs.c
     test_xunionfs.c

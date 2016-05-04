@@ -91,19 +91,18 @@ XError xvfs_utime(XVirtualFs* vfs, const char* path, XTime time);
 XError xvfs_exists(XVirtualFs* vfs, const char* path, bool* exists);
 XError xvfs_is_directory(XVirtualFs* vfs, const char* path, bool* isdir);
 XError xvfs_is_regular(XVirtualFs* vfs, const char* path, bool* isreg);
-int xvfs_putc(XFile* fp, int c);
-int xvfs_puts(XFile* fp, const char* str);
-int xvfs_printf(XFile* fp, const char* fmt, ...);
-int xvfs_vprintf(XFile* fp, const char* fmt, va_list args);
-int xvfs_getc(XFile* fp);
-XError xvfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
-
 XError xvfs_copyfile(XVirtualFs* vfs, const char* src, const char* dst);
 XError xvfs_copyfile2(XFile* src, XFile* dst);
 XError xvfs_copytree(XVirtualFs* vfs, const char* src, const char* dst);
 XError xvfs_rmtree(XVirtualFs* vfs, const char* path);
 XError xvfs_makedirs(XVirtualFs* vfs, const char* path, bool exist_ok);
 XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, void* userptr);
+XError xvfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
+int xvfs_putc(XFile* fp, int c);
+int xvfs_puts(XFile* fp, const char* str);
+int xvfs_printf(XFile* fp, const char* fmt, ...);
+int xvfs_vprintf(XFile* fp, const char* fmt, va_list args);
+int xvfs_getc(XFile* fp);
 
 
 /** @} end of addtogroup xvfs
