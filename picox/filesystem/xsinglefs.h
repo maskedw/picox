@@ -68,17 +68,8 @@ extern "C" {
  */
 
 
-/** @brief xsinglefsの初期化を行います
- *
- */
 void xsinglefs_init(XVirtualFs* vfs);
-
-
-/** @brief xsinglefsの終了処理を行います。
- */
 void xsinglefs_deinit();
-
-
 XError xsinglefs_open(const char* path, XOpenMode mode, XFile** o_fp);
 XError xsinglefs_mkdir(const char* path);
 XError xsinglefs_opendir(const char* path, XDir** o_dir);
@@ -111,7 +102,7 @@ XError xsinglefs_is_regular(const char* path, bool* isreg);
 #define xsinglefs_printf        xvfs_printf
 #define xsinglefs_vprintf       xvfs_vprintf
 #define xsinglefs_getc          xvfs_getc
-#define xsinglefs_gets      xvfs_gets
+#define xsinglefs_gets          xvfs_gets
 #define xsinglefs_copyfile2     xvfs_copyfile2
 
 
