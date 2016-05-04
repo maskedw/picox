@@ -439,7 +439,7 @@ XError xunionfs_is_regular(const char* path, bool* isreg);
 
 /** @brief ファイルから1行を読み込みます
  */
-#define xunionfs_readline    xvfs_readline
+#define xunionfs_gets    xvfs_gets
 
 
 /** @brief ファイルをコピーします

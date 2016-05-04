@@ -286,7 +286,7 @@ int xstream_getc(XStream* self);
  *  '\0'終端される)、overflowがセットされます。
  *  resultには正常終了時には、dst自身が、エラー時にはNULLがセットされます。
  */
-int xstream_read_line(XStream* self, char* dst, size_t size, char** result, bool* overflow);
+int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* overflow);
 
 
 /** @brief ストリームにvprintf形式の出力を行います

@@ -88,7 +88,7 @@ void x_test_stream(XStream* stream)
     const int ret = xstream_printf(stream, "%s %s\n", "hello", "world");
     TEST_ASSERT_EQUAL(ret, (int)strlen("hello world\n"));
     TEST_ASSERT_EQUAL(0, xstream_seek(stream, 0, X_SEEK_SET));
-    TEST_ASSERT_EQUAL(0, xstream_read_line(stream, buf, sizeof(buf), NULL, NULL));
+    TEST_ASSERT_EQUAL(0, xstream_gets(stream, buf, sizeof(buf), NULL, NULL));
     TEST_ASSERT_EQUAL_STRING(buf, "hello world");
 }
 

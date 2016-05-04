@@ -369,7 +369,7 @@ int xvfs_getc(XFile* fp)
 }
 
 
-XError xvfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow)
+XError xvfs_gets(XFile* fp, char* dst, size_t size, char** result, bool* overflow)
 {
     X_ASSERT_SELF(fp);
     X_ASSERT_NULL(dst);

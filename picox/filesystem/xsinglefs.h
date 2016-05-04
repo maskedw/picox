@@ -111,7 +111,7 @@ XError xsinglefs_is_regular(const char* path, bool* isreg);
 #define xsinglefs_printf        xvfs_printf
 #define xsinglefs_vprintf       xvfs_vprintf
 #define xsinglefs_getc          xvfs_getc
-#define xsinglefs_readline      xvfs_readline
+#define xsinglefs_gets      xvfs_gets
 #define xsinglefs_copyfile2     xvfs_copyfile2
 
 

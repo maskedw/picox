@@ -97,7 +97,7 @@ XError xvfs_copytree(XVirtualFs* vfs, const char* src, const char* dst);
 XError xvfs_rmtree(XVirtualFs* vfs, const char* path);
 XError xvfs_makedirs(XVirtualFs* vfs, const char* path, bool exist_ok);
 XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, void* userptr);
-XError xvfs_readline(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
+XError xvfs_gets(XFile* fp, char* dst, size_t size, char** result, bool* overflow);
 int xvfs_putc(XFile* fp, int c);
 int xvfs_puts(XFile* fp, const char* str);
 int xvfs_printf(XFile* fp, const char* fmt, ...);

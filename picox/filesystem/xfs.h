@@ -82,7 +82,7 @@
     #define xfs_printf          xunionfs_printf
     #define xfs_vprintf         xunionfs_vprintf
     #define xfs_getc            xunionfs_getc
-    #define xfs_readline        xunionfs_readline
+    #define xfs_gets        xunionfs_gets
     #define xfs_copyfile        xunionfs_copyfile
     #define xfs_copyfile2       xunionfs_copyfile2
     #define xfs_copytree        xunionfs_copytree
@@ -121,7 +121,7 @@
     #define xfs_printf          xsinglefs_printf
     #define xfs_vprintf         xsinglefs_vprintf
     #define xfs_getc            xsinglefs_getc
-    #define xfs_readline        xsinglefs_readline
+    #define xfs_gets        xsinglefs_gets
     #define xfs_copyfile        xsinglefs_copyfile
     #define xfs_copyfile2       xsinglefs_copyfile2
     #define xfs_copytree        xsinglefs_copytree

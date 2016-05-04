@@ -860,7 +860,7 @@ TEST(xunionfs, putc)
     char buf[X_LINE_MAX];
     char* result;
 
-    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_gets(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING(data, buf);
 
     xunionfs_close(fp);
@@ -901,7 +901,7 @@ TEST(xunionfs, puts)
 
     for (i = 0; i < (int)X_COUNT_OF(data); i++)
     {
-        xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
+        xunionfs_gets(fp, buf, sizeof(buf), &result, NULL);
         TEST_ASSERT_EQUAL_STRING(data[i], buf);
     }
 
@@ -934,13 +934,13 @@ TEST(xunionfs, printf)
     char buf[X_LINE_MAX];
     char* result;
 
-    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_gets(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING("Hello world 0", buf);
 
-    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_gets(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING("Hello world 1", buf);
 
-    xunionfs_readline(fp, buf, sizeof(buf), &result, NULL);
+    xunionfs_gets(fp, buf, sizeof(buf), &result, NULL);
     TEST_ASSERT_EQUAL_STRING("Hello world 2", buf);
 
     xunionfs_close(fp);

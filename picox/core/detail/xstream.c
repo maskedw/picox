@@ -176,7 +176,7 @@ int xstream_getc(XStream* self)
 }
 
 
-int xstream_read_line(XStream* self, char* dst, size_t size, char** result, bool* overflow)
+int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* overflow)
 {
     X_ASSERT(self);
     X_ASSERT(dst);
