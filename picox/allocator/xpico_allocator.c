@@ -154,9 +154,6 @@ void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t new_size)
         old_size = *(size_t*)p;
     }
 
-    if (old_size == new_size)
-        return old_mem;
-
     void* const new_mem = xpalloc_allocate(self, new_size);
     if (!new_mem)
         return NULL;
