@@ -281,8 +281,8 @@ XError xposixfs_mkdir(XPosixFs* fs, const char* path)
 
     XError err = X_ERR_NONE;
 
-#ifdef _WIN32
-    const int result = mkdir(path);
+#ifdef __MINGW32__
+    const int result = _mkdir(path);
 #else
     const int result = mkdir(path, 0777);
 #endif
