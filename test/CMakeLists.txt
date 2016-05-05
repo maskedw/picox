@@ -80,6 +80,6 @@ add_dependencies(picox_tests picox)
 
 add_custom_target(run_tests ALL DEPENDS picox_tests)
 add_custom_command(TARGET run_tests POST_BUILD
-    COMMAND size ./picox_tests
-    COMMAND ./picox_tests
+    COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
+    COMMAND ./$<TARGET_FILE_NAME:picox_tests>
     )
