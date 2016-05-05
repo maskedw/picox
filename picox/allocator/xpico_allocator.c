@@ -57,7 +57,6 @@ typedef struct X__Chunk
 static void* X__Allocate(XPicoAllocator* self, size_t size);
 static void X__Deallocate(XPicoAllocator* self, void* ptr, size_t size);
 #define X__ALIGN        (self->alignment)
-#define X__HEADER_SIZE  (x_roundup_multiple(sizeof(X__Chunk), self->alignment))
 
 
 bool xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment)
@@ -119,9 +118,11 @@ void* xpalloc_allocate(XPicoAllocator* self, size_t size)
     char* ptr;
 
     /* サイズ情報確保用の領域を余分に確保する。 */
-    size = x_roundup_multiple(size + X__HEADER_SIZE + 1, X__ALIGN);
-    ptr = X__Allocate(self, size);
+    size = x_roundup_multiple(size + X__ALIGN, X__ALIGN);
+    if (size <= sizeof(X__Chunk))
+        size = x_roundup_multiple(sizeof(X__Chunk) + 1, X__ALIGN);
 
+    ptr = X__Allocate(self, size);
     X_ASSERT_MALLOC_NULL(ptr);
 
     if (ptr != NULL)
