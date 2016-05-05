@@ -340,24 +340,18 @@ XError xposixfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
     X__ASSERT_TAG(dir->m_fs);
 
     XError err = X_ERR_NONE;
+    DIR* const realdir = X__GET_REAL_DIR(dir);
+
     *result = NULL;
-    struct dirent* const realent = x_malloc(sizeof(struct dirent));
+    errno = 0;
+    struct dirent* const realent = readdir(realdir);
+
     if (!realent)
     {
-        err = X_ERR_NO_MEMORY;
+        if (errno != 0)
+            err = X__GetError();
         goto x__exit;
     }
-
-    DIR* const realdir = X__GET_REAL_DIR(dir);
-    struct dirent* realret;
-    if (readdir_r(realdir, realent, &realret) != 0)
-    {
-        err = X__GetError();
-        goto x__exit;
-    }
-
-    if (!realret)
-        goto x__exit;
 
     const size_t len = strlen(realent->d_name);
     if (len >= X_NAME_MAX)
@@ -370,7 +364,6 @@ XError xposixfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
     *result = dirent;
 
 x__exit:
-    x_free(realent);
 
     return err;
 }
