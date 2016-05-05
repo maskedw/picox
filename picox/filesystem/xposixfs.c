@@ -141,6 +141,23 @@ XError xposixfs_open(XPosixFs* fs, const char* path, XOpenMode mode, XFile** o_f
         goto x__exit;
     }
 
+#ifdef __MINGW32__
+    /* https://linuxjm.osdn.jp/html/LDP_man-pages/man3/fopen.3.html
+     * 上記リンク先の"a"モードの説明では、オープン時のストリームはファイルの最後
+     * に位置されるとあるが、MinGWではftell()で取得する値が0になってしまう。
+     * 書き込みの時はちゃんと末尾に書き込まれるので、特に問題ないのだが、他のモ
+     * ジュールとの動作の対称性のために、明示的に末尾に移動させておく。
+     */
+    if (mode == X_OPEN_MODE_APPEND)
+    {
+        if (fseek(realfp, 0, SEEK_END))
+        {
+            err = X__GetError();
+            goto x__exit;
+        }
+    }
+#endif
+
     X__FileStorage* buf = x_malloc(sizeof(X__FileStorage));
     if (! buf)
     {
