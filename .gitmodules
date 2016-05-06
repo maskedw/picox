@@ -1,24 +1,35 @@
 [submodule "picox_external/spiffs"]
 	path = picox_external/spiffs
 	url = https://github.com/maskedw/spiffs
+	ignore = dirty
 [submodule "picox_external/fatfs"]
 	path = picox_external/fatfs
 	url = https://github.com/maskedw/fatfs.git
+	ignore = dirty
 [submodule "picox_external/sds"]
 	path = picox_external/sds
 	url = https://github.com/maskedw/sds.git
+	ignore = dirty
 [submodule "picox_external/Unity"]
 	path = picox_external/Unity
 	url = https://github.com/maskedw/Unity.git
+	ignore = dirty
 [submodule "picox_external/uthash"]
 	path = picox_external/uthash
 	url = https://github.com/maskedw/uthash.git
+	ignore = dirty
 [submodule "picox_external/minIni"]
 	path = picox_external/minIni
 	url = https://github.com/maskedw/minIni.git
+	ignore = dirty
 [submodule "picox_external/libfixmath"]
 	path = picox_external/libfixmath
 	url = https://github.com/maskedw/libfixmath.git
+	ignore = dirty
 [submodule "docs/wiki"]
 	path = docs/wiki
 	url = https://github.com/maskedw/picox.wiki.git
+[submodule "docs/apidoc"]
+	path = docs/apidoc
+	url = https://github.com/maskedw/picox_apidoc.git
+	ignore = dirty
