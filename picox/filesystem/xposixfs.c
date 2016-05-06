@@ -446,7 +446,7 @@ XError xposixfs_remove(XPosixFs* fs, const char* path)
      */
     struct stat buf;
     int ret;
-    if (ret = stat(path, &buf))
+    if ((ret = stat(path, &buf)) != 0)
     {
         err = X__GetError();
         goto x__exit;

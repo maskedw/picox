@@ -3,14 +3,6 @@
  *      @brief  ノード侵入型のダブルリンクリストコンテナです。
  *
  *    @details
- *    格納するデータ自身が、リストノードを持っている必要があるという点が一般的な
- *    リストコンテナとの違いです。
- *
- *    使い方に癖はありますが、強力なデータ構造なのでOSの実装には、知る限りでは必
- *    ず使用されています。
- *    注意点は格納するデータの寿命管理をユーザー側で行わなければならないというこ
- *    とです。
- *    stackのデータを格納する際は特に注意してください。
  *
  *     @author  MaskedW
  *
@@ -52,12 +44,27 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup container
+ *  @{
+ *  @addtogroup xintrusive_list
+ *  @brief ノード侵入型ダブルリンクリストモジュール
+ *
+ *  通常のリストコンテナでは、データの格納時に動的メモリ確保が必須ですが、ノード
+ *  侵入型の場合、ノード侵入型の場合、データ自身がノードをメンバとして保持してい
+ *  るので、動的メモリ確保が不要です。
+ *
+ *  データのコピーがおこわれないため、使い方に癖がありますが、強力なデータ構造な
+ *  ので、特にOSの実装でよく使用されています。
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 
-/** リストノードです。
+/** @brief 双方向リンリストリストノード
  *
  *  リストに格納するデータはノードメンバを1つ以上含む必要があります。
  *  @code
@@ -84,7 +91,7 @@ typedef struct XIntrusiveNode
 } XIntrusiveNode;
 
 
-/** リストノードデータを格納するコンテナです。
+/** @brief リストノードデータを格納するコンテナ
  */
 typedef struct XIntrusiveList
 {
@@ -93,7 +100,7 @@ typedef struct XIntrusiveList
 } XIntrusiveList;
 
 
-/** XIntrusiveNodeにオーバーラップする型のポインタを取り出します。
+/** @brief XIntrusiveNodeにオーバーラップする型のポインタを取り出します
  *
  *  @param ptr      XIntrusiveNode*
  *  @param type     取り出す型
@@ -110,7 +117,7 @@ typedef struct XIntrusiveList
 #define xnode_entry(ptr, type, member)  X_CONTAINER_OF(ptr, type, member)
 
 
-/** ノードのリンクを解除します。
+/** @brief ノードのリンクを解除します
  *
  *  @pre
  *  + nodeはどこかのリストに格納済みであること
@@ -123,7 +130,7 @@ xnode_unlink(XIntrusiveNode* node)
 }
 
 
-/** p1の後ろにp2を挿入します。
+/** @brief p1の後ろにp2を挿入します
  */
 static inline void
 xnode_insert_prev(XIntrusiveNode* p1, XIntrusiveNode* p2)
@@ -135,7 +142,7 @@ xnode_insert_prev(XIntrusiveNode* p1, XIntrusiveNode* p2)
 }
 
 
-/** p1の前にp2を挿入します。
+/** @brief p1の前にp2を挿入します
  */
 static inline void
 xnode_insert_next(XIntrusiveNode* p1, XIntrusiveNode* p2)
@@ -147,7 +154,7 @@ xnode_insert_next(XIntrusiveNode* p1, XIntrusiveNode* p2)
 }
 
 
-/** p1のリンクをにp2に置換えます。
+/** @brief p1のリンクをにp2に置換えます
  */
 static inline void
 xnode_replace(XIntrusiveNode* p1, XIntrusiveNode* p2)
@@ -159,7 +166,7 @@ xnode_replace(XIntrusiveNode* p1, XIntrusiveNode* p2)
 }
 
 
-/** prev, next間にlistを連結します。
+/** @brief prev, next間にlistを連結します
  */
 static inline void
 xnode_splice(XIntrusiveNode* prev, XIntrusiveNode* next, XIntrusiveList* list)
@@ -174,7 +181,7 @@ xnode_splice(XIntrusiveNode* prev, XIntrusiveNode* next, XIntrusiveList* list)
 }
 
 
-/** コンテナを初期化します。
+/** @brief コンテナを初期化します
  */
 static inline void
 xilist_init(XIntrusiveList* self)
@@ -184,7 +191,7 @@ xilist_init(XIntrusiveList* self)
 }
 
 
-/** コンテナのルートノードのポインタを返します。
+/** @brief コンテナのルートノードのポインタを返します
  */
 static inline XIntrusiveNode*
 xilist_head(XIntrusiveList* self)
@@ -194,7 +201,7 @@ xilist_head(XIntrusiveList* self)
 }
 
 
-/** コンテナを空にします。
+/** @brief コンテナを空にします
  */
 static inline void
 xilist_clear(XIntrusiveList* self)
@@ -204,7 +211,7 @@ xilist_clear(XIntrusiveList* self)
 }
 
 
-/** コンテナが空かどうかを返します。
+/** @brief コンテナが空かどうかを返します
  */
 static inline bool
 xilist_empty(const XIntrusiveList* self)
@@ -214,7 +221,7 @@ xilist_empty(const XIntrusiveList* self)
 }
 
 
-/** コンテナの終端を指すノードを返します。
+/** @brief コンテナの終端を指すノードを返します
  */
 static inline XIntrusiveNode*
 xilist_end(const XIntrusiveList* self)
@@ -224,7 +231,7 @@ xilist_end(const XIntrusiveList* self)
 }
 
 
-/** コンテナの先頭ノードを返します。
+/** @brief コンテナの先頭ノードを返します
  */
 static inline XIntrusiveNode*
 xilist_front(const XIntrusiveList* self)
@@ -234,7 +241,7 @@ xilist_front(const XIntrusiveList* self)
 }
 
 
-/** コンテナの末尾ノードを返します。
+/** @brief コンテナの末尾ノードを返します
  */
 static inline XIntrusiveNode*
 xilist_back(const XIntrusiveList* self)
@@ -244,16 +251,16 @@ xilist_back(const XIntrusiveList* self)
 }
 
 
-/** コンテナ先頭から順方向走査します。
+/** @brief コンテナ先頭から順方向走査します
  *
  *  @param ite  XIntrusiveNode*
- *  ループ毎に、iteratorには次要素が格納されます。
+ *  ループ毎に、iteratorには次要素が格納されます
  *
  *  @attention
- *  ループ中に、ノードを除去したり、コンテナを操作する場合はforeach()を使用しな
- *  いでください。iterator自身がコンテナから除去されると、ループが行えなくなるか
- *  らです。イテレータが除去されるループは面倒ですが自分でループを書く必要があり
- *  ます。
+ *  ループ中にノードを除去したり、コンテナを操作する場合はforeach()を使用しない
+ *  でください。iterator自身がコンテナから除去されると、ループが行えなくなるから
+ *  です。イテレータが除去されるループは面倒ですが自分でループを書く必要がありま
+ *  す。
  *
  *  @code
  *  // [NG] リンクを解除した時点でイテレートできなくなる
@@ -304,7 +311,7 @@ xilist_back(const XIntrusiveList* self)
          ite  = ite->next)
 
 
-/** コンテナ末尾から逆方向走査します。
+/** @brief コンテナ末尾から逆方向走査します
  *
  *  @see xilist_foreach
  */
@@ -314,7 +321,7 @@ xilist_back(const XIntrusiveList* self)
          ite  = ite->prev)
 
 
-/** ノード数を返します。
+/** @brief ノード数を返します
  */
 static inline size_t
 xilist_size(const XIntrusiveList* self)
@@ -329,7 +336,7 @@ xilist_size(const XIntrusiveList* self)
 }
 
 
-/** ノード数が1つかどうかを返します。
+/** @brief ノード数が1つかどうかを返します
  */
 static inline bool
 xilist_is_singular(const XIntrusiveList* self)
@@ -339,7 +346,7 @@ xilist_is_singular(const XIntrusiveList* self)
 }
 
 
-/** ノードを先頭に追加します。
+/** @brief ノードを先頭に追加します
  *
  *  @pre
  *  + node != NULL
@@ -353,7 +360,7 @@ xilist_push_front(XIntrusiveList* self, XIntrusiveNode* node)
 }
 
 
-/** ノードを末尾に追加します。
+/** @brief ノードを末尾に追加します
  *
  *  @pre
  *  + node != NULL
@@ -367,7 +374,7 @@ xilist_push_back(XIntrusiveList* self, XIntrusiveNode* node)
 }
 
 
-/** ノードのリンクを解除してから先頭に追加します。
+/** @brief ノードのリンクを解除してから先頭に追加しま。
  *
  *  @pre
  *  + node != NULL
@@ -382,7 +389,7 @@ xilist_move_front(XIntrusiveList* self, XIntrusiveNode* node)
 }
 
 
-/** ノードのリンクを解除してから末尾に追加します。
+/** @brief ノードのリンクを解除してから末尾に追加します
  *
  *  @pre
  *  + node != NULL
@@ -397,7 +404,7 @@ xilist_move_back(XIntrusiveList* self, XIntrusiveNode* node)
 }
 
 
-/** otherを先頭に連結します。
+/** @brief otherを先頭に連結します
  *
  *  @pre
  *  + other != NULL
@@ -415,7 +422,7 @@ xilist_splice_front(XIntrusiveList* self, XIntrusiveList* other)
 }
 
 
-/** otherを末尾に連結します。
+/** @brief otherを末尾に連結します
  *
  *  @pre
  *  + other != NULL
@@ -433,7 +440,7 @@ xilist_splice_back(XIntrusiveList* self, XIntrusiveList* other)
 }
 
 
-/** 2つのリストの中身を入れ替えます。
+/** @brief 2つのリストの中身を入れ替えます
  *
  *  @pre
  *  + other != NULL
@@ -464,7 +471,7 @@ xilist_swap(XIntrusiveList* self, XIntrusiveList* other)
 }
 
 
-/** 先頭にotherの先頭要素からpos(pos自身も含む)までを転送します。
+/** @brief 先頭にotherの先頭要素からpos(pos自身も含む)までを転送します
  *
  *  @pre
  *  + other != NULL
@@ -489,7 +496,7 @@ xilist_transfer_front(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNod
 }
 
 
-/** 末尾にotherの先頭要素からpos(pos自身も含む)までを転送します。
+/** @brief 末尾にotherの先頭要素からpos(pos自身も含む)までを転送します
  *
  *  @pre
  *  + other != NULL
@@ -517,6 +524,11 @@ xilist_transfer_back(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+
+/** @} end of addtogroup xintrusive_list
+ *  @} end of addtogroup container
+ */
 
 
 #endif // picox_container_xintrusive_list_h_

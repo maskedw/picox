@@ -43,18 +43,27 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup container
+ *  @{
+ *  @addtogroup xbyte_array
+ *  @brief 可変長バイト配列モジュール
+ *
+ *  データはメモリ上に連続して配置されることを保証しているので、データポインタは
+ *  、配列を操作するAPIに直接渡すことができます。
+ *
+ *  型がuint8_t固定なのでstd::vector<>に比べると使い勝手は数段劣りますが、それで
+ *  も十分便利です。パフォーマンスを多少犠牲にしてバイトデータとして扱えば、
+ *  uint8_t以外の型を格納することも可能です。
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 
-/** 可変長バイト配列を管理する構造体です
- *
- *  データはメモリ上に連続して配置されることを保証しているので、データポインタは
- *  、配列を操作するAPIに直接渡すことができます。
- *  型がuint8_t固定なのでstd::vector<>に比べると使い勝手は数段劣りますが、それで
- *  も十分便利です。パフォーマンスを多少犠牲にしてバイトデータとして扱えば、
- *  uint8_t以外の型を格納することも可能です。
+/** @brief 可変長バイト配列管理構造体
  */
 typedef struct
 {
@@ -66,7 +75,7 @@ typedef struct
 } XByteArray;
 
 
-/** バッファを初期化します
+/** @brief バッファを初期化します
  *
  *  @param buffer 可変長バイト配列に使用するメモリ領域
  *  @param size   バッファサイズ
@@ -96,7 +105,7 @@ xbarray_init(XByteArray* self, void* buffer, size_t size)
 }
 
 
-/** バッファを破棄します
+/** @brief バッファを破棄します
  */
 static inline void
 xbarray_deinit(XByteArray* self)
@@ -113,7 +122,7 @@ xbarray_deinit(XByteArray* self)
 }
 
 
-/** バッファ先頭を指すコンストポインタを返します
+/** @brief バッファ先頭を指すコンストポインタを返します
  */
 static inline const uint8_t*
 xbarray_const_data(const XByteArray* self)
@@ -123,7 +132,7 @@ xbarray_const_data(const XByteArray* self)
 }
 
 
-/** バッファ先頭を指すポインタを返します
+/** @brief バッファ先頭を指すポインタを返します
  */
 static inline uint8_t*
 xbarray_data(XByteArray* self)
@@ -132,7 +141,7 @@ xbarray_data(XByteArray* self)
 }
 
 
-/** バッファ先頭からnバイト後方を指すコンストポインタを返します
+/** @brief バッファ先頭からnバイト後方を指すコンストポインタを返します
  */
 static inline const uint8_t*
 xbarray_const_at(const XByteArray* self, size_t index)
@@ -143,7 +152,7 @@ xbarray_const_at(const XByteArray* self, size_t index)
 }
 
 
-/** バッファ先頭からnバイト後方を指すポインタを返します
+/** @brief バッファ先頭からnバイト後方を指すポインタを返します
  */
 static inline uint8_t*
 xbarray_at(XByteArray* self, size_t index)
@@ -152,7 +161,7 @@ xbarray_at(XByteArray* self, size_t index)
 }
 
 
-/** バッファに格納されたバイト数を返します
+/** @brief バッファに格納されたバイト数を返します
  */
 static inline size_t
 xbarray_size(const XByteArray* self)
@@ -162,7 +171,7 @@ xbarray_size(const XByteArray* self)
 }
 
 
-/** バッファに割り当てられたバイト数を返します
+/** @brief バッファに割り当てられたバイト数を返します
  */
 static inline size_t
 xbarray_capacity(const XByteArray* self)
@@ -172,7 +181,7 @@ xbarray_capacity(const XByteArray* self)
 }
 
 
-/** バッファが空かどうかを返します
+/** @brief バッファが空かどうかを返します
  */
 static inline bool
 xbarray_empty(const XByteArray* self)
@@ -182,7 +191,7 @@ xbarray_empty(const XByteArray* self)
 }
 
 
-/** バッファが拡張なしで格納できる上限に達しているかどうかを返します
+/** @brief バッファが拡張なしで格納できる上限に達しているかどうかを返します
  */
 static inline bool
 xbarray_full(const XByteArray* self)
@@ -192,7 +201,7 @@ xbarray_full(const XByteArray* self)
 }
 
 
-/** バッファが拡張なしで格納できる空きバイト数を返します
+/** @brief バッファが拡張なしで格納できる空きバイト数を返します
  */
 static inline size_t
 xbarray_space(const XByteArray* self)
@@ -202,7 +211,7 @@ xbarray_space(const XByteArray* self)
 }
 
 
-/** バッファの要素数を0にします
+/** @brief バッファの要素数を0にします
  */
 static inline void
 xbarray_clear(XByteArray* self)
@@ -212,7 +221,7 @@ xbarray_clear(XByteArray* self)
 }
 
 
-/** バッファをvalueで埋めます
+/** @brief バッファをvalueで埋めます
  */
 static inline void
 xbarray_fill(XByteArray* self, uint8_t value)
@@ -222,7 +231,7 @@ xbarray_fill(XByteArray* self, uint8_t value)
 }
 
 
-/** バッファにsizeバイト以上の容量を確保します
+/** @brief バッファにsizeバイト以上の容量を確保します
  *
  *  @retval true  メモリ確保成功
  *  @retval false メモリ確保失敗
@@ -258,7 +267,7 @@ xbarray_reserve(XByteArray* self, size_t size)
 }
 
 
-/** sizeバイトを格納する空き容量がない場合、バッファを拡張します
+/** @brief sizeバイトを格納する空き容量がない場合、バッファを拡張します
  *
  *  @retval true  メモリ確保成功
  *  @retval false メモリ確保失敗
@@ -280,7 +289,7 @@ xbarray_make_space_if(XByteArray* self, size_t size)
 }
 
 
-/** X_ASSERT()による検査を行うxbarray_make_space_if()です
+/** @brief X_ASSERT()による検査を行うxbarray_make_space_if()です
  */
 static inline void
 xbarray_strict_make_space_if(XByteArray* self, size_t size)
@@ -291,7 +300,7 @@ xbarray_strict_make_space_if(XByteArray* self, size_t size)
 }
 
 
-/** バッファ末尾にsrcからsizeバイトを追加します
+/** @brief バッファ末尾にsrcからsizeバイトを追加します
  */
 static inline void
 xbarray_push_back_n(XByteArray* self, const void* src, size_t size)
@@ -305,7 +314,7 @@ xbarray_push_back_n(XByteArray* self, const void* src, size_t size)
 }
 
 
-/** バッファ末尾にvalueを追加します
+/** @brief バッファ末尾にvalueを追加します
  */
 static inline void
 xbarray_push_back(XByteArray* self, uint8_t value)
@@ -318,7 +327,7 @@ xbarray_push_back(XByteArray* self, uint8_t value)
 }
 
 
-/** バッファ末尾からsizeバイトを除去します
+/** @brief バッファ末尾からsizeバイトを除去します
  *
  *  dstがNULLでなければ除去されるデータがdstにコピーされます
  */
@@ -335,7 +344,7 @@ xbarray_pop_back_n(XByteArray* self, void* dst, size_t size)
 }
 
 
-/** バッファ末尾から1バイトを除去して返します
+/** @brief バッファ末尾から1バイトを除去して返します
  */
 static inline uint8_t
 xbarray_pop_back(XByteArray* self)
@@ -348,7 +357,7 @@ xbarray_pop_back(XByteArray* self)
 }
 
 
-/** バッファの容量を有効バイト数まで切り詰めます
+/** @brief バッファの容量を有効バイト数まで切り詰めます
  *
  *  メモリ再配置によるオーバーヘッドを減らすために、メモリ伸長時はある程度多めに
  *  確保を行います。
@@ -372,7 +381,7 @@ xbarray_shrink_to_fit(XByteArray* self)
 }
 
 
-/** バッファ先頭からn番目にsrcからsizeバイトを挿入します
+/** @brief バッファ先頭からn番目にsrcからsizeバイトを挿入します
  */
 static inline void
 xbarray_insert_n(XByteArray* self, size_t index, const void* src, size_t size)
@@ -397,7 +406,7 @@ xbarray_insert_n(XByteArray* self, size_t index, const void* src, size_t size)
 }
 
 
-/** バッファ先頭からn番目にvalueを挿入します
+/** @brief バッファ先頭からn番目にvalueを挿入します
  */
 static inline void
 xbarray_insert(XByteArray* self, size_t index, uint8_t value)
@@ -406,7 +415,7 @@ xbarray_insert(XByteArray* self, size_t index, uint8_t value)
 }
 
 
-/** バッファ先頭からn番目 ~ n + sizeの範囲を除去します
+/** @brief バッファ先頭からn番目 ~ n + sizeの範囲を除去します
  */
 static inline void
 xbarray_erase_n(XByteArray* self, size_t index, size_t size)
@@ -421,7 +430,7 @@ xbarray_erase_n(XByteArray* self, size_t index, size_t size)
 }
 
 
-/** バッファ先頭からn番目を除去します
+/** @brief バッファ先頭からn番目を除去します
  */
 static inline void
 xbarray_erase(XByteArray* self, size_t index)
@@ -433,6 +442,11 @@ xbarray_erase(XByteArray* self, size_t index)
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+
+/** @} end of addtogroup xbyte_array
+ *  @} end of addtogroup container
+ */
 
 
 #endif /* picox_container_xbyte_array_h_ */

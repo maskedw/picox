@@ -1,6 +1,6 @@
 /**
  *       @file  xfifo_buffer.h
- *      @brief  First In First OutŒ`®‚Ìƒoƒbƒtƒ@
+ *      @brief
  *
  *    @details
  *
@@ -43,14 +43,25 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup container
+ *  @{
+ *  @addtogroup xfifo_buffer
+ *  @brief FIFOãƒã‚¤ãƒˆãƒãƒƒãƒ•ã‚¡
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 
+/** @brief ã‚¢ãƒˆãƒŸãƒƒã‚¯ã«size_tå¤‰æ•°ã«ä»£å…¥ã‚’è¡Œã†é–¢æ•°ãƒã‚¤ãƒ³ã‚¿ */
 typedef void(*XFifoAtomicAssigner)(size_t* dst, size_t value);
 
 
+/** @brief FIFOãƒã‚¤ãƒˆãƒãƒƒãƒ•ã‚¡ç®¡ç†æ§‹é€ ä½“
+ */
 typedef struct XFifoBuffer
 {
 /// @privatesection
@@ -62,7 +73,7 @@ typedef struct XFifoBuffer
 } XFifoBuffer;
 
 
-/* “à•”ˆ——p‚Ìƒ}ƒNƒ */
+/* å†…éƒ¨å‡¦ç†ç”¨ã®ãƒã‚¯ãƒ­ */
 #define XFIFO__ADD_FIRST(x)          ((self->first + x) & self->capacity)
 #define XFIFO__ADD_LAST(x)           ((self->last  + x) & self->capacity)
 
@@ -74,42 +85,42 @@ XFifoDefaultAtomicAssign(size_t* dst, size_t value)
 }
 
 
-/** ƒoƒbƒtƒ@‚ğ‰Šú‰»‚µ‚Ü‚·B
+/** @brief ãƒãƒƒãƒ•ã‚¡ã‚’åˆæœŸåŒ–ã—ã¾ã™ã€‚
  *
- *  @param buffer   ƒf[ƒ^Ši”[æ
- *  @param size     buffer‚ÌƒoƒCƒg”
- *  @param assigner “à•”RWƒ|ƒCƒ“ƒ^‘‚«Š·‚¦ŠÖ”
+ *  @param buffer   ãƒ‡ãƒ¼ã‚¿æ ¼ç´å…ˆ
+ *  @param size     bufferã®ãƒã‚¤ãƒˆæ•°
+ *  @param assigner å†…éƒ¨RWãƒã‚¤ãƒ³ã‚¿æ›¸ãæ›ãˆé–¢æ•°
  *
  *  @pre
  *  + buffer != NULL
- *  + size‚Í2‚Ì‚×‚«æ‚Å‚ ‚é‚±‚ÆB
+ *  + sizeã¯2ã®ã¹ãä¹—ã§ã‚ã‚‹ã“ã¨ã€‚
  *
  *  @details
- *  assigner‚ªNULL‚Ìê‡‚ÍXFifoDefaultAtomicAssign()‚ªg—p‚³‚ê‚Ü‚·B
- *  buffer‚Í‚±‚ÌƒIƒuƒWƒFƒNƒg‚ª•s—v‚É‚È‚é‚Ü‚ÅAƒ†[ƒU[‘¤‚ª•Û‚µ‚Ä‚¨‚­•K—v‚ª‚ ‚è
- *  ‚Ü‚·B
+ *  assignerãŒNULLã®å ´åˆã¯XFifoDefaultAtomicAssign()ãŒä½¿ç”¨ã•ã‚Œã¾ã™ã€‚
+ *  bufferã¯ã“ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒä¸è¦ã«ãªã‚‹ã¾ã§ã€ãƒ¦ãƒ¼ã‚¶ãƒ¼å´ãŒä¿æŒã—ã¦ãŠãå¿…è¦ãŒã‚ã‚Š
+ *  ã¾ã™ã€‚
  *
  *  @note
- *  [XFifoAtomicAssigner‚É‚Â‚¢‚Ä]
+ *  [XFifoAtomicAssignerã«ã¤ã„ã¦]
  *
- *  xfifo_buffer‚Íå‚ÉƒfƒoƒCƒXƒhƒ‰ƒCƒo‚Ìƒoƒbƒtƒ@‚Ég—p‚·‚é‚±‚Æ‚ğ‘z’è‚µ‚Ä‚¨‚èAˆÈ
- *  ‰º‚ÌğŒ‚ÌAŠ„‚è‚İ‹Ö~‹æŠÔ‚È‚µ‚Åƒoƒbƒtƒ@‚Ö‚Ì‘‚«‚İA“Ç‚İo‚µ‚ª‰Â”\‚Å
- *  ‚·B
+ *  xfifo_bufferã¯ä¸»ã«ãƒ‡ãƒã‚¤ã‚¹ãƒ‰ãƒ©ã‚¤ãƒã®ãƒãƒƒãƒ•ã‚¡ã«ä½¿ç”¨ã™ã‚‹ã“ã¨ã‚’æƒ³å®šã—ã¦ãŠã‚Šã€ä»¥
+ *  ä¸‹ã®æ¡ä»¶ã®æ™‚ã€å‰²ã‚Šè¾¼ã¿ç¦æ­¢åŒºé–“ãªã—ã§ãƒãƒƒãƒ•ã‚¡ã¸ã®æ›¸ãè¾¼ã¿ã€èª­ã¿å‡ºã—ãŒå¯èƒ½ã§
+ *  ã™ã€‚
  *
- *  **‘‚«‚İA“Ç‚İo‚µ‚ÌƒRƒ“ƒeƒLƒXƒg‚ªˆÙ‚È‚é‚±‚Æ‚ª•ÛØ‚³‚ê‚Ä‚¢‚é‚±‚Æ**
+ *  **æ›¸ãè¾¼ã¿ã€èª­ã¿å‡ºã—ã®ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆãŒç•°ãªã‚‹ã“ã¨ãŒä¿è¨¼ã•ã‚Œã¦ã„ã‚‹ã“ã¨**
  *
- *  [—á]
- *  + ’Êí‚Éƒoƒbƒtƒ@‚Éƒf[ƒ^‚ğ‘‚«‚İAUART‘—MŠ®—¹Š„‚è‚İ‚ÅAƒoƒbƒtƒ@‚©‚çƒf[ƒ^‚ğæ‚èo‚·
- *  + ’Êí‚Éƒoƒbƒtƒ@‚©‚çƒf[ƒ^‚ğ“Ç‚İo‚µAUARTóMŠ®—¹Š„‚è‚İ‚ÅAƒoƒbƒtƒ@‚Éƒf[ƒ^‚ğ‘‚«‚Ş
+ *  [ä¾‹]
+ *  + é€šå¸¸æ™‚ã«ãƒãƒƒãƒ•ã‚¡ã«ãƒ‡ãƒ¼ã‚¿ã‚’æ›¸ãè¾¼ã¿ã€UARTé€ä¿¡å®Œäº†å‰²ã‚Šè¾¼ã¿ã§ã€ãƒãƒƒãƒ•ã‚¡ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’å–ã‚Šå‡ºã™
+ *  + é€šå¸¸æ™‚ã«ãƒãƒƒãƒ•ã‚¡ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’èª­ã¿å‡ºã—ã€UARTå—ä¿¡å®Œäº†å‰²ã‚Šè¾¼ã¿ã§ã€ãƒãƒƒãƒ•ã‚¡ã«ãƒ‡ãƒ¼ã‚¿ã‚’æ›¸ãè¾¼ã‚€
  *
- *  **size_tŒ^‚Ì•Ï”‚Í•ªŠ„‚È‚µ‚Å‘ã“ü‚Å‚«‚é‚±‚Æ**
+ *  **size_tå‹ã®å¤‰æ•°ã¯åˆ†å‰²ãªã—ã§ä»£å…¥ã§ãã‚‹ã“ã¨**
  *
- *  ’Êí‚Í16bitCPU‚Å32bit•Ï”‚É‘ã“ü‚µ‚æ‚¤‚Æ‚·‚é‚ÆA‹@ŠBŒêƒŒƒxƒ‹‚Å‚Í•¡”‰ñ‚Ì‘ã“ü
- *  –½—ß‚ğ•K—v‚Æ‚µ‚Ü‚·B‚»‚Ìê‡AŠ„‚è‚İ‚ª—‚Ş‚Æxfifo_buffer‚ÌRWƒ|ƒCƒ“ƒ^‚Ì®‡
- *  «‚ª•ÛØ‚Å‚«‚È‚­‚È‚è‚Ü‚·B
+ *  é€šå¸¸ã¯16bitCPUã§32bitå¤‰æ•°ã«ä»£å…¥ã—ã‚ˆã†ã¨ã™ã‚‹ã¨ã€æ©Ÿæ¢°èªãƒ¬ãƒ™ãƒ«ã§ã¯è¤‡æ•°å›ã®ä»£å…¥
+ *  å‘½ä»¤ã‚’å¿…è¦ã¨ã—ã¾ã™ã€‚ãã®å ´åˆã€å‰²ã‚Šè¾¼ã¿ãŒçµ¡ã‚€ã¨xfifo_bufferã®RWãƒã‚¤ãƒ³ã‚¿ã®æ•´åˆ
+ *  æ€§ãŒä¿è¨¼ã§ããªããªã‚Šã¾ã™ã€‚
  *
- *  ã‹LğŒ‚ª•ÛØ‚Å‚«‚È‚¢ê‡‚ÍAXFifoAtomicAssigner‚ğw’è‚µA‚»‚ÌŠÖ”“à‚ÅAŠ„
- *  ‚è‚İ‚ÌƒƒbƒNA•Ï”‚Ö‚Ì‘ã“üAŠ„‚è‚İ‚ÌƒAƒ“ƒƒbƒN‚ğs‚Á‚Ä‚­‚¾‚³‚¢B
+ *  ä¸Šè¨˜æ¡ä»¶ãŒä¿è¨¼ã§ããªã„å ´åˆã¯ã€XFifoAtomicAssignerã‚’æŒ‡å®šã—ã€ãã®é–¢æ•°å†…ã§ã€å‰²
+ *  ã‚Šè¾¼ã¿ã®ãƒ­ãƒƒã‚¯ã€å¤‰æ•°ã¸ã®ä»£å…¥ã€å‰²ã‚Šè¾¼ã¿ã®ã‚¢ãƒ³ãƒ­ãƒƒã‚¯ã‚’è¡Œã£ã¦ãã ã•ã„ã€‚
  */
 static inline void
 xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner assigner)
@@ -130,7 +141,7 @@ xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner ass
 }
 
 
-/** ƒoƒbƒtƒ@‚ğ‹ó‚É‚µ‚Ü‚·B
+/** @brief ãƒãƒƒãƒ•ã‚¡ã‚’ç©ºã«ã—ã¾ã™ã€‚
  */
 static inline void
 xfifo_clear(XFifoBuffer* self)
@@ -140,7 +151,7 @@ xfifo_clear(XFifoBuffer* self)
 }
 
 
-/** Ši”[—v‘f”‚ª0‚©‚Ç‚¤‚©‚ğ•Ô‚µ‚Ü‚·B
+/** @brief æ ¼ç´è¦ç´ æ•°ãŒ0ã‹ã©ã†ã‹ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline bool
 xfifo_empty(const XFifoBuffer* self)
@@ -150,7 +161,7 @@ xfifo_empty(const XFifoBuffer* self)
 }
 
 
-/** Å‘åŠi”[—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** @brief æœ€å¤§æ ¼ç´è¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline size_t
 xfifo_capacity(const XFifoBuffer* self)
@@ -159,7 +170,7 @@ xfifo_capacity(const XFifoBuffer* self)
     return self->capacity;
 }
 
-/** Ši”[—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** @brief æ ¼ç´è¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline size_t
 xfifo_size(const XFifoBuffer* self)
@@ -169,7 +180,7 @@ xfifo_size(const XFifoBuffer* self)
 }
 
 
-/** —v‘f”‚ªãŒÀ‚©‚Ç‚¤‚©‚ğ•Ô‚µ‚Ü‚·B
+/** @brief è¦ç´ æ•°ãŒä¸Šé™ã‹ã©ã†ã‹ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline bool
 xfifo_full(const XFifoBuffer* self)
@@ -179,7 +190,7 @@ xfifo_full(const XFifoBuffer* self)
 }
 
 
-/** ‹ó‚«—v‘f”‚ğ•Ô‚µ‚Ü‚·B
+/** @brief ç©ºãè¦ç´ æ•°ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline size_t
 xfifo_reserve(const XFifoBuffer* self)
@@ -189,7 +200,7 @@ xfifo_reserve(const XFifoBuffer* self)
 }
 
 
-/** —v‘f‚ğŠi”[‚·‚éƒoƒbƒtƒ@‚ğ•Ô‚µ‚Ü‚·B
+/** @brief è¦ç´ ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚’è¿”ã—ã¾ã™ã€‚
  */
 static inline void*
 xfifo_data(const XFifoBuffer* self)
@@ -199,7 +210,7 @@ xfifo_data(const XFifoBuffer* self)
 }
 
 
-/** FIFO––”ö‚É—v‘f‚ğ’Ç‰Á‚µ‚Ü‚·B
+/** @brief FIFOæœ«å°¾ã«è¦ç´ ã‚’è¿½åŠ ã—ã¾ã™ã€‚
  */
 static inline void
 xfifo_push(XFifoBuffer* self, uint8_t data)
@@ -210,7 +221,7 @@ xfifo_push(XFifoBuffer* self, uint8_t data)
 }
 
 
-/** FIFOæ“ª‚©‚ç—v‘f‚ğæ‚èo‚µ‚Ü‚·B
+/** @brief FIFOå…ˆé ­ã‹ã‚‰è¦ç´ ã‚’å–ã‚Šå‡ºã—ã¾ã™ã€‚
  */
 static inline uint8_t
 xfifo_pop(XFifoBuffer* self)
@@ -223,14 +234,14 @@ xfifo_pop(XFifoBuffer* self)
 }
 
 
-/** FIFO––”ö‚Éw’èƒTƒCƒY‚Ìƒf[ƒ^‚Ì‘‚«‚İ‚ğ‚İ‚Ü‚·B
+/** @brief FIFOæœ«å°¾ã«æŒ‡å®šã‚µã‚¤ã‚ºã®ãƒ‡ãƒ¼ã‚¿ã®æ›¸ãè¾¼ã¿ã‚’è©¦ã¿ã¾ã™ã€‚
  *
- *  @param src      ‘‚«‚Şƒf[ƒ^
- *  @param ssize    src‚©‚çæ‚èo‚·ƒoƒCƒg”
- *  @return         ‘‚«‚ß‚½ƒoƒCƒg”
+ *  @param src      æ›¸ãè¾¼ã‚€ãƒ‡ãƒ¼ã‚¿
+ *  @param ssize    srcã‹ã‚‰å–ã‚Šå‡ºã™ãƒã‚¤ãƒˆæ•°
+ *  @return         æ›¸ãè¾¼ã‚ãŸãƒã‚¤ãƒˆæ•°
  *
  *  @details
- *  ‹ó‚«—e—Ê‚ªssizeˆÈ‰º‚¾‚Á‚½ê‡‚ÍA‹ó‚«—e—Ê•ª‚¾‚¯‘‚«‚İ‚Ü‚·B
+ *  ç©ºãå®¹é‡ãŒssizeä»¥ä¸‹ã ã£ãŸå ´åˆã¯ã€ç©ºãå®¹é‡åˆ†ã ã‘æ›¸ãè¾¼ã¿ã¾ã™ã€‚
  */
 static inline size_t
 xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
@@ -243,10 +254,10 @@ xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
     if ((reserve <= 0) || (ssize <= 0) || (src == NULL))
         return 0;
 
-    /* ‘‚«‚Ş(‘‚«‚ß‚é)—v‘f” */
+    /* æ›¸ãè¾¼ã‚€(æ›¸ãè¾¼ã‚ã‚‹)è¦ç´ æ•° */
     size_t to_write = (reserve >= ssize) ? ssize : reserve;
 
-    /* to_write‚ÍŒ¸Z‚³‚ê‚é‰Â”\«‚ª‚ ‚é‚Ì‚Å•Û‘¶‚µ‚Ä‚¨‚­B*/
+    /* to_writeã¯æ¸›ç®—ã•ã‚Œã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹ã®ã§ä¿å­˜ã—ã¦ãŠãã€‚*/
     const size_t    written      = to_write;
     volatile size_t wpos         = self->last;
     const size_t    until_tail   = xfifo_capacity(self) - wpos + 1;
@@ -265,14 +276,14 @@ xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
 }
 
 
-/** FIFOæ“ª‚©‚çw’èƒTƒCƒY‚Ìƒf[ƒ^‚ğ“Ç‚İ‚İ‚ğ‚İ‚Ü‚·B
+/** @brief FIFOå…ˆé ­ã‹ã‚‰æŒ‡å®šã‚µã‚¤ã‚ºã®ãƒ‡ãƒ¼ã‚¿ã‚’èª­ã¿è¾¼ã¿ã‚’è©¦ã¿ã¾ã™ã€‚
  *
- *  @param dst      “Ç‚İ‚İæ
- *  @param dsize    dst‚É“Ç‚İ‚ŞƒoƒCƒg”
- *  @return         “Ç‚İ‚ß‚½ƒoƒCƒg”
+ *  @param dst      èª­ã¿è¾¼ã¿å…ˆ
+ *  @param dsize    dstã«èª­ã¿è¾¼ã‚€ãƒã‚¤ãƒˆæ•°
+ *  @return         èª­ã¿è¾¼ã‚ãŸãƒã‚¤ãƒˆæ•°
  *
  *  @details
- *  Ši”[—v‘f”‚ªdsizeˆÈ‰º‚¾‚Á‚½ê‡‚ÍAŠi”[—v‘f”•ª‚¾‚¯‘‚«‚İ‚Ü‚·B
+ *  æ ¼ç´è¦ç´ æ•°ãŒdsizeä»¥ä¸‹ã ã£ãŸå ´åˆã¯ã€æ ¼ç´è¦ç´ æ•°åˆ†ã ã‘æ›¸ãè¾¼ã¿ã¾ã™ã€‚
  */
 static inline size_t
 xfifo_read(XFifoBuffer* self, void* dst, size_t dsize)
@@ -285,10 +296,10 @@ xfifo_read(XFifoBuffer* self, void* dst, size_t dsize)
     if ((size <= 0) || (dsize <= 0) || (dst == NULL))
         return 0;
 
-    /* “Ç‚İ‚Ş(“Ç‚İ‚ß‚é)—v‘f” */
+    /* èª­ã¿è¾¼ã‚€(èª­ã¿è¾¼ã‚ã‚‹)è¦ç´ æ•° */
     size_t to_read = (size >= dsize) ? dsize : size;
 
-    /* to_read‚ÍŒ¸Z‚³‚ê‚é‰Â”\«‚ª‚ ‚é‚Ì‚Å•Û‘¶‚µ‚Ä‚¨‚­B */
+    /* to_readã¯æ¸›ç®—ã•ã‚Œã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹ã®ã§ä¿å­˜ã—ã¦ãŠãã€‚ */
     const size_t     read        = to_read;
     volatile size_t  rpos        = self->first;
     const size_t     until_tail  = xfifo_capacity(self) - rpos + 1;
@@ -315,6 +326,11 @@ xfifo_read(XFifoBuffer* self, void* dst, size_t dsize)
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+
+/** @} end of addtogroup xfifo_buffer
+ *  @} end of addtogroup container
+ */
 
 
 #endif // xfifo_h_

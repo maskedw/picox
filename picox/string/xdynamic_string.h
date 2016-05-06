@@ -44,6 +44,14 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup string
+ *  @{
+ *  @addtogroup xdynamic_string
+ *  @brief 動的文字列モジュール
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -53,67 +61,67 @@ struct XDynamicString;
 typedef struct XDynamicString XDynamicString;
 
 
-/** srcをコピーした文字列を生成して返します
+/** @brief srcをコピーした文字列を生成して返します
  */
 XDynamicString* xdstr_create(const char* src);
 
 
-/** srcからlenバイトをコピーした文字列を生成して返します
+/** @brief srcからlenバイトをコピーした文字列を生成して返します
  */
 XDynamicString* xdstr_create_length(const char* src, size_t len);
 
 
-/** 長さ0の文字列を生成して返します
+/** @brief 長さ0の文字列を生成して返します
  */
 XDynamicString* xdstr_create_empty(void);
 
 
-/** 文字列のリソースを開放します
+/** @brief 文字列のリソースを開放します
  */
 void xdstr_destroy(XDynamicString* self);
 
 
-/** 文字列のコピーを生成して返します
+/** @brief 文字列のコピーを生成して返します
  */
 XDynamicString* xdstr_clone(const XDynamicString* self);
 
 
-/** 文字列末尾にstrを連結して返します
+/** @brief 文字列末尾にstrを連結して返します
  */
 XDynamicString* xdstr_cat(XDynamicString* self, const char* str);
 
 
-/** 文字列末尾にstrから最大len文字を連結して返します
+/** @brief 文字列末尾にstrから最大len文字を連結して返します
  */
 XDynamicString* xdstr_cat_n(XDynamicString* self, const char* str, size_t len);
 
 
-/** 文字列末尾にprintf形式で文字列を連結して返します
+/** @brief 文字列末尾にprintf形式で文字列を連結して返します
  */
 XDynamicString* xdstr_cat_printf(XDynamicString* self, const char *fmt, ...);
 
 
-/** 文字列末尾にvprintf形式で文字列を連結して返します
+/** @brief 文字列末尾にvprintf形式で文字列を連結して返します
  */
 XDynamicString* xdstr_cat_vprintf(XDynamicString* self, const char *fmt, va_list args);
 
 
-/** 文字列にstrをコピーして返します
+/** @brief 文字列にstrをコピーして返します
  */
 XDynamicString* xdstr_copy(XDynamicString* self, const char* str);
 
 
-/** 文字列にstrから最大len文字をコピーして返します
+/** @brief 文字列にstrから最大len文字をコピーして返します
  */
 XDynamicString* xdstr_copy_n(XDynamicString* self, const char* str, size_t len);
 
 
-/** 文字列からchar_setに含まれる各文字を除去します
+/** @brief 文字列からchar_setに含まれる各文字を除去します
  */
 void xdstr_trim(XDynamicString* self, const char* char_set);
 
 
-/** 文字列からfirst ~ lastまで(last自身も含む)の範囲外の部分を除去します
+/** @brief 文字列からfirst ~ lastまで(last自身も含む)の範囲外の部分を除去します
  *
  *  負の値を指定した場合、-1なら文字列終端。-2は文字列終端 - 1という具合に
  *  末尾からのインデックスを意味します。
@@ -127,37 +135,37 @@ void xdstr_trim(XDynamicString* self, const char* char_set);
 void xdstr_range(XDynamicString* self, int first, int last);
 
 
-/** 文字列のアルファベットを小文字に変換します
+/** @brief 文字列のアルファベットを小文字に変換します
  */
 void xdstr_to_lower(XDynamicString* self);
 
 
-/** 文字列のアルファベットを大文字に変換します
+/** @brief 文字列のアルファベットを大文字に変換します
  */
 void xdstr_to_upper(XDynamicString* self);
 
 
-/** 文字列の長さを返します
+/** @brief 文字列の長さを返します
  */
 size_t xdstr_length(const XDynamicString* self);
 
 
-/** 文字列に格納できるバイト数を返します
+/** @brief 文字列に格納できるバイト数を返します
  */
 size_t xdstr_capacity(const XDynamicString* self);
 
 
-/** 文字列のconst char*を返します
+/** @brief 文字列のconst char*を返します
  */
 const char* xdstr_c_str(const XDynamicString* self);
 
 
-/** ストレージサイズを文字列長がちょうど収まるサイズにまで縮小して返します
+/** @brief ストレージサイズを文字列長がちょうど収まるサイズにまで縮小して返します
  */
 XDynamicString* xdstr_shrink_to_fit(XDynamicString* self);
 
 
-/** ストレージをsizeバイトまで(末尾のnullバイトを除く)格納できるサイズまで拡張して返します
+/** @brief ストレージをsizeバイトまで(末尾のnullバイトを除く)格納できるサイズまで拡張して返します
  *
  *  すでにストレージサイズがsizeバイト以上であれば自身を返します。
  */
@@ -167,6 +175,11 @@ XDynamicString* xdstr_reserve(XDynamicString* self, size_t size);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+
+/** @} end of addtogroup xdynamic_string
+ *  @} end of addtogroup string
+ */
 
 
 #endif /* picox_string_xdynamic_string_h_ */

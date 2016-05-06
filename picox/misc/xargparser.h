@@ -44,6 +44,14 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup misc
+ *  @{
+ *  @addtogroup xargparser
+ *  @brief
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,7 +67,7 @@ typedef enum XArgParserErr
 } XArgParserErr;
 
 
-/** strを解析してargvを設定します。
+/** @brief strを解析してargvを設定します。
  *
  *  @param str      解析文字列
  *  @param argc     引数の数の出力先
@@ -80,7 +88,7 @@ typedef enum XArgParserErr
 XArgParserErr xargparser_to_argv(char* str, int* argc, char* argv[], int max_argc);
 
 
-/** エラーステータスの文字列表現を返します。
+/** @brief エラーステータスの文字列表現を返します。
  */
 const char* xargparser_err_to_string(XArgParserErr err);
 
@@ -88,6 +96,11 @@ const char* xargparser_err_to_string(XArgParserErr err);
 #ifdef __cplusplus
 }
 #endif
+
+
+/** @} end of addtogroup xargparser
+ *  @} end of addtogroup misc
+ */
 
 
 #endif // picox_misc_xargparser_h_

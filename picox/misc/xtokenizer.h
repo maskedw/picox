@@ -3,9 +3,6 @@
  *      @brief
  *
  *    @details
- *    •¶š—ñ‚ğw’è‚Ì•¶š‚Å•ªŠ„‚µAw’è‚ÌŒ^‚É•ÏŠ·‚·‚é‚½‚ß‚ÌƒCƒ“ƒ^[ƒtƒF[ƒX‚ğ”õ‚¦
- *    ‚½ƒ‚ƒWƒ…[ƒ‹‚Å‚·B
- *    strtok()‚ğ‚æ‚èˆµ‚¢‚â‚·‚­‚µ‚½Š´‚¶‚Å‚·B
  *
  *     @author  MaskedW
  *
@@ -46,11 +43,25 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup misc
+ *  @{
+ *  @addtogroup xtokenizer
+ *  @brief æ–‡å­—åˆ—ã®ãƒˆãƒ¼ã‚¯ãƒ³åŒ–
+ *
+ *  æ–‡å­—åˆ—ã‚’æŒ‡å®šã®æ–‡å­—ã§åˆ†å‰²ã—ã€æŒ‡å®šã®å‹ã«å¤‰æ›ã™ã‚‹ãŸã‚ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ã‚’å‚™ãˆ
+ *  ãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ã™ã€‚
+ *  strtok()ã‚’ã‚ˆã‚Šæ‰±ã„ã‚„ã™ãã—ãŸæ„Ÿã˜ã§ã™ã€‚
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
+/** @brief ãƒˆãƒ¼ã‚¯ãƒ³åŒ–ã—ãŸæ–‡å­—åˆ—ã®ç®¡ç†æ§‹é€ ä½“
+ */
 typedef struct XTokenizer
 {
 /// @privatesection
@@ -60,17 +71,17 @@ typedef struct XTokenizer
 } XTokenizer;
 
 
-/** •¶š—ñ‚ğw’è•¶š‚Å—ñ‚É•ª‰ğ‚µ‚Ü‚·B
+/** @brief æ–‡å­—åˆ—ã‚’æŒ‡å®šæ–‡å­—ã§åˆ—ã«åˆ†è§£ã—ã¾ã™ã€‚
  *
- *  •¶š—ñ‚ÍƒIƒuƒWƒFƒNƒg‚ÉƒRƒs[‚³‚ê‚Ü‚·B‰Šú‰»Œã‚Íxtok_release()‚Å•K‚¸ƒŠƒ\[ƒX
- *  ‚ğ‰ğ•ú‚³‚¹‚Ä‚­‚¾‚³‚¢B
+ *  æ–‡å­—åˆ—ã¯ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«ã‚³ãƒ”ãƒ¼ã•ã‚Œã¾ã™ã€‚åˆæœŸåŒ–å¾Œã¯xtok_release()ã§å¿…ãšãƒªã‚½ãƒ¼ã‚¹
+ *  ã‚’è§£æ”¾ã•ã›ã¦ãã ã•ã„ã€‚
  *
- *  @param row          s•¶š—ñ
- *  @param separater    ‹æØ‚è•¶š
- *  @param max_tokens   Å‘å—ñ”
+ *  @param row          è¡Œæ–‡å­—åˆ—
+ *  @param separater    åŒºåˆ‡ã‚Šæ–‡å­—
+ *  @param max_tokens   æœ€å¤§åˆ—æ•°
  *  @retval false
- *      + ƒƒ‚ƒŠŠm•Û¸”s
- *      + Å‘å—ñ”‚ğ’´‚¦‚½
+ *      + ãƒ¡ãƒ¢ãƒªç¢ºä¿å¤±æ•—
+ *      + æœ€å¤§åˆ—æ•°ã‚’è¶…ãˆãŸ
  *
  *  @pre
  *  + row != NULL
@@ -79,15 +90,15 @@ typedef struct XTokenizer
 bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens);
 
 
-/** ƒIƒuƒWƒFƒNƒg‚ª•Û‚·‚éƒŠƒ\[ƒX‚ğ‰ğ•ú‚µ‚Ü‚·B
+/** @brief ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒä¿æŒã™ã‚‹ãƒªã‚½ãƒ¼ã‚¹ã‚’è§£æ”¾ã—ã¾ã™ã€‚
  *
  *  @note
- *  xtok_init()‚Å¸”sŒã‚ÌŒÄ‚Ño‚µ‚Å‚àˆÀ‘S‚É“®ì‚µ‚Ü‚·B
+ *  xtok_init()ã§å¤±æ•—å¾Œã®å‘¼ã³å‡ºã—ã§ã‚‚å®‰å…¨ã«å‹•ä½œã—ã¾ã™ã€‚
  */
 void xtok_release(XTokenizer* self);
 
 
-/** —ñ‚ğQÆ‚µ‚Ü‚·
+/** @brief åˆ—ã‚’å‚ç…§ã—ã¾ã™
  *
  *  @pre
  *  col <= (xtok_num_tokens() - 1)
@@ -101,7 +112,7 @@ xtok_ref_token(const XTokenizer* self, int col)
 }
 
 
-/** —ñ”‚ğ•Ô‚µ‚Ü‚·
+/** @brief åˆ—æ•°ã‚’è¿”ã—ã¾ã™
  */
 static inline int
 xtok_num_tokens(const XTokenizer* self)
@@ -113,6 +124,11 @@ xtok_num_tokens(const XTokenizer* self)
 #ifdef __cplusplus
 }
 #endif
+
+
+/** @} end of addtogroup xtokenizer
+ *  @} end of addtogroup misc
+ */
 
 
 #endif // picox_misc_xtokenizer_h_

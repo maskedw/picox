@@ -1,6 +1,6 @@
 /**
  *       @file  xmessage_buffer.h
- *      @brief  可変長メッセージを格納するコンテナです
+ *      @brief
  *
  *    @details
  *
@@ -44,12 +44,20 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup container
+ *  @{
+ *  @addtogroup xmessage_buffer
+ *  @brief 可変長バイトデータを格納するコンテナ
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 
-/** メッセージヘッダ
+/** @brief メッセージヘッダ
  *
  *  XMessageBufferへnバイトのデータを格納する時、XMessageBufferの空き容量は
  *  sizeof(XMessageHeader) + nバイト以上必要です。
@@ -62,7 +70,7 @@ typedef union XMessageHeader
 } XMessageHeader;
 
 
-/** Message Buffer
+/** @brief 可変長バイトデータの管理構造体
  *
  *  @note
  *  メッセージはリングバッファ形式で格納されます。
@@ -78,7 +86,7 @@ typedef struct XMessageBuffer
 } XMessageBuffer;
 
 
-/** バッファを初期化します。
+/** @brief バッファを初期化します
  *
  *  @pre
  *  + buffer != NULL
@@ -101,7 +109,7 @@ xmsgbuf_init(XMessageBuffer* self, void* buffer, size_t size)
 }
 
 
-/** 要素を格納するバッファを返します。
+/** @brief 要素を格納するバッファを返します
  */
 static inline uint8_t*
 xmsgbuf_data(const XMessageBuffer* self)
@@ -111,7 +119,7 @@ xmsgbuf_data(const XMessageBuffer* self)
 }
 
 
-/** バッファを空にします。
+/** @brief バッファを空にします
  */
 static inline void
 xmsgbuf_clear(XMessageBuffer* self)
@@ -121,7 +129,7 @@ xmsgbuf_clear(XMessageBuffer* self)
 }
 
 
-/** バッファに格納されているバイト数を返します。
+/** @brief バッファに格納されているバイト数を返します
  *
  *  サイズにはメッセージヘッダのバイト数も含まれます。
  */
@@ -133,7 +141,7 @@ xmsgbuf_size(const XMessageBuffer* self)
 }
 
 
-/** バッファが空かどうかを返します。
+/** @brief バッファが空かどうかを返します
  */
 static inline bool
 xmsgbuf_empty(const XMessageBuffer* self)
@@ -143,7 +151,7 @@ xmsgbuf_empty(const XMessageBuffer* self)
 }
 
 
-/** バッファに格納できる最大バイト数を返します。
+/** @brief バッファに格納できる最大バイト数を返します
  */
 static inline size_t
 xmsgbuf_capacity(const XMessageBuffer* self)
@@ -153,7 +161,7 @@ xmsgbuf_capacity(const XMessageBuffer* self)
 }
 
 
-/** バッファの空きバイト数を返します。
+/** @brief バッファの空きバイト数を返します
  */
 static inline size_t
 xmsgbuf_reserve(const XMessageBuffer* self)
@@ -163,7 +171,7 @@ xmsgbuf_reserve(const XMessageBuffer* self)
 }
 
 
-/** バッファが満タンかどうかを返します。
+/** @brief バッファが満タンかどうかを返します
  *
  *  xmsgbuf_reserve() <= sizeof(XMessageHeader)の時も、これ以上メッセージを格納できな
  *  い為、満タンと判定します。
@@ -176,7 +184,7 @@ xmsgbuf_full(const XMessageBuffer* self)
 }
 
 
-/** 先頭メッセージのバイト数を返します。
+/** @brief 先頭メッセージのバイト数を返します
  */
 static inline size_t
 xmsgbuf_msg_size(const XMessageBuffer* self)
@@ -199,7 +207,7 @@ xmsgbuf_msg_size(const XMessageBuffer* self)
 }
 
 
-/** 格納メッセージ数を返します。
+/** @brief 格納メッセージ数を返します
  */
 static inline size_t
 xmsgbuf_num(const XMessageBuffer* self)
@@ -229,7 +237,7 @@ xmsgbuf_num(const XMessageBuffer* self)
 }
 
 
-/** 先頭メッセージを読み飛ばします。
+/** @brief 先頭メッセージを読み飛ばします
  */
 static inline void
 xmsgbuf_skip(XMessageBuffer* self)
@@ -255,7 +263,7 @@ xmsgbuf_skip(XMessageBuffer* self)
 }
 
 
-/** バッファ末尾にメッセージを追加します。
+/** @brief バッファ末尾にメッセージを追加します
  *
  *  @pre
  *  + src != NULL
@@ -308,7 +316,7 @@ xmsgbuf_push(XMessageBuffer* self, const void* src, size_t size)
 }
 
 
-/** バッファ先頭からメッセージを取り出し、メッセージサイズを返します。
+/** @brief バッファ先頭からメッセージを取り出し、メッセージサイズを返します
  *
  *  @pre
  *  + dst != NULL
@@ -362,6 +370,11 @@ xmsgbuf_pull(XMessageBuffer* self, void* dst)
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+
+/** @} end of addtogroup xmessage_buffer
+ *  @} end of addtogroup container
+ */
 
 
 #endif // picox_container_xmessage_buffer_h_
