@@ -438,8 +438,32 @@ XError xposixfs_remove(XPosixFs* fs, const char* path)
     X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
+
+#ifdef __MINGW32__
+    /* MinGWだと通常ファイルを作って削除 => 同名のディレクトリを作って削除とする
+     * とき(普通はそんなことしないが)に失敗する。
+     * 自分でrmdir()とunlink()を呼び分けると成功する。
+     */
+    struct stat buf;
+    int ret;
+    if (ret = stat(path, &buf))
+    {
+        err = X__GetError();
+        goto x__exit;
+    }
+
+    if (S_ISDIR(buf.st_mode))
+        ret = rmdir(path);
+    else
+        ret = unlink(path);
+
+    if (ret)
+        err = X__GetError();
+x__exit:
+#else
     if (remove(path) != 0)
         err = X__GetError();
+#endif
 
     return err;
 }
