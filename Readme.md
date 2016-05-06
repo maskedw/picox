@@ -1,6 +1,7 @@
 
-
-https://www.squarespace.com/logo
+<img style="display:block;margin:auto" alt="logo"
+     src="https://raw.github.com/wiki/maskedw/picox/res/picox_logo.png" />
+<!-- https://www.squarespace.com/logo -->
 
 # これは何？
 
@@ -45,7 +46,7 @@ picoxは特定のターゲットを持たないため、新規プラットフォ
 可能です。
 
 また、Arduinoやmbedのライブラリは、あくまでもお手軽さを重視していますが、picoxは
-実業務の使用にも耐えうるよう、インターフェースに徹底的にこだわったガチ仕様です。
+実業務の使用にも耐えうるよう、インターフェースに徹底的にこだわるガチ仕様です。
 
 その分、ライブラリの粒度が細かいため、初心者の入門用ではなく、わかっている人間が
 楽をするための玄人向けという位置づけです。
