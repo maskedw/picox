@@ -28,7 +28,11 @@ TEST_SETUP(xposixfs)
     if (stat(workdir, &statbuf) == 0)
         system("rm -r ./posixfstmp");
 
+#ifdef _WIN32
+    TEST_ASSERT_EQUAL(0, mkdir(workdir));
+#else
     TEST_ASSERT_EQUAL(0, mkdir(workdir, 0777));
+#endif
     TEST_ASSERT_EQUAL(0, chdir(workdir));
     TEST_ASSERT_EQUAL(0, chdir(workdir));
 }
