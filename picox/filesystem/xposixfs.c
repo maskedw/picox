@@ -299,7 +299,7 @@ XError xposixfs_mkdir(XPosixFs* fs, const char* path)
     XError err = X_ERR_NONE;
 
 #ifdef __MINGW32__
-    const int result = _mkdir(path);
+    const int result = mkdir(path);
 #else
     const int result = mkdir(path, 0777);
 #endif
