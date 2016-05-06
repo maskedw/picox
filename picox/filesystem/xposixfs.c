@@ -500,9 +500,12 @@ XError xposixfs_stat(XPosixFs* fs, const char* path, XStat* statbuf)
         goto x__exit;
     }
 
-    /* [TODO] mode */
     statbuf->size = buf.st_size;
     statbuf->mtime = buf.st_mtime;
+    if (S_ISDIR(buf.st_mode))
+        statbuf->mode = XSTAT_MODE_DIRECTORY;
+    else
+        statbuf->mode = XSTAT_MODE_REGULAR;
 
 x__exit:
     return err;
