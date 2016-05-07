@@ -306,6 +306,16 @@ typedef struct
 typedef uint32_t XMode;
 
 
+/** @brief XModeと同じくビットフラグを格納しますが、よりビットを意識した型です
+ */
+typedef uint32_t XBits;
+
+
+/** @brief システムチックを格納する型です
+ */
+typedef int32_t XTick;
+
+
 /** @brief qsort()互換の比較関数ポインタ型です */
 typedef int (*XCompareFunc)(const void* a, const void* b);
 

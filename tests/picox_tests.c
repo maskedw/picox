@@ -28,6 +28,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xunionfs);
     RUN_TEST_GROUP(xfs);
     RUN_TEST_GROUP(minIni);
+    RUN_TEST_GROUP(xfiber);
 }
 
 
