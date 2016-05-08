@@ -63,7 +63,9 @@ XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBi
 XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result, XTick timeout);
 XError xfiber_event_set(XFiberEvent* event, XBits pattern);
+XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern);
 XError xfiber_event_clear(XFiberEvent* event, XBits pattern);
+const char* xfiber_event_name(const XFiberEvent* event);
 
 
 

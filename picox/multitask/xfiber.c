@@ -20,7 +20,7 @@
  * obtaining a copy of self software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies
+ * modify, merge, publish, X__GetStackDepthribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
@@ -68,46 +68,163 @@ typedef struct X__Kernel
 } X__Kernel;
 
 
+static size_t X__GetStackDepth(const X__StackFrame* from, const X__StackFrame* to);
+static void X__EatStack(X__StackFrame* p, size_t block_size);
+static void X__PushReadyQueue(XFiber* fiber);
+static XFiber* X__PopReadyQueue(void);
+static void X__Schedule(void);
+static bool X__TestEvent(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
+
+
 X__Kernel        x_g_fiber_kernel;
 #define priv    (&x_g_fiber_kernel)
 
 
-static void schedule()                  // run m_next task
+XError xfiber_kernel_init(size_t total_stack_size, size_t main_stack_size)
 {
-    XIntrusiveNode* cur = xilist_front(&priv->m_ready_queue);
-    if (cur == xilist_end(&priv->m_ready_queue))
+    xilist_init(&priv->m_ready_queue);
+
+    /* init main fiber */
+    priv->m_main_task.m_func = NULL;
+    priv->m_main_task.m_arg = NULL;
+    priv->m_main_task.m_priority = 0;
+    priv->m_main_task.m_stack_size = 0;
+    priv->m_main_task.m_frame = &priv->m_main_frame;
+    strcpy(priv->m_main_task.m_name, "main");
+
+    /* Make main stack farme */
+    X__StackFrame tmp;
+    tmp.m_next = NULL;
+    tmp.m_block_size = total_stack_size;
+    tmp.m_used = false;
+    tmp.m_fiber = &priv->m_main_task;
+    if (setjmp(tmp.m_jmpbuf) == 0)
+        X__EatStack(&tmp, main_stack_size);
+    tmp.m_used = true;
+    priv->m_main_frame = tmp;
+
+    priv->m_main_task.m_frame = &priv->m_main_frame;
+    priv->m_main_task.m_state = X_FIBER_STATE_RUNNING;
+    priv->m_cur_task = &priv->m_main_task;
+}
+
+
+void xfiber_yield()
+{
+    X__StackFrame* const cur_frame = priv->m_cur_task->m_frame;
+    if (setjmp(cur_frame->m_jmpbuf) == 0)
+        X__Schedule();
+}
+
+
+XFiber* xfiber_self(void)
+{
+    return priv->m_cur_task;
+}
+
+
+XError xfiber_init(XFiber* fiber, const char* name, size_t stack_size, XFiberFunc func, void* arg, int priority)
+{
+    X__StackFrame* p;
+
+    for (p = priv->m_main_frame.m_next; p != NULL; p = p->m_next)
     {
-        puts ("Deadlock!");
-        exit (1);
+        if (!p->m_used && p->m_block_size >= stack_size)
+        {
+            fiber->m_func = func;
+            fiber->m_arg = arg;
+            fiber->m_priority = priority;
+            fiber->m_stack_size = stack_size;
+            if (name)
+                strcpy(fiber->m_name, name);
+            p->m_fiber = fiber;
+
+            if (setjmp (priv->m_tmp_jmpbuf) == 0)
+                longjmp (p->m_jmpbuf, 1);
+
+            X__PushReadyQueue(fiber);
+            return X_ERR_NONE;
+        }
     }
 
-    xnode_unlink(cur);
-    priv->m_cur_task = xnode_entry(cur, XFiber, m_node);
-    X__StackFrame* const cur_frame = priv->m_cur_task->m_frame;
-    longjmp (cur_frame->m_jmpbuf, 1);          // restore state of m_next task
+    return X_ERR_OTHER;
 }
 
 
-static unsigned dist (X__StackFrame* from, X__StackFrame* to)
+XError xfiber_deinit(XFiber* fiber)
 {
-    char* c1, *c2;
-    c1 = (char*) from;
-    c2 = (char*) to;
+    /* TODO 終了処理 */
+    X_UNUSED(fiber);
+    return X_ERR_NONE;
+}
+
+
+const char* xfiber_name(const XFiber* fiber)
+{
+    return fiber->m_name;
+}
+
+
+XError xfiber_event_init(XFiberEvent* event, const char* name)
+{
+    strcpy(event->m_name, name);
+    event->m_pattern = 0;
+    xilist_init(&event->m_queue);
+
+    return X_ERR_NONE;
+}
+
+
+XError xfiber_event_deinit(XFiberEvent* event)
+{
+    X_UNUSED(event);
+    return X_ERR_NONE;
+}
+
+
+XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
+{
+    XError err = X_ERR_NONE;
+
+    if (X__TestEvent(event, mode, wait_pattern, result))
+        goto x__exit;
+
+    XFiber* const fiber = xfiber_self();
+    fiber->m_result_event_patten = result;
+    fiber->m_wait_event_pattern = wait_pattern;
+    fiber->m_wait_event_mode = mode;
+    fiber->m_state = X_FIBER_STATE_WAITING_EVENT;
+    fiber->m_result_waiting = &err;
+    xilist_push_front(&event->m_queue, &fiber->m_node);
+
+    X__Schedule();
+    err = *(fiber->m_result_waiting);
+
+x__exit:
+    return err;
+}
+
+
+static size_t X__GetStackDepth(const X__StackFrame* from, const X__StackFrame* to)
+{
+    const uint8_t* c1, *c2;
+    c1 = (const uint8_t*)from;
+    c2 = (const uint8_t*)to;
 
     if (c1 > c2)                          // stack grows down
-        return ( (unsigned) (c1 - c2));
+        return c1 - c2;
     else                                  // stack grows up
-        return ( (unsigned) (c2 - c1));
+        return c2 - c1;
 }
 
 
-static void eat(X__StackFrame* p, unsigned block_size)
+static void X__EatStack(X__StackFrame* p, size_t block_size)
 {
     X__StackFrame t;
-    const size_t depth = dist (p, &t);
+    const size_t depth = X__GetStackDepth(p, &t);
 
-    if (depth < block_size)                         // eat stack
-        eat(p, block_size);
+    if (depth < block_size)
+        X__EatStack(p, block_size);
 
     t.m_block_size = p->m_block_size - depth;
     p->m_block_size = depth;
@@ -125,7 +242,7 @@ static void eat(X__StackFrame* p, unsigned block_size)
         {
             PRINTF("split block %p\n", &t);
             if (setjmp (t.m_jmpbuf) == 0)         // split block
-                eat (&t, t.m_fiber->m_stack_size);
+                X__EatStack (&t, t.m_fiber->m_stack_size);
         }
 
         t.m_used = true;                      // mark as m_used
@@ -137,6 +254,7 @@ static void eat(X__StackFrame* p, unsigned block_size)
         PRINTF("run task %p\n", &t);
 
         t.m_fiber->m_func(t.m_fiber->m_arg);
+        t.m_fiber->m_state = X_FIBER_STATE_DESTROYED;
         t.m_used = false;                     // mark as free
 
         PRINTF("func end %p\n", &t);
@@ -164,89 +282,70 @@ static void eat(X__StackFrame* p, unsigned block_size)
 
         PRINTF("save state %p\n", &t);
         if (setjmp (t.m_jmpbuf) == 0)           // save state
-            schedule();
+            X__Schedule();
         PRINTF("restore state %p\n", &t);
         volatile int nop = 0;
         nop++;
     }
-    PRINTF("reutrn eat %p\n", &t);
+    PRINTF("reutrn X__EatStack %p\n", &t);
 }
 
 
-XError xfiber_kernel_init(size_t total_stack_size, size_t main_stack_size)
+static void X__PushReadyQueue(XFiber* fiber)
 {
-    xilist_init(&priv->m_ready_queue);
-
-    /* init main fiber */
-    priv->m_main_task.m_func = NULL;
-    priv->m_main_task.m_arg = NULL;
-    priv->m_main_task.m_priority = 0;
-    priv->m_main_task.m_stack_size = 0;
-    priv->m_main_task.m_frame = &priv->m_main_frame;
-    strcpy(priv->m_main_task.m_name, "main");
-
-    /* Make main stack farme */
-    X__StackFrame tmp;
-    tmp.m_next = NULL;
-    tmp.m_block_size = total_stack_size;
-    tmp.m_used = false;
-    tmp.m_fiber = &priv->m_main_task;
-    if (setjmp(tmp.m_jmpbuf) == 0)
-        eat(&tmp, main_stack_size);
-    tmp.m_used = true;
-    priv->m_main_frame = tmp;
-
-    priv->m_main_task.m_frame = &priv->m_main_frame;
-    priv->m_cur_task = &priv->m_main_task;
+    /* priority */
+    fiber->m_state = X_FIBER_STATE_READY;
+    xilist_push_back(&priv->m_ready_queue, &fiber->m_node);
 }
 
 
-XFiber* xfiber_self(void)
+/* TODO priority */
+static XFiber* X__PopReadyQueue(void)
 {
-    return priv->m_cur_task;
-}
-
-
-const char* xfiber_name(const XFiber* fiber)
-{
-    return fiber->m_name;
-}
-
-
-void xfiber_yield()
-{
-    X__StackFrame* const frame = priv->m_cur_task->m_frame;
-    if (setjmp(frame->m_jmpbuf) == 0)
+    XIntrusiveNode* const next = xilist_front(&priv->m_ready_queue);
+    if (next == xilist_end(&priv->m_ready_queue))
     {
-        xilist_push_back(&priv->m_ready_queue, &priv->m_cur_task->m_node);
-        schedule();
-    }
-}
-
-
-XError xfiber_init(XFiber* fiber, const char* name, size_t stack_size, XFiberFunc func, void* arg, int priority)
-{
-    X__StackFrame* p;
-
-    for (p = priv->m_main_frame.m_next; p != NULL; p = p->m_next)      // find free block
-    {
-        if (!p->m_used && p->m_block_size >= stack_size)
-        {
-            fiber->m_func = func;                     // set task parameters
-            fiber->m_arg = arg;
-            fiber->m_priority = priority;
-            fiber->m_stack_size = stack_size;
-            if (name)
-                strcpy(fiber->m_name, name);
-            p->m_fiber = fiber;
-
-            if (setjmp (priv->m_tmp_jmpbuf) == 0)       // activate control block
-                longjmp (p->m_jmpbuf, 1);
-
-            xilist_push_back(&priv->m_ready_queue, &fiber->m_node);
-            return X_ERR_NONE;
-        }
+        puts("Deadlock!");
+        exit(1);
     }
 
-    return X_ERR_OTHER;
+    xnode_unlink(next);
+    XFiber* const fiber = xnode_entry(next, XFiber, m_node);
+    return fiber;
+}
+
+
+static void X__Schedule(void)
+{
+    XFiber* fiber = priv->m_cur_task;
+    if (fiber->m_state == X_FIBER_STATE_RUNNING)
+        X__PushReadyQueue(fiber);
+
+    fiber = X__PopReadyQueue();
+    fiber->m_state = X_FIBER_STATE_RUNNING;
+    priv->m_cur_task = fiber;
+
+    X__StackFrame* const cur_frame = fiber->m_frame;
+    longjmp(cur_frame->m_jmpbuf, 1);
+}
+
+
+static bool X__TestEvent(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
+{
+    bool ok = false;
+    const XBits pattern = event->m_pattern;
+
+    if ((mode & X_FIBER_EVENT_WAIT_MASK) == X_FIBER_EVENT_WAIT_OR)
+        ok = (pattern & wait_pattern) != 0;
+    else
+        ok = (pattern & wait_pattern) == wait_pattern;
+
+    if (ok)
+    {
+        *result = pattern;
+        if (mode & X_FIBER_EVENT_CLEAR_ON_EXIT)
+            event->m_pattern = 0;
+    }
+
+    return ok;
 }
