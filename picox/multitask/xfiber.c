@@ -205,6 +205,49 @@ x__exit:
 }
 
 
+XError xfiber_event_set(XFiberEvent* event, XBits pattern)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    event->m_pattern |= pattern;
+    XIntrusiveNode* ite = xilist_front(&event->m_queue);
+    XIntrusiveNode* const end = xilist_end(&event->m_queue);
+
+    while (ite != end)
+    {
+        XFiber* const fiber = xnode_entry(ite, XFiber, m_node);
+        XIntrusiveNode* const next = ite->next;
+
+        if (X__TestEvent(event,
+                         fiber->m_wait_event_mode,
+                         fiber->m_wait_event_pattern,
+                         fiber->m_result_event_patten))
+        {
+            *(fiber->m_result_waiting) = X_ERR_NONE;
+            xnode_unlink(&fiber->m_node);
+            X__PushReadyQueue(fiber);
+            scheduling_request = true;
+            if (fiber->m_wait_event_mode & X_FIBER_EVENT_CLEAR_ON_EXIT)
+                break;
+        }
+        ite = next;
+    }
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_event_clear(XFiberEvent* event, XBits pattern)
+{
+    event->m_pattern &= ~pattern;
+    return X_ERR_NONE;
+}
+
+
 static size_t X__GetStackDepth(const X__StackFrame* from, const X__StackFrame* to)
 {
     const uint8_t* c1, *c2;

@@ -40,6 +40,8 @@ void* function1(void* arg)
         PRINTF("run '%s' %d\n", xfiber_name(fiber_self), i);
         xfiber_yield();
     }
+
+    return (void*)0;
 }
 
 
@@ -78,7 +80,55 @@ TEST(xfiber, task_create)
 }
 
 
+static void* test_event(void* arg)
+{
+    int id;
+    XFiberEvent* event = arg;
+    XFiber* const self_fiber = xfiber_self();
+    const char* const name = xfiber_name(self_fiber);
+
+    sscanf(name, "task%d", &id);
+    int i;
+    for (i = 0; i < 10; i++)
+    {
+        PRINTF("run '%s' %d\n", name, i);
+        xfiber_yield();
+    }
+
+    xfiber_event_set(event, X_BIT(id));
+}
+
+
+TEST(xfiber, event)
+{
+    xfiber_kernel_init(1024 * 200, STACK_SIZE * 4);
+    XFiber fiber[3];
+    XFiberEvent event;
+
+    xfiber_event_init(&event, "event0");
+
+    int i;
+    XBits wait_pattern = 0;
+    XBits result_pattern;
+    for (i = 0; i < 3; i++)
+    {
+        char name[32];
+        snprintf(name, sizeof(name), "task%d", i);
+        xfiber_init(&fiber[i], name, STACK_SIZE, test_event, &event, 1);
+        wait_pattern |= X_BIT(i);
+    }
+
+    PRINTF("wait event...\n");
+    xfiber_event_wait(&event, X_FIBER_EVENT_WAIT_AND | X_FIBER_EVENT_CLEAR_ON_EXIT,
+                      wait_pattern, &result_pattern);
+    PRINTF("complete\n");
+    TEST_ASSERT_EQUAL(wait_pattern, result_pattern);
+    xfiber_event_deinit(&event);
+}
+
+
 TEST_GROUP_RUNNER(xfiber)
 {
     RUN_TEST_CASE(xfiber, task_create);
+    RUN_TEST_CASE(xfiber, event);
 }
