@@ -46,8 +46,8 @@
 #define X_VERSION_STRING    "0.3"
 
 
-/* ���ʂŎg�p����w�b�_���܂Ƃ߂ăC���N���[�h����B�R���p�C�����v���R���p�C���@
- * �\�������Ă���Ȃ�g�p����̂��R���p�C�����ԒZ�k�ׂ̈ɖ]�܂����B
+/* 共通で使用するヘッダをまとめてインクルードする。コンパイラがプリコンパイル機
+ * 能を持っているなら使用するのがコンパイル時間短縮の為に望ましい。
  */
 #include <stddef.h>
 #include <stdint.h>
