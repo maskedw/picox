@@ -93,7 +93,7 @@
     #define xfs_is_directory    xunionfs_is_directory
     #define xfs_is_regular      xunionfs_is_regular
 
-#elif X_XFS_TYPE == X_XFS_TYPE_UNION_FS
+#elif X_XFS_TYPE == X_XFS_TYPE_SINGLE_FS
 
     #include <picox/filesystem/xsinglefs.h>
 

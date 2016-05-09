@@ -373,7 +373,7 @@ extern "C" {
 
 
 #define X_XFS_TYPE_UNION_FS     (0)
-#define X_xFS_TYPE_SINGLE_FS    (1)
+#define X_XFS_TYPE_SINGLE_FS    (1)
 
 
 /** @def   X_CONF_XFS_TYPE
