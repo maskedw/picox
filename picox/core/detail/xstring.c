@@ -801,6 +801,45 @@ void x_memrandom_alpha(void* p, size_t n)
 }
 
 
+const char* x_strerror(XError err)
+{
+    const char* ret = NULL;
+    switch (err)
+    {
+        case X_ERR_NONE:                ret = "ERR_NONE";           break;
+        case X_ERR_IO:                  ret = "ERR_IO";             break;
+        case X_ERR_INVALID:             ret = "ERR_INVALID";        break;
+        case X_ERR_TIMED_OUT:           ret = "ERR_TIMED_OUT";      break;
+        case X_ERR_BUSY:                ret = "ERR_BUSY";           break;
+        case X_ERR_AGAIN:               ret = "ERR_AGAIN";          break;
+        case X_ERR_CANCELED:            ret = "ERR_CANCELED";       break;
+        case X_ERR_NO_MEMORY:           ret = "ERR_NO_MEMORY";      break;
+        case X_ERR_EXIST:               ret = "ERR_EXIST";          break;
+        case X_ERR_NOT_READY:           ret = "ERR_NOT_READY";      break;
+        case X_ERR_ACCESS:              ret = "ERR_ACCESS";         break;
+        case X_ERR_NO_ENTRY:            ret = "ERR_NO_ENTRY";       break;
+        case X_ERR_NOT_SUPPORTED:       ret = "ERR_NOT_SUPPORTED";  break;
+        case X_ERR_DISCONNECTED:        ret = "ERR_DISCONNECTED";   break;
+        case X_ERR_INPROGRESS:          ret = "ERR_INPROGRESS";     break;
+        case X_ERR_PROTOCOL:            ret = "ERR_PROTOCOL";       break;
+        case X_ERR_MANY:                ret = "ERR_MANY";           break;
+        case X_ERR_RANGE:               ret = "ERR_RANGE";          break;
+        case X_ERR_BROKEN:              ret = "ERR_BROKEN";         break;
+        case X_ERR_NAME_TOO_LONG:       ret = "ERR_NAME_TOO_LONG";  break;
+        case X_ERR_INVALID_NAME:        ret = "ERR_INVALID_NAME";   break;
+        case X_ERR_IS_DIRECTORY:        ret = "ERR_IS_DIRECTORY";   break;
+        case X_ERR_NOT_DIRECTORY:       ret = "ERR_NOT_DIRECTORY";  break;
+        case X_ERR_NOT_EMPTY:           ret = "ERR_NOT_EMPTY";      break;
+        case X_ERR_NO_SPACE:            ret = "ERR_NO_SPACE";       break;
+        case X_ERR_INTERNAL:            ret = "ERR_INTERNAL";       break;
+        case X_ERR_OTHER:               ret = "ERR_OTHER";          break;
+        default:                        ret = "ERR_UNKNOWN";        break;
+    }
+
+    return ret;
+}
+
+
 static bool X__IsSkip(char c, const char* skip_chars)
 {
     for (;;)
