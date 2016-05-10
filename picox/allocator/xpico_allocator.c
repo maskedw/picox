@@ -249,7 +249,11 @@ static void* X__Allocate(XPicoAllocator* self, size_t size)
      * は参照しないので問題ない。
      * わかりにくいのだが、これにより相当処理が簡略化できる。
      */
-    X__Chunk* p1 = (X__Chunk*)&self->top;
+
+    /* 一旦(void*)にキャストしているのはstrict aliasingルールを回避するたため
+     * + http://d.hatena.ne.jp/yohhoy/20120220/p1
+     */
+    X__Chunk* p1 = (X__Chunk*)(void*)(&self->top);
     X__Chunk* p = p1->next;
 
     for (;;)

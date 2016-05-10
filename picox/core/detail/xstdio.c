@@ -251,7 +251,12 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
 
 #if X_CONF_USE_FLOATING_POINT_PRINTF
     unsigned char precision;
-    double f;
+    /* fの0初期化は必要ないように見えるが、gccの最適化レベルを上げると、未初期化
+     * 変数を使用していますという警告が出る。最適化の結果によって、そういうルー
+     * トができてしまうのか？それはそれでまずいバグになりそーなのだが・・・。と
+     * りあえず0で初期化して警告を黙らせておく。
+     */
+    double f = 0;
 #endif
 
     for (;;)
