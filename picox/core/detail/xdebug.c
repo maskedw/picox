@@ -39,6 +39,11 @@
 #include <picox/core/xcore.h>
 
 
+#if X_CONF_HAS_ERRNO_AND_STRERROR != 0
+    #include <errno.h>
+#endif
+
+
 typedef struct X__Debug
 {
     int level;
@@ -264,6 +269,10 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
     x_printf("[FUNC] %s\n", func ? func : none);
     x_printf("[FILE] %s\n", file ? file : none);
     x_printf("[LINE] %d\n", line);
+#if X_CONF_HAS_ERRNO_AND_STRERROR != 0
+    x_printf("[ERR ] %s\n", strerror(errno));
+#endif
+
     x_printf("************************\n");
 
     x_post_assertion_failed(expr, msg, func, file, line);

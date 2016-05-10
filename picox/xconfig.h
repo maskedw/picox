@@ -400,6 +400,17 @@ extern "C" {
 #endif
 
 
+/** @def   X_CONF_HAS_ERRNO_AND_STRERROR
+ *  @brief errnoとstrerror()が使用可能かを指定します
+ *
+ *  1をセットした場合、X_ASSERT()に失敗した場合のエラーメッセージ出力に、
+ *  strerror()で取得した文字列を追加で出力します。
+ */
+#ifndef X_CONF_HAS_ERRNO_AND_STRERROR
+#define X_CONF_HAS_ERRNO_AND_STRERROR (0)
+#endif
+
+
 /** @} end of addtogroup config
  */
 
