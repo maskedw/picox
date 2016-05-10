@@ -1,5 +1,6 @@
 # QMake project file
 
+include (../common.pro)
 TEMPLATE = lib
 CONFIG += staticlib
 
