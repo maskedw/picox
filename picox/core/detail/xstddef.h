@@ -314,6 +314,7 @@ typedef uint32_t XBits;
 /** @brief システムチックを格納する型です
  */
 typedef int32_t XTick;
+#define X_TICK_FOREVER      ((XTick)-1)
 
 
 /** @brief qsort()互換の比較関数ポインタ型です */
@@ -324,8 +325,12 @@ typedef int (*XCompareFunc)(const void* a, const void* b);
 typedef void* (*XMallocFunc)(size_t size);
 
 
-/** @brief free()互換のメモリ確保関数ポインタ型です */
+/** @brief free()互換のメモリ開放関数ポインタ型です */
 typedef void (*XFreeFunc)(void* ptr);
+
+
+/** @brief オブジェクトを削除する関数ポインタ型です */
+typedef void (*XDeleter)(void* ptr);
 
 
 /** @brief 組込み型の最大アライメント型です。
