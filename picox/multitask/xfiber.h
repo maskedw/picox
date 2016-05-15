@@ -14,7 +14,7 @@
 
 /*
  * License: MIT license
- * Copyright (c) <2015> <MaskedW [maskedw00@gmail.com]>
+ * Copyright (c) <2016> <MaskedW [maskedw00@gmail.com]>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of self software and associated documentation
@@ -42,7 +42,7 @@
 #define picox_multitask_xfiber_h_
 
 
-#include <picox/multitask/xfiber_def.h>
+#include <picox/core/xcore.h>
 
 
 #ifdef __cplusplus
@@ -50,23 +50,37 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-XError xfiber_kernel_init(size_t total_stack_size, size_t main_stack_size);
+typedef void* (*XFiberFunc)(void*);
+typedef int(*XFiberIdleHook)(void);
+
+#define X_TICK_TIMEOUT_FOREVER      ((XTick)-1)
+#define X_FIBER_EVENT_WAIT_OR       (0)
+#define X_FIBER_EVENT_WAIT_AND      (1)
+#define X_FIBER_EVENT_CLEAR_ON_EXIT (1 << 1)
+
+struct XFiber;
+struct XFiberEvent;
+typedef struct XFiber XFiber;
+typedef struct XFiberEvent XFiberEvent;
+
+
+XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook);
+XError xfiber_kernel_start_scheduler(void);
 void xfiber_yield();
 XFiber* xfiber_self();
-XError xfiber_init(XFiber* fiber, const char* name, size_t stack_size, XFiberFunc func, void* arg, int priority);
-XError xfiber_deinit(XFiber* fiber);
-const char* xfiber_name(const XFiber* fiber);
+XError xfiber_create(XFiber** o_fiber, const char* name, size_t stack_size, XFiberFunc func, void* arg, int priority);
 
-XError xfiber_event_init(XFiberEvent* event, const char* name);
-XError xfiber_event_deinit(XFiberEvent* event);
+XError xfiber_event_create(XFiberEvent** o_event, const char* name);
+void xfiber_event_destroy(XFiberEvent* event);
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result, XTick timeout);
 XError xfiber_event_set(XFiberEvent* event, XBits pattern);
 XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern);
 XError xfiber_event_clear(XFiberEvent* event, XBits pattern);
-const char* xfiber_event_name(const XFiberEvent* event);
 
+const char* xfiber_name(const XFiber* fiber);
+const char* xfiber_event_name(const XFiberEvent* event);
 
 
 // XFiberMailbox
