@@ -285,25 +285,6 @@ typedef uint32_t XTag;
     | ((uint32_t)(d) <<  0) )
 
 
-/** @brief time_tの代替をするシステム時刻を格納するための型です
- *
- *  POSIX互換システム風にUNIX時間1970年1月1日0時0分0秒(ただしタイムゾーンは考慮
- *  しない)からの経過秒数を表します。
- *  旧いシステムではtime_tは32bit符号ありで実装されることが多く、2038年問題があ
- *  りますが、XTimeは符号なしなので2106年まで保持可能です。
- */
-typedef uint32_t XTime;
-
-
-/** @brief struct timevalの代替をする高精度のシステム時刻を格納するための型です
- */
-typedef struct
-{
-    XTime   tv_sec;     /** 秒 */
-    int32_t tv_usec;    /** マイクロ秒 */
-} XTimeVal;
-
-
 /** @brief 何らかのビットフラグを格納することを意図した型です
  */
 typedef uint32_t XMode;
@@ -312,12 +293,6 @@ typedef uint32_t XMode;
 /** @brief XModeと同じくビットフラグを格納しますが、よりビットを意識した型です
  */
 typedef uint32_t XBits;
-
-
-/** @brief システムチックを格納する型です
- */
-typedef int32_t XTick;
-#define X_TICK_FOREVER      ((XTick)-1)
 
 
 /** @brief qsort()互換の比較関数ポインタ型です */

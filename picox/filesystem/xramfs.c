@@ -248,7 +248,7 @@ XError xramfs_open(XRamFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
             fileent->m_data = NULL;
             fileent->m_size = 0;
             fileent->m_capacity = 0;
-            fileent->m_entry.m_timestamp = x_gettimeofday().tv_sec;
+            fileent->m_entry.m_timestamp = x_gettimeofday2().tv_sec;
         }
     }
     else
