@@ -53,7 +53,6 @@ extern "C" {
 typedef void* (*XFiberFunc)(void*);
 typedef int(*XFiberIdleHook)(void);
 
-#define X_TICK_TIMEOUT_FOREVER      ((XTick)-1)
 #define X_FIBER_EVENT_WAIT_OR       (0)
 #define X_FIBER_EVENT_WAIT_AND      (1)
 #define X_FIBER_EVENT_CLEAR_ON_EXIT (1 << 1)
@@ -74,13 +73,15 @@ XError xfiber_event_create(XFiberEvent** o_event, const char* name);
 void xfiber_event_destroy(XFiberEvent* event);
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
-XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result, XTick timeout);
+XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result, XTicks timeout);
 XError xfiber_event_set(XFiberEvent* event, XBits pattern);
 XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern);
 XError xfiber_event_clear(XFiberEvent* event, XBits pattern);
 
 const char* xfiber_name(const XFiber* fiber);
 const char* xfiber_event_name(const XFiberEvent* event);
+
+void xfiber_delay(XTicks time);
 
 
 // XFiberMailbox

@@ -41,7 +41,11 @@
 #include <picox/multitask/xfiber.h>
 #include <picox/container/xintrusive_list.h>
 #include <picox/allocator/xpico_allocator.h>
+#include <picox/multitask/xvtimer.h>
 
+
+#define X_FIBER_ENTER_CRITICAL()
+#define X_FIBER_EXIT_CRITICAL()
 
 #define X_FIBER_IMPL_TYPE_COPY_STACK        (0)
 #define X_FIBER_IMPL_TYPE_UCONTEXT          (1)
@@ -84,6 +88,7 @@ typedef enum
     X_FIBER_STATE_READY,
     X_FIBER_STATE_RUNNING,
     X_FIBER_STATE_WAITING_EVENT,
+    X_FIBER_STATE_WAITING_DELAY,
 } XFiberState;
 
 
@@ -93,6 +98,7 @@ typedef enum
 
 struct XFiberObject;
 typedef struct XFiberObject* XFiberObject;
+typedef void (*XFiberTimeEventHandler)(XFiber*);
 
 struct XFiberObject
 {
@@ -125,12 +131,14 @@ struct XFiber
     void*               m_arg;
     uint8_t*            m_stack;
     XFiberState         m_state;
+    void*               m_holder;
     XBits               m_wait_event_pattern;
     XMode               m_wait_event_mode;
     XFiberContext       m_context;
     XBits               m_result_event_patten;
     XError              m_result_waiting;
-    XTick               m_waiting_time;
+    XTicks              m_waiting_time;
+    XVTimerRequest      m_timer_request;
 };
 
 
@@ -149,6 +157,8 @@ typedef struct X__Kernel
     XPicoAllocator      m_alloc;
     XFiberIdleHook      m_idlehook;
     XFiberContext       m_return_ctx;
+    XTicks              m_timepoint;
+    XVTimer             m_vtimer;
 
 #if X_CONF_FIBER_IMPL_TYPE == X_FIBER_IMPL_TYPE_COPY_STACK
     uint8_t*            m_machine_stack_begin;
@@ -163,6 +173,8 @@ static void* X__Malloc(size_t size);
 static void X__Free(void* ptr);
 static void X__FiberMain(XFiber* fiber);
 static bool X__TestEvent(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
+static void X__DelayTimeoutHandler(XFiber* fiber);
+static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTicks time);
 
 static void X__StartSchedule(void);
 static void X__EndSchedule();
@@ -190,6 +202,7 @@ XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook)
 {
     xilist_init(&priv->m_ready_queue);
     xpalloc_init(&priv->m_alloc, heap, heapsize, X_ALIGN_OF(XMaxAlign));
+    xvtimer_init(&priv->m_vtimer);
     priv->m_idlehook = idlehook;
 
     return X_ERR_NONE;
@@ -213,6 +226,7 @@ XError xfiber_create(XFiber** o_fiber, const char* name, size_t stack_size,
 {
     XError err = X_ERR_NONE;
     uint8_t* stack = NULL;
+
     XFiber* fiber = X__Malloc(sizeof(XFiber));
     if (!fiber)
     {
@@ -238,9 +252,15 @@ XError xfiber_create(XFiber** o_fiber, const char* name, size_t stack_size,
     fiber->m_stack_size = stack_size;
     fiber->m_priority = priority;
     fiber->m_type = X_FIBER_OBJTYPE_TASK;
+    xvtimer_init_request(&fiber->m_timer_request);
 
     X__MakeContext(fiber, func, arg, stack, stack_size);
-    X__PushReadyQueue(fiber);
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PushReadyQueue(fiber);
+    }
+    X_FIBER_EXIT_CRITICAL();
 
     *o_fiber = fiber;
     fiber = NULL;
@@ -258,9 +278,15 @@ XError xfiber_kernel_start_scheduler(void)
 {
     X__LOG((X__TAG, "start schedule"));
 
-    XFiber* fiber = X__PopReadyQueue();
-    fiber->m_state = X_FIBER_STATE_RUNNING;
-    priv->m_cur_task = fiber;
+    X_FIBER_ENTER_CRITICAL();
+    {
+        XFiber* fiber = X__PopReadyQueue();
+        fiber->m_state = X_FIBER_STATE_RUNNING;
+        priv->m_cur_task = fiber;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    priv->m_timepoint = x_ticks_now();
     X__StartSchedule();
 
     X__LOG((X__TAG, "end schedule"));
@@ -271,6 +297,8 @@ XError xfiber_kernel_start_scheduler(void)
 
 const char* xfiber_name(const XFiber* fiber)
 {
+    if (!fiber)
+        fiber = priv->m_cur_task;
     return fiber->m_name;
 }
 
@@ -306,15 +334,23 @@ void xfiber_event_destroy(XFiberEvent* event)
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
 {
     volatile XError err = X_ERR_NONE;
+    XFiber* const fiber = xfiber_self();
 
-    if (X__TestEvent(event, mode, wait_pattern, result))
-        goto x__exit;
 
-    XFiber* const volatile fiber = xfiber_self();
-    fiber->m_wait_event_pattern = wait_pattern;
-    fiber->m_wait_event_mode = mode;
-    fiber->m_state = X_FIBER_STATE_WAITING_EVENT;
-    xilist_push_front(&event->m_queue, &fiber->m_node);
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (X__TestEvent(event, mode, wait_pattern, result))
+        {
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+        xilist_push_front(&event->m_queue, &fiber->m_node);
+        fiber->m_wait_event_pattern = wait_pattern;
+        fiber->m_wait_event_mode = mode;
+        fiber->m_state = X_FIBER_STATE_WAITING_EVENT;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
     X__Schedule();
 
     *result = fiber->m_result_event_patten;
@@ -325,11 +361,25 @@ x__exit:
 }
 
 
+XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
+{
+    volatile XError err = X_ERR_NONE;
 
-XError xfiber_event_set(XFiberEvent* event, XBits pattern)
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (!X__TestEvent(event, mode, wait_pattern, result))
+            err = X_ERR_TIMED_OUT;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    return err;
+}
+
+
+
+XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern)
 {
     XError err = X_ERR_NONE;
-    bool scheduling_request = false;
 
     event->m_pattern |= pattern;
     XIntrusiveNode* ite = xilist_front(&event->m_queue);
@@ -347,12 +397,47 @@ XError xfiber_event_set(XFiberEvent* event, XBits pattern)
         {
             xnode_unlink(&fiber->m_node);
             X__PushReadyQueue(fiber);
-            scheduling_request = true;
             if (fiber->m_wait_event_mode & X_FIBER_EVENT_CLEAR_ON_EXIT)
                 break;
         }
         ite = next;
     }
+
+    return err;
+}
+
+
+XError xfiber_event_set(XFiberEvent* event, XBits pattern)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        event->m_pattern |= pattern;
+        XIntrusiveNode* ite = xilist_front(&event->m_queue);
+        XIntrusiveNode* const end = xilist_end(&event->m_queue);
+
+        while (ite != end)
+        {
+            XFiber* const fiber = xnode_entry(ite, XFiber, m_node);
+            XIntrusiveNode* const next = ite->next;
+
+            if (X__TestEvent(event,
+                             fiber->m_wait_event_mode,
+                             fiber->m_wait_event_pattern,
+                             &fiber->m_result_event_patten))
+            {
+                xnode_unlink(&fiber->m_node);
+                X__PushReadyQueue(fiber);
+                scheduling_request = true;
+                if (fiber->m_wait_event_mode & X_FIBER_EVENT_CLEAR_ON_EXIT)
+                    break;
+            }
+            ite = next;
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
 
     if (scheduling_request)
         X__Schedule();
@@ -363,8 +448,51 @@ XError xfiber_event_set(XFiberEvent* event, XBits pattern)
 
 XError xfiber_event_clear(XFiberEvent* event, XBits pattern)
 {
-    event->m_pattern &= ~pattern;
+    X_FIBER_ENTER_CRITICAL();
+    {
+        event->m_pattern &= ~pattern;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
     return X_ERR_NONE;
+}
+
+
+void xfiber_delay(XTicks time)
+{
+    if (time == 0)
+        return;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        XFiber* const self = priv->m_cur_task;
+        self->m_state= X_FIBER_STATE_WAITING_DELAY;
+        X__AddTimerEvent(self, X__DelayTimeoutHandler, time);
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    X__Schedule();
+}
+
+
+static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTicks time)
+{
+    const XTicks now = x_ticks_now();
+    const XTicks cur_step = now - priv->m_timepoint;
+    time += cur_step;
+    xvtimer_add_request(&priv->m_vtimer,
+                        &fiber->m_timer_request,
+                        (XVTimerCallBack)handler,
+                        fiber,
+                        0,
+                        time,
+                        true);
+}
+
+
+static void X__DelayTimeoutHandler(XFiber* fiber)
+{
+    X__PushReadyQueue(fiber);
 }
 
 
@@ -390,25 +518,80 @@ static XFiber* X__PopReadyQueue(void)
 static void X__Schedule(void)
 {
     XFiber* const prev = priv->m_cur_task;
-    if (prev && (prev->m_state == X_FIBER_STATE_RUNNING))
-        X__PushReadyQueue(prev);
+    XFiber* next = NULL;
 
-    while (xilist_empty(&priv->m_ready_queue))
+    XTicks now = x_ticks_now();
+    XTicks step = now - priv->m_timepoint;
+    priv->m_timepoint = now;
+
+    X_FIBER_ENTER_CRITICAL();
     {
-        const int ret = priv->m_idlehook();
-        if (ret != 0)
-            X__EndSchedule();
-    }
+        if (prev && (prev->m_state == X_FIBER_STATE_RUNNING))
+            X__PushReadyQueue(prev);
 
-    XFiber* const next = X__PopReadyQueue();
-    next->m_state = X_FIBER_STATE_RUNNING;
-    priv->m_cur_task = next;
+        xvtimer_schedule(&priv->m_vtimer, step);
+
+        while (xilist_empty(&priv->m_ready_queue))
+        {
+            X_FIBER_EXIT_CRITICAL();
+
+            const int ret = priv->m_idlehook();
+            if (ret != 0)
+                X__EndSchedule();
+
+            now = x_ticks_now();
+            step = now - priv->m_timepoint;
+            priv->m_timepoint = now;
+
+            X_FIBER_ENTER_CRITICAL();
+            xvtimer_schedule(&priv->m_vtimer, step);
+        }
+
+        next = X__PopReadyQueue();
+        next->m_state = X_FIBER_STATE_RUNNING;
+        priv->m_cur_task = next;
+    }
+    X_FIBER_EXIT_CRITICAL();
 
     if (prev)
         X__SwapContext(prev, next);
     else
         X__SetContext(next);
 }
+
+#if 0
+static void X__Schedule(void)
+{
+    XFiber* const prev = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (prev && (prev->m_state == X_FIBER_STATE_RUNNING))
+            X__PushReadyQueue(prev);
+
+        while (xilist_empty(&priv->m_ready_queue))
+        {
+            X_FIBER_EXIT_CRITICAL();
+
+            const int ret = priv->m_idlehook();
+            if (ret != 0)
+                X__EndSchedule();
+
+            X_FIBER_ENTER_CRITICAL();
+        }
+
+        XFiber* const next = X__PopReadyQueue();
+        next->m_state = X_FIBER_STATE_RUNNING;
+        priv->m_cur_task = next;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (prev)
+        X__SwapContext(prev, next);
+    else
+        X__SetContext(next);
+}
+#endif
 
 
 static bool X__TestEvent(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
