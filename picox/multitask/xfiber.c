@@ -90,11 +90,20 @@ typedef enum
     X_FIBER_STATE_WAITING_EVENT,
     X_FIBER_STATE_WAITING_DELAY,
     X_FIBER_STATE_WAITING_SIGNAL,
+    X_FIBER_STATE_SUSPEND = (1 << 8),
+    X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SIGNAL = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SIGNAL,
 } XFiberState;
 
 
-#define X_FIBER_EVENT_WAIT_MASK                  (X_FIBER_EVENT_WAIT_OR | X_FIBER_EVENT_WAIT_AND)
-#define X_FIBER_STATE_IS_WAITING(state)          ((state) >= X_FIBER_STATE_WAITING_EVENT)
+#define X_FIBER_EVENT_WAIT_MASK             (X_FIBER_EVENT_WAIT_OR | X_FIBER_EVENT_WAIT_AND)
+
+#define X_FIBER_IS_READY(state)             ((state) == X_FIBER_STATE_READY)
+#define X_FIBER_IS_RUNNING(state)           ((state) == X_FIBER_STATE_RUNNING)
+#define X_FIBER_IS_SUSPEND(state)           ((state) & X_FIBER_STATE_SUSPEND)
+#define X_FIBER_IS_WAITING_SUSPEND(state)   ((state) >= X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT)
+#define X_FIBER_IS_WAITING(state)           (((state) & 0xFF) >= X_FIBER_STATE_WAITING_EVENT)
 
 
 struct XFiberObject;
@@ -172,6 +181,7 @@ typedef struct X__Kernel
 static void X__PushToReadyQueue(XFiber* fiber);
 static XFiber* X__PopFromReadyQueue(void);
 static void X__Schedule(void);
+static void X__ReleaseWaiting(XFiber* fiber);
 static void* X__Malloc(size_t size);
 static void X__Free(void* ptr);
 static void X__FiberMain(XFiber* fiber);
@@ -373,6 +383,7 @@ XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_patter
         if (timeout == 0)
         {
             err = X_ERR_TIMED_OUT;
+            X_FIBER_EXIT_CRITICAL();
             goto x__exit;
         }
 
@@ -414,8 +425,7 @@ XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern)
                          fiber->m_wait_event_pattern,
                          &fiber->m_result_event_patten))
         {
-            xnode_unlink(&fiber->m_node);
-            X__PushToReadyQueue(fiber);
+            X__ReleaseWaiting(fiber);
             xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
             if (fiber->m_wait_event_mode & X_FIBER_EVENT_CLEAR_ON_EXIT)
                 break;
@@ -448,8 +458,7 @@ XError xfiber_event_set(XFiberEvent* event, XBits pattern)
                              fiber->m_wait_event_pattern,
                              &fiber->m_result_event_patten))
             {
-                xnode_unlink(&fiber->m_node);
-                X__PushToReadyQueue(fiber);
+                X__ReleaseWaiting(fiber);
                 fiber->m_result_waiting = X_ERR_NONE;
                 xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
                 scheduling_request = true;
@@ -508,12 +517,14 @@ XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout)
         if (*result)
         {
             fiber->m_recv_sigs &= ~(*result);
+            X_FIBER_EXIT_CRITICAL();
             goto x__exit;
         }
 
         if (timeout == 0)
         {
             err = X_ERR_TIMED_OUT;
+            X_FIBER_EXIT_CRITICAL();
             goto x__exit;
         }
 
@@ -549,7 +560,6 @@ x__exit:
 XError xfiber_signal_raise(XFiber* fiber, XBits sigs)
 {
     XError err = X_ERR_NONE;
-    XBits result_sigs;
     bool scheduling_request = false;
 
     X_FIBER_ENTER_CRITICAL();
@@ -557,8 +567,7 @@ XError xfiber_signal_raise(XFiber* fiber, XBits sigs)
         fiber->m_recv_sigs |= sigs;
         if (fiber->m_wait_sigs & sigs)
         {
-            xnode_unlink(&fiber->m_node);
-            X__PushToReadyQueue(fiber);
+            X__ReleaseWaiting(fiber);
             fiber->m_wait_sigs = 0;
             fiber->m_result_waiting = X_ERR_NONE;
             xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
@@ -581,8 +590,7 @@ XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs)
     fiber->m_recv_sigs |= sigs;
     if (fiber->m_wait_sigs & fiber->m_recv_sigs)
     {
-        xnode_unlink(&fiber->m_node);
-        X__PushToReadyQueue(fiber);
+        X__ReleaseWaiting(fiber);
         fiber->m_wait_sigs = 0;
         fiber->m_result_waiting = X_ERR_NONE;
         xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
@@ -610,6 +618,77 @@ void xfiber_delay(XTicks time)
 }
 
 
+XError xfiber_suspend(XFiber* fiber)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    if (!fiber)
+        fiber = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (X_FIBER_IS_SUSPEND(fiber->m_state))
+        {
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+
+        if (X_FIBER_IS_WAITING(fiber->m_state))
+        {
+            fiber->m_state |= X_FIBER_STATE_SUSPEND;
+        }
+        else
+        {
+            fiber->m_state =  X_FIBER_STATE_SUSPEND;
+            xilist_push_back(&priv->m_delay_queue, &fiber->m_node);
+            scheduling_request = (fiber == priv->m_cur_task);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+x__exit:
+    return err;
+}
+
+
+XError xfiber_resume(XFiber* fiber)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (!X_FIBER_IS_SUSPEND(fiber->m_state))
+        {
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+
+        if (X_FIBER_IS_WAITING_SUSPEND(fiber->m_state))
+        {
+            fiber->m_state &= ~X_FIBER_STATE_SUSPEND;
+        }
+        else
+        {
+            xnode_unlink(&fiber->m_node);
+            X__PushToReadyQueue(fiber);
+            scheduling_request = true;
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+x__exit:
+    return err;
+}
+
+
 static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTicks time)
 {
     const XTicks now = x_ticks_now();
@@ -625,17 +704,25 @@ static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTic
 }
 
 
-static void X__DelayTimeoutHandler(XFiber* fiber)
+static void X__ReleaseWaiting(XFiber* fiber)
 {
-    X__PushToReadyQueue(fiber);
+    xnode_unlink(&fiber->m_node);
+    if (X_FIBER_IS_WAITING_SUSPEND(fiber->m_state))
+    {
+        fiber->m_state = X_FIBER_STATE_SUSPEND;
+        xilist_push_front(&priv->m_delay_queue, &fiber->m_node);
+    }
+    else
+    {
+        X__PushToReadyQueue(fiber);
+    }
 }
 
 
 static void X__TimeoutHandler(XFiber* fiber)
 {
-    xnode_unlink(&fiber->m_node);
     fiber->m_result_waiting = X_ERR_TIMED_OUT;
-    X__PushToReadyQueue(fiber);
+    X__ReleaseWaiting(fiber);
 }
 
 

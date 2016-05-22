@@ -82,6 +82,10 @@ XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout);
 XError xfiber_signal_raise(XFiber* fiber, XBits sigs);
 XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs);
 
+XError xfiber_suspend(XFiber* fiber);
+XError xfiber_resume(XFiber* fiber);
+
+
 const char* xfiber_name(const XFiber* fiber);
 const char* xfiber_event_name(const XFiberEvent* event);
 
