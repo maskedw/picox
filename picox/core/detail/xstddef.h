@@ -207,6 +207,9 @@ extern "C" {
 #define X_MSBOF_LONG     (ULONG_MAX   & (~(ULONG_MAX   >> 1)))
 #define X_MSBOF_INTPTR   (UINTPTR_MAX & (~(UINTPTR_MAX >> 1)))
 #define X_MSBOF_SIZE     (SIZE_MAX    & (~(SIZE_MAX    >> 1)))
+#define X_MSBOF_INT8     (1U << 7)
+#define X_MSBOF_INT16    (1U << 15)
+#define X_MSBOF_INT32    (X_UINT32_C(1) << 31)
 
 
 /** @} endof name X_MSBOF_XXX
