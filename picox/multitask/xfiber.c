@@ -89,6 +89,7 @@ typedef enum
     X_FIBER_STATE_RUNNING,
     X_FIBER_STATE_WAITING_EVENT,
     X_FIBER_STATE_WAITING_DELAY,
+    X_FIBER_STATE_WAITING_SIGNAL,
 } XFiberState;
 
 
@@ -132,6 +133,9 @@ struct XFiber
     uint8_t*            m_stack;
     XFiberState         m_state;
     XBits               m_wait_event_pattern;
+    XBits               m_wait_sigs;
+    XBits               m_recv_sigs;
+    XBits               m_result_sigs;
     XMode               m_wait_event_mode;
     XFiberContext       m_context;
     XBits               m_result_event_patten;
@@ -172,6 +176,7 @@ static void* X__Malloc(size_t size);
 static void X__Free(void* ptr);
 static void X__FiberMain(XFiber* fiber);
 static bool X__TestEvent(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
+static bool X__TestSignal(XFiber* fiber, XBits sigs);
 static void X__DelayTimeoutHandler(XFiber* fiber);
 static void X__TimeoutHandler(XFiber* fiber);
 static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTicks time);
@@ -222,8 +227,13 @@ void xfiber_yield()
 }
 
 
-XError xfiber_create(XFiber** o_fiber, const char* name, size_t stack_size,
-                     XFiberFunc func, void* arg, int priority)
+
+XError xfiber_create(XFiber** o_fiber,
+                     int priority,
+                     const char* name,
+                     size_t stack_size,
+                     XFiberFunc func,
+                     void* arg)
 {
     XError err = X_ERR_NONE;
     uint8_t* stack = NULL;
@@ -253,6 +263,9 @@ XError xfiber_create(XFiber** o_fiber, const char* name, size_t stack_size,
     fiber->m_stack_size = stack_size;
     fiber->m_priority = priority;
     fiber->m_type = X_FIBER_OBJTYPE_TASK;
+    fiber->m_wait_sigs = 0;
+    fiber->m_recv_sigs = 0;
+
     xvtimer_init_request(&fiber->m_timer_request);
 
     X__MakeContext(fiber, func, arg, stack, stack_size);
@@ -334,46 +347,13 @@ void xfiber_event_destroy(XFiberEvent* event)
 
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
 {
-    volatile XError err = X_ERR_NONE;
-    XFiber* const fiber = xfiber_self();
-
-
-    X_FIBER_ENTER_CRITICAL();
-    {
-        if (X__TestEvent(event, mode, wait_pattern, result))
-        {
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
-        xilist_push_front(&event->m_queue, &fiber->m_node);
-        fiber->m_wait_event_pattern = wait_pattern;
-        fiber->m_wait_event_mode = mode;
-        fiber->m_state = X_FIBER_STATE_WAITING_EVENT;
-    }
-    X_FIBER_EXIT_CRITICAL();
-
-    X__Schedule();
-
-    *result = fiber->m_result_event_patten;
-    err = fiber->m_result_waiting;
-
-x__exit:
-    return err;
+    return xfiber_event_timed_wait(event, mode, wait_pattern, result, X_TICKS_FOREVER);
 }
 
 
 XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result)
 {
-    volatile XError err = X_ERR_NONE;
-
-    X_FIBER_ENTER_CRITICAL();
-    {
-        if (!X__TestEvent(event, mode, wait_pattern, result))
-            err = X_ERR_TIMED_OUT;
-    }
-    X_FIBER_EXIT_CRITICAL();
-
-    return err;
+    return xfiber_event_timed_wait(event, mode, wait_pattern, result, 0);
 }
 
 
@@ -389,11 +369,20 @@ XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_patter
             X_FIBER_EXIT_CRITICAL();
             goto x__exit;
         }
+
+        if (timeout == 0)
+        {
+            err = X_ERR_TIMED_OUT;
+            goto x__exit;
+        }
+
         xilist_push_front(&event->m_queue, &fiber->m_node);
         fiber->m_wait_event_pattern = wait_pattern;
         fiber->m_wait_event_mode = mode;
         fiber->m_state = X_FIBER_STATE_WAITING_EVENT;
-        X__AddTimerEvent(fiber, X__TimeoutHandler, timeout);
+
+        if (timeout > 0)
+            X__AddTimerEvent(fiber, X__TimeoutHandler, timeout);
     }
     X_FIBER_EXIT_CRITICAL();
 
@@ -405,7 +394,6 @@ XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_patter
 x__exit:
     return err;
 }
-
 
 
 XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern)
@@ -489,6 +477,118 @@ XError xfiber_event_clear(XFiberEvent* event, XBits pattern)
     X_FIBER_EXIT_CRITICAL();
 
     return X_ERR_NONE;
+}
+
+
+XError xfiber_signal_wait(XBits sigs, XBits* result)
+{
+    return xfiber_signal_timed_wait(sigs, result, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_signal_try_wait(XBits sigs, XBits* result)
+{
+    return xfiber_signal_timed_wait(sigs, result, 0);
+}
+
+
+XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout)
+{
+    volatile XError err = X_ERR_NONE;
+    if (!sigs)
+    {
+        *result = 0;
+        goto x__exit;
+    }
+
+    XFiber* const fiber = xfiber_self();
+    X_FIBER_ENTER_CRITICAL();
+    {
+        *result = sigs & fiber->m_recv_sigs;
+        if (*result)
+        {
+            fiber->m_recv_sigs &= ~(*result);
+            goto x__exit;
+        }
+
+        if (timeout == 0)
+        {
+            err = X_ERR_TIMED_OUT;
+            goto x__exit;
+        }
+
+        xilist_push_front(&priv->m_delay_queue, &fiber->m_node);
+        fiber->m_wait_sigs = sigs;
+        fiber->m_state = X_FIBER_STATE_WAITING_SIGNAL;
+
+        if (timeout > 0)
+            X__AddTimerEvent(fiber, X__TimeoutHandler, timeout);
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    X__Schedule();
+
+    err = fiber->m_result_waiting;
+
+    if (err == X_ERR_NONE)
+    {
+        X_FIBER_ENTER_CRITICAL();
+        {
+            *result = sigs & fiber->m_recv_sigs;
+            X_ASSERT(*result);
+            fiber->m_recv_sigs &= ~(*result);
+        }
+        X_FIBER_EXIT_CRITICAL();
+    }
+
+x__exit:
+    return err;
+}
+
+
+XError xfiber_signal_raise(XFiber* fiber, XBits sigs)
+{
+    XError err = X_ERR_NONE;
+    XBits result_sigs;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        fiber->m_recv_sigs |= sigs;
+        if (fiber->m_wait_sigs & sigs)
+        {
+            xnode_unlink(&fiber->m_node);
+            X__PushToReadyQueue(fiber);
+            fiber->m_wait_sigs = 0;
+            fiber->m_result_waiting = X_ERR_NONE;
+            xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
+            scheduling_request = true;
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs)
+{
+    XError err = X_ERR_NONE;
+
+    fiber->m_recv_sigs |= sigs;
+    if (fiber->m_wait_sigs & fiber->m_recv_sigs)
+    {
+        xnode_unlink(&fiber->m_node);
+        X__PushToReadyQueue(fiber);
+        fiber->m_wait_sigs = 0;
+        fiber->m_result_waiting = X_ERR_NONE;
+        xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
+    }
+
+    return err;
 }
 
 

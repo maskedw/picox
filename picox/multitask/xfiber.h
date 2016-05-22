@@ -67,8 +67,7 @@ XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook);
 XError xfiber_kernel_start_scheduler(void);
 void xfiber_yield();
 XFiber* xfiber_self();
-XError xfiber_create(XFiber** o_fiber, const char* name, size_t stack_size, XFiberFunc func, void* arg, int priority);
-
+XError xfiber_create(XFiber** o_fiber, int priority, const char* name, size_t stack_size, XFiberFunc func, void* arg);
 XError xfiber_event_create(XFiberEvent** o_event, const char* name);
 void xfiber_event_destroy(XFiberEvent* event);
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
@@ -77,6 +76,11 @@ XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_patter
 XError xfiber_event_set(XFiberEvent* event, XBits pattern);
 XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern);
 XError xfiber_event_clear(XFiberEvent* event, XBits pattern);
+XError xfiber_signal_wait(XBits sigs, XBits* result);
+XError xfiber_signal_try_wait(XBits sigs, XBits* result);
+XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout);
+XError xfiber_signal_raise(XFiber* fiber, XBits sigs);
+XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs);
 
 const char* xfiber_name(const XFiber* fiber);
 const char* xfiber_event_name(const XFiberEvent* event);
