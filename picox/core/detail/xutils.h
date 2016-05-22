@@ -166,6 +166,11 @@ extern "C" {
 #define X_FOREVER()    for (;;)
 
 
+/** @brief あまりの切り上げを行う整数除算です
+ */
+#define X_DIV_ROUNDUP(dividend, divisor)  (((dividend) + (divisor) - 1) / (divisor))
+
+
 /** @brief xをmの倍数に切り上げた値を返します。
  */
 #define X_ROUNDUP_MULTIPLE(x, m)    (((m) == 0) ? (x) : (((uint32_t)(x) + (m) - 1) / (m)) * (m))
