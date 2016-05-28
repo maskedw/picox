@@ -241,6 +241,18 @@ xilist_front(const XIntrusiveList* self)
 }
 
 
+/** @brief 先頭ノードをコンテナから除去して返します
+ */
+static inline XIntrusiveNode*
+xilist_pop_front(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    XIntrusiveNode* front = self->head.next;
+    xnode_unlink(front);
+    return front;
+}
+
+
 /** @brief コンテナの末尾ノードを返します
  */
 static inline XIntrusiveNode*
@@ -248,6 +260,18 @@ xilist_back(const XIntrusiveList* self)
 {
     X_ASSERT(self);
     return self->head.prev;
+}
+
+
+/** @brief 末尾ノードをコンテナから除去して返します
+ */
+static inline XIntrusiveNode*
+xilist_pop_back(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    XIntrusiveNode* back = self->head.prev;
+    xnode_unlink(back);
+    return back;
 }
 
 
