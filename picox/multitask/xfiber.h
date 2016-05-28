@@ -59,15 +59,33 @@ typedef int(*XFiberIdleHook)(void);
 
 struct XFiber;
 struct XFiberEvent;
+struct XFiberQueue;
+struct XFiberPool;
+struct XFiberChannel;
+struct XFiberMailbox;
+struct XFiberSemaphore;
+struct XFiberMutex;
+
 typedef struct XFiber XFiber;
 typedef struct XFiberEvent XFiberEvent;
-
+typedef struct XFiberQueue XFiberQueue;
+typedef struct XFiberPool XFiberPool;
+typedef struct XFiberChannel XFiberChannel;
+typedef struct XFiberMailbox XFiberMailbox;
+typedef struct XFiberSemaphore XFiberSemaphore;
+typedef struct XFiberMutex XFiberMutex;
 
 XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook);
 XError xfiber_kernel_start_scheduler(void);
+
+XError xfiber_create(XFiber** o_fiber, int priority, const char* name, size_t stack_size, XFiberFunc func, void* arg);
+void xfiber_delay(XTicks time);
+XError xfiber_suspend(XFiber* fiber);
+XError xfiber_resume(XFiber* fiber);
 void xfiber_yield();
 XFiber* xfiber_self();
-XError xfiber_create(XFiber** o_fiber, int priority, const char* name, size_t stack_size, XFiberFunc func, void* arg);
+const char* xfiber_name(const XFiber* fiber);
+
 XError xfiber_event_create(XFiberEvent** o_event, const char* name);
 void xfiber_event_destroy(XFiberEvent* event);
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
@@ -76,29 +94,70 @@ XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_patter
 XError xfiber_event_set(XFiberEvent* event, XBits pattern);
 XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern);
 XError xfiber_event_clear(XFiberEvent* event, XBits pattern);
+const char* xfiber_event_name(const XFiberEvent* event);
+
 XError xfiber_signal_wait(XBits sigs, XBits* result);
 XError xfiber_signal_try_wait(XBits sigs, XBits* result);
 XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout);
 XError xfiber_signal_raise(XFiber* fiber, XBits sigs);
 XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs);
 
-XError xfiber_suspend(XFiber* fiber);
-XError xfiber_resume(XFiber* fiber);
+XError xfiber_queue_create(XFiberQueue** o_queue, size_t queue_len, size_t item_size);
+void xfiber_queue_destroy(XFiberQueue* queue);
+XError xfiber_queue_send_back(XFiberQueue* queue, const void* src);
+XError xfiber_queue_send_back_isr(XFiberQueue* queue, const void* src);
+XError xfiber_queue_timed_send_back(XFiberQueue* queue, const void* src, XTicks timeout);
+XError xfiber_queue_try_send_back(XFiberQueue* queue, const void* src);
+XError xfiber_queue_send_front(XFiberQueue* queue, const void* src);
+XError xfiber_queue_send_front_isr(XFiberQueue* queue, const void* src);
+XError xfiber_queue_timed_send_front(XFiberQueue* queue, const void* src, XTicks timeout);
+XError xfiber_queue_try_send_front(XFiberQueue* queue, const void* src);
+XError xfiber_queue_receive(XFiberQueue* queue, void* dst);
+XError xfiber_queue_timed_receive(XFiberQueue* queue, void* dst, XTicks timeout);
+XError xfiber_queue_try_receive(XFiberQueue* queue, void* dst);
+XError xfiber_queue_receive_isr(XFiberQueue* queue, void* dst);
 
+XError xfiber_channel_create(XFiberChannel** o_channel, size_t capacity, size_t max_item_size);
+void xfiber_channel_destroy(XFiberChannel* channel);
+XError xfiber_channel_send(XFiberChannel* channel, const void* src, size_t size);
+XError xfiber_channel_send_isr(XFiberChannel* channel, const void* src, size_t size);
+XError xfiber_channel_timed_send(XFiberChannel* channel, const void* src, size_t size);
+XError xfiber_channel_try_send(XFiberChannel* channel, const void* src);
+XError xfiber_channel_receive(XFiberChannel* channel, void* dst, size_t* o_size);
+XError xfiber_channel_timed_receive(XFiberChannel* channel, void* dst, size_t* o_size);
+XError xfiber_channel_try_receive(XFiberChannel* channel, void* dst, size_t* o_size);
 
-const char* xfiber_name(const XFiber* fiber);
-const char* xfiber_event_name(const XFiberEvent* event);
+XError xfiber_mutex_create(XFiberMutex** o_mutex);
+void xfiber_mutex_destroy(XFiberMutex* mutex);
+XError xfiber_mutex_lock(XFiberMutex* mutex);
+XError xfiber_mutex_timed_lock(XFiberMutex* mutex);
+XError xfiber_mutex_try_lock(XFiberMutex* mutex);
+XError xfiber_mutex_unlock(XFiberMutex* mutex);
 
-void xfiber_delay(XTicks time);
+XError xfiber_semaphore_create(XFiberSemaphore** o_semaphore);
+void xfiber_semaphore_destroy(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_acquire(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_acquire_n(XFiberSemaphore* semaphore, size_t n);
+XError xfiber_semaphore_acquire_all(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_try_acquire(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_try_acquire_n(XFiberSemaphore* semaphore, size_t n);
+XError xfiber_semaphore_try_acquire_all(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_timed_acquire(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_timed_acquire_n(XFiberSemaphore* semaphore, size_t n);
+XError xfiber_semaphore_timed_acquire_all(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_release(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_release_n(XFiberSemaphore* semaphore, size_t n);
+XError xfiber_semaphore_release_all(XFiberSemaphore* semaphore, size_t n);
 
+XError xfiber_mailbox_send(XFiberMailbox* mailbox, const void* src, size_t size);
+XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, const void* src, size_t size);
+XError xfiber_mailbox_receive(XFiberMailbox* mailbox, void* dst, size_t* o_size);
+XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, void* dst, size_t* o_size);
+XError xfiber_mailbox_try_receive(XFiberMailbox* mailbox, void* dst, size_t* o_size);
 
-// XFiberMailbox
-// XFiberSemaphore
+// 固定メモリブロック
+// XError xfiber_pool_init();
 
-// XError xfiber_semaphore_init();
-// XError xfiber_channel_init();
-// /* シングルリスト */
-// XError xfiber_mailbox_init();
 
 #ifdef __cplusplus
 }
