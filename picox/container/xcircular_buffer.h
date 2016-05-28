@@ -82,6 +82,8 @@ xcbuf_init(XCircularBuffer* self, void* buffer, size_t capacity)
     self->m_end = self->m_buff + capacity;
     self->m_first = self->m_last = self->m_buff;
     self->m_size = 0;
+
+    return true;
 }
 
 
@@ -300,6 +302,22 @@ xcbuf_push_front_n(XCircularBuffer* self, const void* src, size_t n)
         *(self->m_first) = *p++;
         self->m_last = self->m_first;
     }
+}
+
+
+static inline uint8_t
+xcbuf_back(XCircularBuffer* self)
+{
+    const uint8_t* p = self->m_last;
+    XCBUF__DECREMENT(p);
+    return *p;
+}
+
+
+static inline uint8_t
+xcbuf_front(XCircularBuffer* self)
+{
+    return *(self->m_first);
 }
 
 
