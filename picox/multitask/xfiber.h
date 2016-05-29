@@ -130,9 +130,10 @@ XError xfiber_channel_try_receive(XFiberChannel* channel, void* dst, size_t* o_s
 XError xfiber_mutex_create(XFiberMutex** o_mutex);
 void xfiber_mutex_destroy(XFiberMutex* mutex);
 XError xfiber_mutex_lock(XFiberMutex* mutex);
-XError xfiber_mutex_timed_lock(XFiberMutex* mutex);
+XError xfiber_mutex_timed_lock(XFiberMutex* mutex, XTicks timeout);
 XError xfiber_mutex_try_lock(XFiberMutex* mutex);
 XError xfiber_mutex_unlock(XFiberMutex* mutex);
+XError xfiber_mutex_unlock_isr(XFiberMutex* mutex);
 
 XError xfiber_semaphore_create(XFiberSemaphore** o_semaphore);
 void xfiber_semaphore_destroy(XFiberSemaphore* semaphore);

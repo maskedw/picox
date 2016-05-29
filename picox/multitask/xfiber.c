@@ -94,12 +94,14 @@ typedef enum
     X_FIBER_STATE_WAITING_SIGNAL,
     X_FIBER_STATE_WAITING_SEND_QUEUE,
     X_FIBER_STATE_WAITING_RECV_QUEUE,
+    X_FIBER_STATE_WAITING_MUTEX,
     X_FIBER_STATE_SUSPEND = (1 << 8),
     X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
     X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
     X_FIBER_STATE_SUSPEND_AND_WAITING_SIGNAL = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SIGNAL,
     X_FIBER_STATE_SUSPEND_AND_WAITING_SEND_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEND_QUEUE,
     X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_QUEUE,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
 } XFiberState;
 
 
@@ -129,6 +131,7 @@ typedef enum
     X_FIBER_OBJTYPE_TASK,
     X_FIBER_OBJTYPE_EVENT,
     X_FIBER_OBJTYPE_QUEUE,
+    X_FIBER_OBJTYPE_MUTEX,
 } XFiberObjectType;
 
 
@@ -179,6 +182,14 @@ struct XFiberQueue
     XIntrusiveList      m_pending_tasks;
     XCircularBuffer     m_buffer;
     size_t              m_item_size;
+};
+
+
+struct XFiberMutex
+{
+    X_DECLAER_FIBER_OBJECT_MEMBERS;
+    XIntrusiveList      m_pending_tasks;
+    XFiber*             m_holder;
 };
 
 
@@ -987,6 +998,131 @@ XError xfiber_queue_receive_isr(XFiberQueue* queue, void* dst)
     return err;
 }
 
+
+XError xfiber_mutex_create(XFiberMutex** o_mutex)
+{
+    if (!o_mutex)
+        return X_ERR_INVALID;
+
+    XFiberMutex* mutex = X__Malloc(sizeof(XFiberMutex));
+    if (!mutex)
+        return X_ERR_NO_MEMORY;
+
+    xilist_init(&mutex->m_pending_tasks);
+    mutex->m_type = X_FIBER_OBJTYPE_MUTEX;
+    mutex->m_holder = NULL;
+    *o_mutex = mutex;
+
+    return X_ERR_NONE;
+}
+
+
+XError xfiber_mutex_lock(XFiberMutex* mutex)
+{
+    return xfiber_mutex_timed_lock(mutex, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_mutex_try_lock(XFiberMutex* mutex)
+{
+    return xfiber_mutex_timed_lock(mutex, 0);
+}
+
+
+XError xfiber_mutex_timed_lock(XFiberMutex* mutex, XTicks timeout)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+    XFiber* const cur_task = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (!mutex->m_holder)
+        {
+            mutex->m_holder = cur_task;
+        }
+        else if (timeout == 0)
+        {
+            err = X_ERR_TIMED_OUT;
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+        else
+        {
+            scheduling_request = true;
+            xilist_push_back(&mutex->m_pending_tasks, &cur_task->m_node);
+            cur_task->m_state = X_FIBER_STATE_WAITING_MUTEX;
+            if (timeout > 0)
+                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+    {
+        X__Schedule();
+        err = cur_task->m_result_waiting;
+    }
+
+x__exit:
+    return err;
+}
+
+
+XError xfiber_mutex_unlock(XFiberMutex* mutex)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (!mutex->m_holder)
+        {
+            /* ロックされていない */
+            err = X_ERR_INVALID;
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+        else
+        {
+            mutex->m_holder = NULL;
+            if (xilist_empty(&mutex->m_pending_tasks))
+                goto x__exit;
+
+            XFiber* const pend_task = X__NODE_TO_FIBER(
+                    xilist_pop_front(&mutex->m_pending_tasks));
+            mutex->m_holder = pend_task;
+            X__ReleaseWaiting(pend_task, X_ERR_NONE);
+            scheduling_request = true;
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+x__exit:
+    return err;
+}
+
+
+XError xfiber_mutex_unlock_isr(XFiberMutex* mutex)
+{
+    XError err = X_ERR_NONE;
+    if (!mutex->m_holder)
+        return X_ERR_INVALID;
+
+    mutex->m_holder = NULL;
+    if (xilist_empty(&mutex->m_pending_tasks))
+        return X_ERR_NONE;
+
+    XFiber* const pend_task = X__NODE_TO_FIBER(
+            xilist_pop_front(&mutex->m_pending_tasks));
+    mutex->m_holder = pend_task;
+    X__ReleaseWaiting(pend_task, X_ERR_NONE);
+
+    return err;
+}
 
 
 static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTicks time)
