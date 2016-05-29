@@ -96,6 +96,7 @@ typedef enum
     X_FIBER_STATE_WAITING_RECV_QUEUE,
     X_FIBER_STATE_WAITING_MUTEX,
     X_FIBER_STATE_WAITING_SEMAPHORE,
+    X_FIBER_STATE_WAITING_RECV_MAILBOX,
     X_FIBER_STATE_SUSPEND = (1 << 8),
     X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
     X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
@@ -104,6 +105,7 @@ typedef enum
     X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_QUEUE,
     X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
     X_FIBER_STATE_SUSPEND_AND_WAITING_SEMAPHORE  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEMAPHORE,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_MAILBOX  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_MAILBOX,
 } XFiberState;
 
 
@@ -135,6 +137,7 @@ typedef enum
     X_FIBER_OBJTYPE_QUEUE,
     X_FIBER_OBJTYPE_MUTEX,
     X_FIBER_OBJTYPE_SEMAPHORE,
+    X_FIBER_OBJTYPE_MAILBOX,
 } XFiberObjectType;
 
 
@@ -168,6 +171,7 @@ struct XFiber
     XMode               m_wait_event_mode;
     const void*         m_pending_send_src;
     void*               m_pending_recv_dst;
+    XFiberMessage**     m_pending_recv_msg;
 };
 
 
@@ -203,6 +207,13 @@ struct XFiberSemaphore
     int                 m_count;
 };
 
+
+struct XFiberMailbox
+{
+    X_DECLAER_FIBER_OBJECT_MEMBERS;
+    XIntrusiveList      m_pending_tasks;
+    XIntrusiveList      m_messages;
+};
 
 
 typedef struct X__Kernel
@@ -1241,6 +1252,109 @@ XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore)
     }
 
     return err;
+}
+
+
+
+XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (xilist_empty(&mailbox->m_messages) && !xilist_empty(&mailbox->m_pending_tasks))
+        {
+            XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&mailbox->m_pending_tasks));
+            *(pend_task->m_pending_recv_msg) = message;
+            X__ReleaseWaiting(pend_task, X_ERR_NONE);
+            scheduling_request = true;
+        }
+        else
+        {
+            xilist_push_back(&mailbox->m_messages, message);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, XFiberMessage* message)
+{
+    XError err = X_ERR_NONE;
+
+    if (xilist_empty(&mailbox->m_messages) && !xilist_empty(&mailbox->m_pending_tasks))
+    {
+        XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&mailbox->m_pending_tasks));
+        *(pend_task->m_pending_recv_msg) = message;
+        X__ReleaseWaiting(pend_task, X_ERR_NONE);
+    }
+    else
+    {
+        xilist_push_back(&mailbox->m_messages, message);
+    }
+
+    return err;
+}
+
+
+XError xfiber_mailbox_receive(XFiberMailbox* mailbox, XFiberMessage** o_message)
+{
+    return xfiber_mailbox_timed_receive(mailbox, o_message, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_mailbox_try_receive(XFiberMailbox* mailbox, XFiberMessage** o_message)
+{
+    return xfiber_mailbox_timed_receive(mailbox, o_message, 0);
+}
+
+
+XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, XFiberMessage** o_message, XTicks timeout)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+    XFiber* cur_task = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (!xilist_empty(&mailbox->m_messages))
+        {
+            *o_message = xilist_pop_front(&mailbox->m_messages);
+        }
+        else
+        {
+            scheduling_request = true;
+            xilist_push_back(&mailbox->m_pending_tasks, &cur_task->m_node);
+            cur_task->m_pending_recv_msg = X__ResolvePtr(cur_task, (void*)o_message);
+            cur_task->m_state = X_FIBER_STATE_WAITING_RECV_MAILBOX;
+            if (timeout > 0)
+                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_mailbox_receive_isr(XFiberMailbox* mailbox, XFiberMessage** o_message)
+{
+    if (!xilist_empty(&mailbox->m_messages))
+    {
+        *o_message = xilist_pop_front(&mailbox->m_messages);
+        return X_ERR_NONE;
+    }
+
+    return X_ERR_TIMED_OUT;
 }
 
 

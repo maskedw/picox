@@ -43,6 +43,7 @@
 
 
 #include <picox/core/xcore.h>
+#include <picox/container/xintrusive_list.h>
 
 
 #ifdef __cplusplus
@@ -74,6 +75,7 @@ typedef struct XFiberChannel XFiberChannel;
 typedef struct XFiberMailbox XFiberMailbox;
 typedef struct XFiberSemaphore XFiberSemaphore;
 typedef struct XFiberMutex XFiberMutex;
+typedef XIntrusiveNode XFiberMessage;
 
 XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook);
 XError xfiber_kernel_start_scheduler(void);
@@ -143,12 +145,13 @@ XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout);
 XError xfiber_semaphore_give(XFiberSemaphore* semaphore);
 XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore);
 
+XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message);
+XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, XFiberMessage* message);
+XError xfiber_mailbox_receive(XFiberMailbox* mailbox, XFiberMessage** o_message);
+XError xfiber_mailbox_try_receive(XFiberMailbox* mailbox, XFiberMessage** o_message);
+XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, XFiberMessage** o_message, XTicks timeout);
+XError xfiber_mailbox_receive_isr(XFiberMailbox* mailbox, XFiberMessage** o_message);
 
-XError xfiber_mailbox_send(XFiberMailbox* mailbox, const void* src, size_t size);
-XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, const void* src, size_t size);
-XError xfiber_mailbox_receive(XFiberMailbox* mailbox, void* dst, size_t* o_size);
-XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, void* dst, size_t* o_size);
-XError xfiber_mailbox_try_receive(XFiberMailbox* mailbox, void* dst, size_t* o_size);
 
 // 固定メモリブロック
 // XError xfiber_pool_init();
