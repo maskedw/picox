@@ -95,13 +95,15 @@ typedef enum
     X_FIBER_STATE_WAITING_SEND_QUEUE,
     X_FIBER_STATE_WAITING_RECV_QUEUE,
     X_FIBER_STATE_WAITING_MUTEX,
+    X_FIBER_STATE_WAITING_SEMAPHORE,
     X_FIBER_STATE_SUSPEND = (1 << 8),
-    X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_SIGNAL = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SIGNAL,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SIGNAL     = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SIGNAL,
     X_FIBER_STATE_SUSPEND_AND_WAITING_SEND_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEND_QUEUE,
     X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_QUEUE,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SEMAPHORE  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEMAPHORE,
 } XFiberState;
 
 
@@ -132,6 +134,7 @@ typedef enum
     X_FIBER_OBJTYPE_EVENT,
     X_FIBER_OBJTYPE_QUEUE,
     X_FIBER_OBJTYPE_MUTEX,
+    X_FIBER_OBJTYPE_SEMAPHORE,
 } XFiberObjectType;
 
 
@@ -191,6 +194,15 @@ struct XFiberMutex
     XIntrusiveList      m_pending_tasks;
     XFiber*             m_holder;
 };
+
+
+struct XFiberSemaphore
+{
+    X_DECLAER_FIBER_OBJECT_MEMBERS;
+    XIntrusiveList      m_pending_tasks;
+    int                 m_count;
+};
+
 
 
 typedef struct X__Kernel
@@ -1120,6 +1132,113 @@ XError xfiber_mutex_unlock_isr(XFiberMutex* mutex)
             xilist_pop_front(&mutex->m_pending_tasks));
     mutex->m_holder = pend_task;
     X__ReleaseWaiting(pend_task, X_ERR_NONE);
+
+    return err;
+}
+
+
+XError xfiber_semaphore_create(XFiberSemaphore** o_semaphore, int initial_count)
+{
+    if (!o_semaphore)
+        return X_ERR_INVALID;
+
+    XFiberSemaphore* semaphore = X__Malloc(sizeof(XFiberSemaphore));
+    if (!semaphore)
+        return X_ERR_NO_MEMORY;
+
+    xilist_init(&semaphore->m_pending_tasks);
+    semaphore->m_type = X_FIBER_OBJTYPE_SEMAPHORE;
+    semaphore->m_count = initial_count;
+    *o_semaphore = semaphore;
+
+    return X_ERR_NONE;
+}
+
+
+XError xfiber_semaphore_take(XFiberSemaphore* semaphore)
+{
+    return xfiber_semaphore_timed_take(semaphore, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_semaphore_try_take(XFiberSemaphore* semaphore)
+{
+    return xfiber_semaphore_timed_take(semaphore, 0);
+}
+
+
+XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+    XFiber* cur_task = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (semaphore->m_count > 0)
+        {
+            semaphore->m_count--;
+        }
+        else
+        {
+            scheduling_request = true;
+            xilist_push_back(&semaphore->m_pending_tasks, &cur_task->m_node);
+            cur_task->m_state = X_FIBER_STATE_WAITING_SEMAPHORE;
+            if (timeout > 0)
+                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_semaphore_give(XFiberSemaphore* semaphore)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (xilist_empty(&semaphore->m_pending_tasks))
+        {
+            semaphore->m_count++;
+        }
+        else
+        {
+            XFiber* const pend_task = X__NODE_TO_FIBER(
+                    xilist_pop_front(&semaphore->m_pending_tasks));
+            X__ReleaseWaiting(pend_task, X_ERR_NONE);
+            scheduling_request = true;
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore)
+{
+    XError err = X_ERR_NONE;
+
+    if (xilist_empty(&semaphore->m_pending_tasks))
+    {
+        semaphore->m_count++;
+    }
+    else
+    {
+        XFiber* const pend_task = X__NODE_TO_FIBER(
+                xilist_pop_front(&semaphore->m_pending_tasks));
+        X__ReleaseWaiting(pend_task, X_ERR_NONE);
+    }
 
     return err;
 }

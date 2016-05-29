@@ -135,20 +135,14 @@ XError xfiber_mutex_try_lock(XFiberMutex* mutex);
 XError xfiber_mutex_unlock(XFiberMutex* mutex);
 XError xfiber_mutex_unlock_isr(XFiberMutex* mutex);
 
-XError xfiber_semaphore_create(XFiberSemaphore** o_semaphore);
+XError xfiber_semaphore_create(XFiberSemaphore** o_semaphore, int initial_count);
 void xfiber_semaphore_destroy(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_acquire(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_acquire_n(XFiberSemaphore* semaphore, size_t n);
-XError xfiber_semaphore_acquire_all(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_try_acquire(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_try_acquire_n(XFiberSemaphore* semaphore, size_t n);
-XError xfiber_semaphore_try_acquire_all(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_timed_acquire(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_timed_acquire_n(XFiberSemaphore* semaphore, size_t n);
-XError xfiber_semaphore_timed_acquire_all(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_release(XFiberSemaphore* semaphore);
-XError xfiber_semaphore_release_n(XFiberSemaphore* semaphore, size_t n);
-XError xfiber_semaphore_release_all(XFiberSemaphore* semaphore, size_t n);
+XError xfiber_semaphore_take(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_try_take(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout);
+XError xfiber_semaphore_give(XFiberSemaphore* semaphore);
+XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore);
+
 
 XError xfiber_mailbox_send(XFiberMailbox* mailbox, const void* src, size_t size);
 XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, const void* src, size_t size);
