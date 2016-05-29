@@ -42,6 +42,7 @@
 #include <picox/container/xintrusive_list.h>
 #include <picox/container/xcircular_buffer.h>
 #include <picox/allocator/xpico_allocator.h>
+#include <picox/allocator/xfixed_allocator.h>
 #include <picox/multitask/xvtimer.h>
 
 
@@ -97,6 +98,7 @@ typedef enum
     X_FIBER_STATE_WAITING_MUTEX,
     X_FIBER_STATE_WAITING_SEMAPHORE,
     X_FIBER_STATE_WAITING_RECV_MAILBOX,
+    X_FIBER_STATE_WAITING_POOL,
     X_FIBER_STATE_SUSPEND = (1 << 8),
     X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
     X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
@@ -106,6 +108,7 @@ typedef enum
     X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
     X_FIBER_STATE_SUSPEND_AND_WAITING_SEMAPHORE  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEMAPHORE,
     X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_MAILBOX  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_MAILBOX,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_POOL      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_POOL,
 } XFiberState;
 
 
@@ -138,6 +141,7 @@ typedef enum
     X_FIBER_OBJTYPE_MUTEX,
     X_FIBER_OBJTYPE_SEMAPHORE,
     X_FIBER_OBJTYPE_MAILBOX,
+    X_FIBER_OBJTYPE_POOL,
 } XFiberObjectType;
 
 
@@ -213,6 +217,14 @@ struct XFiberMailbox
     X_DECLAER_FIBER_OBJECT_MEMBERS;
     XIntrusiveList      m_pending_tasks;
     XIntrusiveList      m_messages;
+};
+
+
+struct XFiberPool
+{
+    X_DECLAER_FIBER_OBJECT_MEMBERS;
+    XIntrusiveList      m_pending_tasks;
+    XFixedAllocator     m_allocator;
 };
 
 
@@ -1255,6 +1267,21 @@ XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore)
 }
 
 
+XError xfiber_mailbox_create(XFiberMailbox** o_mailbox)
+{
+    XError err = X_ERR_NONE;
+    XFiberMailbox* mailbox = X__Malloc(sizeof(*mailbox));
+    if (!mailbox)
+        return X_ERR_NO_MEMORY;
+
+    xilist_init(&mailbox->m_pending_tasks);
+    xilist_init(&mailbox->m_messages);
+    mailbox->m_type = X_FIBER_OBJTYPE_MAILBOX;
+    *o_mailbox = mailbox;
+
+    return err;
+}
+
 
 XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message)
 {
@@ -1355,6 +1382,128 @@ XError xfiber_mailbox_receive_isr(XFiberMailbox* mailbox, XFiberMessage** o_mess
     }
 
     return X_ERR_TIMED_OUT;
+}
+
+
+XError xfiber_pool_create(XFiberPool** o_pool, size_t block_size, size_t num_blocks)
+{
+    XError err = X_ERR_NONE;
+    XFiberPool* pool = X__Malloc(x_roundup_multiple(
+                sizeof(*pool), X_ALIGN_OF(XMaxAlign)) +
+                block_size * num_blocks);
+    if (!pool)
+        return X_ERR_NO_MEMORY;
+
+    xilist_init(&pool->m_pending_tasks);
+    xfalloc_init(&pool->m_allocator,
+                 (uint8_t*)pool + x_roundup_multiple(sizeof(*pool), X_ALIGN_OF(XMaxAlign)),
+                 block_size * num_blocks,
+                 block_size,
+                 X_ALIGN_OF(XMaxAlign));
+    pool->m_type = X_FIBER_OBJTYPE_POOL;
+    *o_pool = pool;
+
+    return err;
+}
+
+
+XError xfiber_pool_get(XFiberPool* pool, void** o_mem)
+{
+    return xfiber_pool_timed_get(pool, o_mem, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_pool_try_get(XFiberPool* pool, void** o_mem)
+{
+    return xfiber_pool_timed_get(pool, o_mem, 0);
+}
+
+
+XError xfiber_pool_timed_get(XFiberPool* pool, void** o_mem, XTicks timeout)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+    XFiber* cur_task = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (xfalloc_remain_blocks(&pool->m_allocator) > 0)
+        {
+            *o_mem = xfalloc_allocate(&pool->m_allocator);
+        }
+        else
+        {
+            scheduling_request = true;
+            xilist_push_back(&pool->m_pending_tasks, &cur_task->m_node);
+            cur_task->m_pending_recv_dst = X__ResolvePtr(cur_task, (void*)o_mem);
+            cur_task->m_state = X_FIBER_STATE_WAITING_POOL;
+            if (timeout > 0)
+                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_pool_get_isr(XFiberPool* pool, void** o_mem)
+{
+    if (xfalloc_remain_blocks(&pool->m_allocator) > 0)
+    {
+        *o_mem = xfalloc_allocate(&pool->m_allocator);
+        return X_ERR_NONE;
+    }
+
+    return X_ERR_TIMED_OUT;
+}
+
+
+XError xfiber_pool_release(XFiberPool* pool, void* mem)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if ((xfalloc_remain_blocks(&pool->m_allocator) == 0) && !xilist_empty(&pool->m_pending_tasks))
+        {
+            XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&pool->m_pending_tasks));
+            *((void**)(pend_task->m_pending_recv_dst)) = mem;
+            X__ReleaseWaiting(pend_task, X_ERR_NONE);
+            scheduling_request = true;
+        }
+        else
+        {
+            xfalloc_deallocate(&pool->m_allocator, mem);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+        X__Schedule();
+
+    return err;
+}
+
+
+XError xfiber_pool_release_isr(XFiberPool* pool, void* mem)
+{
+    if ((xfalloc_remain_blocks(&pool->m_allocator) == 0) && !xilist_empty(&pool->m_pending_tasks))
+    {
+        XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&pool->m_pending_tasks));
+        *((void**)(pend_task->m_pending_recv_dst)) = mem;
+        X__ReleaseWaiting(pend_task, X_ERR_NONE);
+    }
+    else
+    {
+        xfalloc_deallocate(&pool->m_allocator, mem);
+    }
+
+    return X_ERR_NONE;
 }
 
 

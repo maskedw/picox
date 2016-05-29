@@ -145,6 +145,9 @@ XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout);
 XError xfiber_semaphore_give(XFiberSemaphore* semaphore);
 XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore);
 
+
+XError xfiber_mailbox_create(XFiberMailbox** o_mailbox);
+void xfiber_mailbox_destory(XFiberMailbox* mailbox);
 XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message);
 XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, XFiberMessage* message);
 XError xfiber_mailbox_receive(XFiberMailbox* mailbox, XFiberMessage** o_message);
@@ -153,8 +156,14 @@ XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, XFiberMessage** o_me
 XError xfiber_mailbox_receive_isr(XFiberMailbox* mailbox, XFiberMessage** o_message);
 
 
-// 固定メモリブロック
-// XError xfiber_pool_init();
+XError xfiber_pool_create(XFiberPool** o_pool, size_t block_size, size_t num_blocks);
+void xfiber_pool_destroy(XFiberPool* pool);
+XError xfiber_pool_get(XFiberPool* pool, void** o_mem);
+XError xfiber_pool_try_get(XFiberPool* pool, void** o_mem);
+XError xfiber_pool_timed_get(XFiberPool* pool, void** o_mem, XTicks timeout);
+XError xfiber_pool_get_isr(XFiberPool* pool, void** o_mem);
+XError xfiber_pool_release(XFiberPool* pool, void* mem);
+XError xfiber_pool_release_isr(XFiberPool* pool, void* mem);
 
 
 #ifdef __cplusplus
