@@ -1,12 +1,10 @@
 #include <picox/multitask/xfiber.h>
 #include "testutils.h"
-#include <time.h>
-// #include <signal.h>
-// #include <ucontext.h>
+
 
 #define PRINTF(...) do { printf(__VA_ARGS__); fflush(stdout); } while (0)
 #define STACK_SIZE (2048 * 2)
-// #define STACK_SIZE (2048 * 4)
+#define FIBER_PRIORITY  (8)
 
 char buffer[1024 * 1024];
 XFiber* fiber1;
@@ -43,7 +41,7 @@ static int IdleHook()
 }
 
 
-void* function1(void* arg)
+void function1(void* arg)
 {
     const XFiber* fiber_self = xfiber_self();
     const int n = (intptr_t)arg;
@@ -53,12 +51,10 @@ void* function1(void* arg)
         PRINTF("run '%s' %d\n", xfiber_name(fiber_self), i);
         xfiber_yield();
     }
-
-    return (void*)0;
 }
 
 
-static void* wait_event(void* arg)
+static void wait_event(void* arg)
 {
     XBits wait_pattern = (XBits)(uintptr_t)arg;
     XBits result_pattern;
@@ -74,7 +70,7 @@ static void* wait_event(void* arg)
 }
 
 
-static void* wait_event_expected_ok(void* arg)
+static void wait_event_expected_ok(void* arg)
 {
     XBits wait_pattern = (XBits)(uintptr_t)arg;
     XBits result_pattern;
@@ -93,7 +89,7 @@ static void* wait_event_expected_ok(void* arg)
     req_exit = true;
 }
 
-static void* wait_event_expected_timeout(void* arg)
+static void wait_event_expected_timeout(void* arg)
 {
     XBits wait_pattern = (XBits)(uintptr_t)arg;
     XBits result_pattern;
@@ -111,7 +107,8 @@ static void* wait_event_expected_timeout(void* arg)
     req_exit = true;
 }
 
-static void* event_setter(void* arg)
+
+static void event_setter(void* arg)
 {
     XBits set_pattern = (XBits)(uintptr_t)arg;
 
@@ -127,7 +124,6 @@ static void* event_setter(void* arg)
     }
 
     xfiber_event_set(event1, set_pattern);
-    return (void*)0;
 }
 
 
@@ -137,10 +133,12 @@ TEST(xfiber, task_create)
 
     xfiber_create(&fiber1, 0, "task1", 4096, function1, (void*)20);
     xfiber_create(&fiber2, 0, "task2", 4096, function1, (void*)30);
-
     req_exit = true;
+
     xfiber_kernel_start_scheduler();
 }
+
+
 
 TEST(xfiber, event)
 {
@@ -178,7 +176,7 @@ TEST(xfiber, event_timed_wait)
 }
 
 
-static void* delay_task(void* arg)
+static void delay_task(void* arg)
 {
     int i = 0;
 
@@ -235,7 +233,7 @@ static SignalArgs* create_signal_args(XBits sigs, XFiber* target, bool expected_
 }
 
 
-static void* signal_wait(void* arg)
+static void signal_wait(void* arg)
 {
     SignalArgs* sigarg = arg;
     XBits result;
@@ -273,7 +271,7 @@ static void* signal_wait(void* arg)
 }
 
 
-static void* signal_raise(void* arg)
+static void signal_raise(void* arg)
 {
     SignalArgs* sigarg = arg;
 
@@ -318,7 +316,7 @@ TEST(xfiber, signal)
 }
 
 
-static void* suspend_task(void* arg)
+static void suspend_task(void* arg)
 {
     X_LOG_NOTI(("Task", "resumue"));
     xfiber_suspend(NULL);
@@ -327,7 +325,7 @@ static void* suspend_task(void* arg)
 }
 
 
-static void* resume_task(void* arg)
+static void resume_task(void* arg)
 {
     xfiber_resume(arg);
     return NULL;
@@ -345,7 +343,7 @@ TEST(xfiber, suspend)
 }
 
 
-static void* queue_recv_task(void* arg)
+static void queue_recv_task(void* arg)
 {
     XFiberQueue* queue = arg;
     char dst[256] = {0};
@@ -357,11 +355,10 @@ static void* queue_recv_task(void* arg)
     }
 
     req_exit = true;
-    return NULL;
 }
 
 
-static void* queue_send_task(void* arg)
+static void queue_send_task(void* arg)
 {
     XFiberQueue* queue = arg;
 
@@ -375,7 +372,7 @@ static void* queue_send_task(void* arg)
 
 
 
-static void* queue_recv_task2(void* arg)
+static void queue_recv_task2(void* arg)
 {
     XFiberQueue* queue = arg;
     char dst[256] = {0};
@@ -391,12 +388,11 @@ static void* queue_recv_task2(void* arg)
 
     xfiber_event_set(event1, 0x01);
     req_exit = true;
-    return NULL;
 }
 
 
 
-static void* queue_send_task2(void* arg)
+static void queue_send_task2(void* arg)
 {
     XFiberQueue* queue = arg;
 

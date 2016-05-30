@@ -51,7 +51,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-typedef void* (*XFiberFunc)(void*);
+typedef void (*XFiberFunc)(void*);
 typedef int(*XFiberIdleHook)(void);
 
 #define X_FIBER_EVENT_WAIT_OR       (0)
