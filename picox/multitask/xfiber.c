@@ -41,6 +41,7 @@
 #include <picox/multitask/xfiber.h>
 #include <picox/container/xintrusive_list.h>
 #include <picox/container/xcircular_buffer.h>
+#include <picox/container/xmessage_buffer.h>
 #include <picox/allocator/xpico_allocator.h>
 #include <picox/allocator/xfixed_allocator.h>
 #include <picox/multitask/xvtimer.h>
@@ -95,20 +96,24 @@ typedef enum
     X_FIBER_STATE_WAITING_SIGNAL,
     X_FIBER_STATE_WAITING_SEND_QUEUE,
     X_FIBER_STATE_WAITING_RECV_QUEUE,
+    X_FIBER_STATE_WAITING_SEND_CHANNEL,
+    X_FIBER_STATE_WAITING_RECV_CHANNEL,
     X_FIBER_STATE_WAITING_MUTEX,
     X_FIBER_STATE_WAITING_SEMAPHORE,
     X_FIBER_STATE_WAITING_RECV_MAILBOX,
     X_FIBER_STATE_WAITING_POOL,
     X_FIBER_STATE_SUSPEND = (1 << 8),
-    X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_SIGNAL     = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SIGNAL,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_SEND_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEND_QUEUE,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_QUEUE = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_QUEUE,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_SEMAPHORE  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEMAPHORE,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_MAILBOX  = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_MAILBOX,
-    X_FIBER_STATE_SUSPEND_AND_WAITING_POOL      = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_POOL,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_EVENT        = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_EVENT,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_DELAY        = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_DELAY,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SIGNAL       = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SIGNAL,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SEND_QUEUE   = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEND_QUEUE,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_QUEUE   = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_QUEUE,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SEND_CHANNEL = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEND_CHANNEL,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_CHANNEL = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_CHANNEL,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_MUTEX        = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_MUTEX,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_SEMAPHORE    = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_SEMAPHORE,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_RECV_MAILBOX = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_RECV_MAILBOX,
+    X_FIBER_STATE_SUSPEND_AND_WAITING_POOL         = X_FIBER_STATE_SUSPEND | X_FIBER_STATE_WAITING_POOL,
 } XFiberState;
 
 
@@ -138,6 +143,7 @@ typedef enum
     X_FIBER_OBJTYPE_TASK,
     X_FIBER_OBJTYPE_EVENT,
     X_FIBER_OBJTYPE_QUEUE,
+    X_FIBER_OBJTYPE_CHANNEL,
     X_FIBER_OBJTYPE_MUTEX,
     X_FIBER_OBJTYPE_SEMAPHORE,
     X_FIBER_OBJTYPE_MAILBOX,
@@ -176,6 +182,7 @@ struct XFiber
     const void*         m_pending_send_src;
     void*               m_pending_recv_dst;
     XFiberMessage**     m_pending_recv_msg;
+    size_t              m_channel_item_size;
 };
 
 
@@ -193,6 +200,15 @@ struct XFiberQueue
     XIntrusiveList      m_pending_tasks;
     XCircularBuffer     m_buffer;
     size_t              m_item_size;
+};
+
+
+struct XFiberChannel
+{
+    X_DECLAER_FIBER_OBJECT_MEMBERS;
+    XIntrusiveList      m_pending_tasks;
+    XMessageBuffer      m_buffer;
+    size_t              m_max_item_size;
 };
 
 
@@ -1030,6 +1046,215 @@ XError xfiber_queue_receive_isr(XFiberQueue* queue, void* dst)
         err = X_ERR_TIMED_OUT;
     }
 
+    return err;
+}
+
+
+XError xfiber_channel_create(XFiberChannel** o_channel, size_t capacity, size_t max_item_size)
+{
+    if (!o_channel)
+        return X_ERR_INVALID;
+
+    XFiberChannel* channel = X__Malloc(sizeof(XFiberChannel) + capacity);
+    if (!channel)
+        return X_ERR_NO_MEMORY;
+
+    xmsgbuf_init(&channel->m_buffer, (uint8_t*)channel + sizeof(XFiberChannel), capacity);
+    xilist_init(&channel->m_pending_tasks);
+    channel->m_type = X_FIBER_OBJTYPE_CHANNEL;
+    channel->m_max_item_size = max_item_size;
+    *o_channel = channel;
+
+    return X_ERR_NONE;
+}
+
+
+XError xfiber_channel_send(XFiberChannel* channel, const void* src, size_t size)
+{
+    return xfiber_channel_timed_send(channel, src, size, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_channel_try_send(XFiberChannel* channel, const void* src, size_t size)
+{
+    return xfiber_channel_timed_send(channel, src, size, 0);
+}
+
+
+XError xfiber_channel_timed_send(XFiberChannel* channel, const void* src, size_t size, XTicks timeout)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+    XFiber* cur_task = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (xmsgbuf_empty(&channel->m_buffer) && (!xilist_empty(&channel->m_pending_tasks)))
+        {
+            XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&channel->m_pending_tasks));
+            memcpy(pend_task->m_pending_recv_dst, src, size);
+            pend_task->m_channel_item_size = size;
+            X__ReleaseWaiting(pend_task, X_ERR_NONE);
+            scheduling_request = true;
+        }
+        else if (xmsgbuf_reserve(&channel->m_buffer) >= size + sizeof(XMessageHeader))
+        {
+            xmsgbuf_push(&channel->m_buffer, src, size);
+        }
+        else if (timeout == 0)
+        {
+            err = X_ERR_TIMED_OUT;
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+        else
+        {
+            scheduling_request = true;
+            xilist_push_back(&channel->m_pending_tasks, &cur_task->m_node);
+            cur_task->m_pending_send_src = X__ResolvePtr(cur_task, src);
+            cur_task->m_channel_item_size = size;
+            cur_task->m_state = X_FIBER_STATE_WAITING_SEND_CHANNEL;
+            if (timeout > 0)
+                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+    {
+        X__Schedule();
+        err = cur_task->m_result_waiting;
+    }
+
+x__exit:
+    return err;
+}
+
+
+XError xfiber_channel_send_isr(XFiberChannel* channel, const void* src, size_t size)
+{
+    XError err = X_ERR_NONE;
+
+    if (xmsgbuf_empty(&channel->m_buffer) && (!xilist_empty(&channel->m_pending_tasks)))
+    {
+        XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&channel->m_pending_tasks));
+        memcpy(pend_task->m_pending_recv_dst, src, size);
+        pend_task->m_channel_item_size = size;
+        X__ReleaseWaiting(pend_task, X_ERR_NONE);
+    }
+    else if (xmsgbuf_reserve(&channel->m_buffer) >= size + sizeof(XMessageHeader))
+    {
+        xmsgbuf_push(&channel->m_buffer, src, size);
+    }
+    else
+    {
+        err = X_ERR_TIMED_OUT;
+        goto x__exit;
+    }
+
+x__exit:
+    return err;
+}
+
+
+
+XError xfiber_channel_receive(XFiberChannel* channel, void* dst, size_t* o_size)
+{
+    return xfiber_channel_timed_receive(channel, dst, o_size, X_TICKS_FOREVER);
+}
+
+
+XError xfiber_channel_try_receive(XFiberChannel* channel, void* dst, size_t* o_size)
+{
+    return xfiber_channel_timed_receive(channel, dst, o_size, 0);
+}
+
+
+XError xfiber_channel_timed_receive(XFiberChannel* channel, void* dst, size_t* o_size, XTicks timeout)
+{
+    XError err = X_ERR_NONE;
+    bool scheduling_request = false;
+    XFiber* const cur_task = priv->m_cur_task;
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        if (!xmsgbuf_empty(&channel->m_buffer))
+        {
+            *o_size = xmsgbuf_pull(&channel->m_buffer, dst);
+            if (!xilist_empty(&channel->m_pending_tasks))
+            {
+                XFiber* const pend_task = X__NODE_TO_FIBER(xilist_front(&channel->m_pending_tasks));
+                if (xmsgbuf_reserve(&channel->m_buffer) >=
+                                    pend_task->m_channel_item_size + sizeof(XMessageHeader))
+                {
+                    xilist_pop_front(&channel->m_pending_tasks);
+                    xmsgbuf_push(&channel->m_buffer,
+                                 pend_task->m_pending_send_src,
+                                 pend_task->m_channel_item_size);
+                    X__ReleaseWaiting(pend_task, X_ERR_NONE);
+                    scheduling_request = true;
+                }
+
+            }
+        }
+        else if (timeout == 0)
+        {
+            err = X_ERR_TIMED_OUT;
+            X_FIBER_EXIT_CRITICAL();
+            goto x__exit;
+        }
+        else
+        {
+            scheduling_request = true;
+            xilist_push_back(&channel->m_pending_tasks, &cur_task->m_node);
+            cur_task->m_pending_recv_dst = X__ResolvePtr(cur_task, dst);
+            cur_task->m_state = X_FIBER_STATE_WAITING_RECV_CHANNEL;
+            if (timeout > 0)
+                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+        }
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    if (scheduling_request)
+    {
+        X__Schedule();
+        err = cur_task->m_result_waiting;
+        *o_size = cur_task->m_channel_item_size;
+    }
+
+x__exit:
+    return err;
+}
+
+
+XError xfiber_channel_receive_isr(XFiberChannel* channel, void* dst, size_t* o_size)
+{
+    XError err = X_ERR_NONE;
+
+    if (!xmsgbuf_empty(&channel->m_buffer))
+    {
+        *o_size = xmsgbuf_pull(&channel->m_buffer, dst);
+        if (!xilist_empty(&channel->m_pending_tasks))
+        {
+            XFiber* const pend_task = X__NODE_TO_FIBER(xilist_front(&channel->m_pending_tasks));
+            if (xmsgbuf_reserve(&channel->m_buffer) >=
+                                pend_task->m_channel_item_size + sizeof(XMessageHeader))
+            {
+                xilist_pop_front(&channel->m_pending_tasks);
+                xmsgbuf_push(&channel->m_buffer,
+                             pend_task->m_pending_send_src,
+                             pend_task->m_channel_item_size);
+                X__ReleaseWaiting(pend_task, X_ERR_NONE);
+            }
+        }
+    }
+    else
+    {
+        err = X_ERR_TIMED_OUT;
+        goto x__exit;
+    }
+
+x__exit:
     return err;
 }
 

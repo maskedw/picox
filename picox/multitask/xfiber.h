@@ -123,11 +123,11 @@ XError xfiber_channel_create(XFiberChannel** o_channel, size_t capacity, size_t 
 void xfiber_channel_destroy(XFiberChannel* channel);
 XError xfiber_channel_send(XFiberChannel* channel, const void* src, size_t size);
 XError xfiber_channel_send_isr(XFiberChannel* channel, const void* src, size_t size);
-XError xfiber_channel_timed_send(XFiberChannel* channel, const void* src, size_t size);
-XError xfiber_channel_try_send(XFiberChannel* channel, const void* src);
+XError xfiber_channel_timed_send(XFiberChannel* channel, const void* src, size_t size, XTicks timeout);
 XError xfiber_channel_receive(XFiberChannel* channel, void* dst, size_t* o_size);
-XError xfiber_channel_timed_receive(XFiberChannel* channel, void* dst, size_t* o_size);
 XError xfiber_channel_try_receive(XFiberChannel* channel, void* dst, size_t* o_size);
+XError xfiber_channel_timed_receive(XFiberChannel* channel, void* dst, size_t* o_size, XTicks timeout);
+XError xfiber_channel_receive_isr(XFiberChannel* channel, void* dst, size_t* o_size);
 
 XError xfiber_mutex_create(XFiberMutex** o_mutex);
 void xfiber_mutex_destroy(XFiberMutex* mutex);
