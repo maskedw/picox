@@ -48,6 +48,17 @@
 
 
 #define X__NODE_TO_FIBER(node)     xnode_entry(node, XFiber, m_node)
+#define X__CHECK_POLL(timeout)       \
+    do                                  \
+    {                                   \
+        if ((timeout) == 0)             \
+        {                               \
+            err = X_ERR_TIMED_OUT;      \
+            X_FIBER_EXIT_CRITICAL();    \
+            goto x__exit;               \
+        }                               \
+    } while (0)
+
 #define X_FIBER_ENTER_CRITICAL()
 #define X_FIBER_EXIT_CRITICAL()
 
@@ -151,16 +162,21 @@ typedef enum
 } XFiberObjectType;
 
 
-#define X_DECLAER_FIBER_OBJECT_MEMBERS \
+#define X_DECLAER_FIBER_OBJECT_COMMON_MEMBERS \
     XIntrusiveNode      m_node;         \
     char                m_name[16];     \
     XFiberObjectType    m_type
 
 
+#define X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS \
+    X_DECLAER_FIBER_OBJECT_COMMON_MEMBERS;         \
+    XIntrusiveList      m_pending_tasks;
+
+
 struct XFiber
 {
 /** @privatesection */
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
+    X_DECLAER_FIBER_OBJECT_COMMON_MEMBERS;
     size_t              m_stack_size;
     int                 m_priority;
     XFiberFunc          m_func;
@@ -181,23 +197,27 @@ struct XFiber
     XMode               m_wait_event_mode;
     const void*         m_pending_send_src;
     void*               m_pending_recv_dst;
-    XFiberMessage**     m_pending_recv_msg;
     size_t              m_channel_item_size;
+};
+
+
+struct XFiberWaitObject
+{
+    X_DECLAER_FIBER_OBJECT_COMMON_MEMBERS;
+    XIntrusiveList      m_pending_tasks;
 };
 
 
 struct XFiberEvent
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     XBits               m_pattern;
 };
 
 
 struct XFiberQueue
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     XCircularBuffer     m_buffer;
     size_t              m_item_size;
 };
@@ -205,8 +225,7 @@ struct XFiberQueue
 
 struct XFiberChannel
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     XMessageBuffer      m_buffer;
     size_t              m_max_item_size;
 };
@@ -214,32 +233,28 @@ struct XFiberChannel
 
 struct XFiberMutex
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     XFiber*             m_holder;
 };
 
 
 struct XFiberSemaphore
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     int                 m_count;
 };
 
 
 struct XFiberMailbox
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     XIntrusiveList      m_messages;
 };
 
 
 struct XFiberPool
 {
-    X_DECLAER_FIBER_OBJECT_MEMBERS;
-    XIntrusiveList      m_pending_tasks;
+    X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS;
     XFixedAllocator     m_allocator;
 };
 
@@ -271,7 +286,7 @@ static void X__FiberMain(XFiber* fiber);
 static bool X__TestEvent(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 static void X__TimeoutHandler(XFiber* fiber);
 static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTicks time);
-
+static void X__TransitionIntoWaitState(XIntrusiveList* list, XFiber* fiber, XFiberState state, XTicks timeout);
 static void X__StartSchedule(void);
 static void X__EndSchedule();
 static void X__MakeContext(XFiber* fiber, XFiberFunc func, void* arg, void* stack, size_t stack_size);
@@ -802,7 +817,7 @@ XError xfiber_queue_timed_send_back(XFiberQueue* queue, const void* src, XTicks 
 {
     XError err = X_ERR_NONE;
     bool scheduling_request = false;
-    XFiber* cur_task = priv->m_cur_task;
+    XFiber* const cur_task = priv->m_cur_task;
 
     X_FIBER_ENTER_CRITICAL();
     {
@@ -817,20 +832,13 @@ XError xfiber_queue_timed_send_back(XFiberQueue* queue, const void* src, XTicks 
         {
             xcbuf_push_back_n(&queue->m_buffer, src, queue->m_item_size);
         }
-        else if (timeout == 0)
-        {
-            err = X_ERR_TIMED_OUT;
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&queue->m_pending_tasks, &cur_task->m_node);
             cur_task->m_pending_send_src = X__ResolvePtr(cur_task, src);
-            cur_task->m_state = X_FIBER_STATE_WAITING_SEND_QUEUE;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&queue->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_SEND_QUEUE, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -900,20 +908,13 @@ XError xfiber_queue_timed_send_front(XFiberQueue* queue, const void* src, XTicks
         {
             xcbuf_push_front_n(&queue->m_buffer, src, queue->m_item_size);
         }
-        else if (timeout == 0)
-        {
-            err = X_ERR_TIMED_OUT;
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&queue->m_pending_tasks, &cur_task->m_node);
             cur_task->m_pending_send_src = X__ResolvePtr(cur_task, src);
-            cur_task->m_state = X_FIBER_STATE_WAITING_SEND_QUEUE;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&queue->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_SEND_QUEUE, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -991,20 +992,13 @@ XError xfiber_queue_timed_receive(XFiberQueue* queue, void* dst, XTicks timeout)
                 scheduling_request = true;
             }
         }
-        else if (timeout == 0)
-        {
-            err = X_ERR_TIMED_OUT;
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&queue->m_pending_tasks, &cur_task->m_node);
             cur_task->m_pending_recv_dst = X__ResolvePtr(cur_task, dst);
-            cur_task->m_state = X_FIBER_STATE_WAITING_RECV_QUEUE;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&queue->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_RECV_QUEUE, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1030,14 +1024,12 @@ XError xfiber_queue_receive_isr(XFiberQueue* queue, void* dst)
 
         if (!xilist_empty(&queue->m_pending_tasks))
         {
-            XFiber* const pend_task = xnode_entry(
-                    xilist_pop_front(&queue->m_pending_tasks),
-                    XFiber, m_node);
+            XFiber* const pend_task = X__NODE_TO_FIBER(
+                    xilist_pop_front(&queue->m_pending_tasks));
 
             xcbuf_push_back_n(&queue->m_buffer,
                               pend_task->m_pending_send_src,
                               queue->m_item_size);
-
             X__ReleaseWaiting(pend_task, X_ERR_NONE);
         }
     }
@@ -1085,7 +1077,7 @@ XError xfiber_channel_timed_send(XFiberChannel* channel, const void* src, size_t
 {
     XError err = X_ERR_NONE;
     bool scheduling_request = false;
-    XFiber* cur_task = priv->m_cur_task;
+    XFiber* const cur_task = priv->m_cur_task;
 
     X_FIBER_ENTER_CRITICAL();
     {
@@ -1101,21 +1093,14 @@ XError xfiber_channel_timed_send(XFiberChannel* channel, const void* src, size_t
         {
             xmsgbuf_push(&channel->m_buffer, src, size);
         }
-        else if (timeout == 0)
-        {
-            err = X_ERR_TIMED_OUT;
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&channel->m_pending_tasks, &cur_task->m_node);
             cur_task->m_pending_send_src = X__ResolvePtr(cur_task, src);
             cur_task->m_channel_item_size = size;
-            cur_task->m_state = X_FIBER_STATE_WAITING_SEND_CHANNEL;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&channel->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_SEND_CHANNEL, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1149,10 +1134,8 @@ XError xfiber_channel_send_isr(XFiberChannel* channel, const void* src, size_t s
     else
     {
         err = X_ERR_TIMED_OUT;
-        goto x__exit;
     }
 
-x__exit:
     return err;
 }
 
@@ -1197,20 +1180,13 @@ XError xfiber_channel_timed_receive(XFiberChannel* channel, void* dst, size_t* o
 
             }
         }
-        else if (timeout == 0)
-        {
-            err = X_ERR_TIMED_OUT;
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&channel->m_pending_tasks, &cur_task->m_node);
             cur_task->m_pending_recv_dst = X__ResolvePtr(cur_task, dst);
-            cur_task->m_state = X_FIBER_STATE_WAITING_RECV_CHANNEL;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&channel->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_RECV_CHANNEL, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1301,19 +1277,12 @@ XError xfiber_mutex_timed_lock(XFiberMutex* mutex, XTicks timeout)
         {
             mutex->m_holder = cur_task;
         }
-        else if (timeout == 0)
-        {
-            err = X_ERR_TIMED_OUT;
-            X_FIBER_EXIT_CRITICAL();
-            goto x__exit;
-        }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&mutex->m_pending_tasks, &cur_task->m_node);
-            cur_task->m_state = X_FIBER_STATE_WAITING_MUTEX;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&mutex->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_MUTEX, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1419,7 +1388,7 @@ XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout)
 {
     XError err = X_ERR_NONE;
     bool scheduling_request = false;
-    XFiber* cur_task = priv->m_cur_task;
+    XFiber* const cur_task = priv->m_cur_task;
 
     X_FIBER_ENTER_CRITICAL();
     {
@@ -1429,11 +1398,10 @@ XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout)
         }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&semaphore->m_pending_tasks, &cur_task->m_node);
-            cur_task->m_state = X_FIBER_STATE_WAITING_SEMAPHORE;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&semaphore->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_SEMAPHORE, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1441,6 +1409,7 @@ XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout)
     if (scheduling_request)
         X__Schedule();
 
+x__exit:
     return err;
 }
 
@@ -1518,7 +1487,7 @@ XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message)
         if (xilist_empty(&mailbox->m_messages) && !xilist_empty(&mailbox->m_pending_tasks))
         {
             XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&mailbox->m_pending_tasks));
-            *(pend_task->m_pending_recv_msg) = message;
+            *((XFiberMessage**)(pend_task->m_pending_recv_dst)) = message;
             X__ReleaseWaiting(pend_task, X_ERR_NONE);
             scheduling_request = true;
         }
@@ -1543,7 +1512,7 @@ XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, XFiberMessage* message)
     if (xilist_empty(&mailbox->m_messages) && !xilist_empty(&mailbox->m_pending_tasks))
     {
         XFiber* const pend_task = X__NODE_TO_FIBER(xilist_pop_front(&mailbox->m_pending_tasks));
-        *(pend_task->m_pending_recv_msg) = message;
+        *((XFiberMessage**)(pend_task->m_pending_recv_dst)) = message;
         X__ReleaseWaiting(pend_task, X_ERR_NONE);
     }
     else
@@ -1581,12 +1550,11 @@ XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, XFiberMessage** o_me
         }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&mailbox->m_pending_tasks, &cur_task->m_node);
-            cur_task->m_pending_recv_msg = X__ResolvePtr(cur_task, (void*)o_message);
-            cur_task->m_state = X_FIBER_STATE_WAITING_RECV_MAILBOX;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            cur_task->m_pending_recv_dst = X__ResolvePtr(cur_task, (void*)o_message);
+            X__TransitionIntoWaitState(&mailbox->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_RECV_MAILBOX, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1594,6 +1562,7 @@ XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, XFiberMessage** o_me
     if (scheduling_request)
         X__Schedule();
 
+x__exit:
     return err;
 }
 
@@ -1658,12 +1627,11 @@ XError xfiber_pool_timed_get(XFiberPool* pool, void** o_mem, XTicks timeout)
         }
         else
         {
+            X__CHECK_POLL(timeout);
             scheduling_request = true;
-            xilist_push_back(&pool->m_pending_tasks, &cur_task->m_node);
             cur_task->m_pending_recv_dst = X__ResolvePtr(cur_task, (void*)o_mem);
-            cur_task->m_state = X_FIBER_STATE_WAITING_POOL;
-            if (timeout > 0)
-                X__AddTimerEvent(cur_task, X__TimeoutHandler, timeout);
+            X__TransitionIntoWaitState(&pool->m_pending_tasks, cur_task,
+                                       X_FIBER_STATE_WAITING_POOL, timeout);
         }
     }
     X_FIBER_EXIT_CRITICAL();
@@ -1671,6 +1639,7 @@ XError xfiber_pool_timed_get(XFiberPool* pool, void** o_mem, XTicks timeout)
     if (scheduling_request)
         X__Schedule();
 
+x__exit:
     return err;
 }
 
@@ -1729,6 +1698,16 @@ XError xfiber_pool_release_isr(XFiberPool* pool, void* mem)
     }
 
     return X_ERR_NONE;
+}
+
+
+
+static void X__TransitionIntoWaitState(XIntrusiveList* list, XFiber* fiber, XFiberState state, XTicks timeout)
+{
+    xilist_push_back(list, &fiber->m_node);
+    fiber->m_state = state;
+    if (timeout > 0)
+        X__AddTimerEvent(fiber, X__TimeoutHandler, timeout);
 }
 
 
