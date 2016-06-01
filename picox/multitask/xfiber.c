@@ -159,6 +159,7 @@ typedef enum
     X_FIBER_OBJTYPE_SEMAPHORE,
     X_FIBER_OBJTYPE_MAILBOX,
     X_FIBER_OBJTYPE_POOL,
+    X_FIBER_OBJTYPE_END,
 } XFiberObjectType;
 
 
@@ -170,7 +171,7 @@ typedef enum
 
 #define X_DECLAER_FIBER_WAIT_OBJECT_COMMON_MEMBERS \
     X_DECLAER_FIBER_OBJECT_COMMON_MEMBERS;         \
-    XIntrusiveList      m_pending_tasks;
+    XIntrusiveList      m_pending_tasks
 
 
 struct XFiber
@@ -269,7 +270,7 @@ typedef struct X__Kernel
     XFiberContext       m_return_ctx;
     XTicks              m_timepoint;
     XVTimer             m_vtimer;
-
+    int                 m_num_objects[X_FIBER_OBJTYPE_END];
 #if X_CONF_FIBER_IMPL_TYPE == X_FIBER_IMPL_TYPE_COPY_STACK
     uint8_t*            m_machine_stack_begin;
 #endif
@@ -293,6 +294,7 @@ static void X__MakeContext(XFiber* fiber, XFiberFunc func, void* arg, void* stac
 static void X__SwapContext(XFiber* from, XFiber* to);
 static void X__SetContext(XFiber* to);
 static void* X__ResolvePtr(const XFiber* fiber, const void* ptr);
+static void X__DestroyFiber(XFiber* fiber);
 
 #if X_CONF_FIBER_IMPL_TYPE == X_FIBER_IMPL_TYPE_COPY_STACK
 static void X__GetStackPtr(uint8_t** volatile dst);
@@ -316,81 +318,9 @@ XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook)
     xpalloc_init(&priv->m_alloc, heap, heapsize, X_ALIGN_OF(XMaxAlign));
     xvtimer_init(&priv->m_vtimer);
     priv->m_idlehook = idlehook;
+    memset(priv->m_num_objects, 0, sizeof(priv->m_num_objects));
 
     return X_ERR_NONE;
-}
-
-
-XFiber* xfiber_self(void)
-{
-    return priv->m_cur_task;
-}
-
-
-void xfiber_yield()
-{
-    X__Schedule();
-}
-
-
-
-XError xfiber_create(XFiber** o_fiber,
-                     int priority,
-                     const char* name,
-                     size_t stack_size,
-                     XFiberFunc func,
-                     void* arg)
-{
-    XError err = X_ERR_NONE;
-    uint8_t* stack = NULL;
-
-    XFiber* fiber = X__Malloc(sizeof(XFiber));
-    if (!fiber)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-    stack = X__Malloc(stack_size);
-    if (!stack)
-    {
-        err = X_ERR_NO_MEMORY;
-        goto x__exit;
-    }
-
-    if (name)
-        x_strlcpy(fiber->m_name, name, sizeof(fiber->m_name));
-    else
-        fiber->m_name[0] = '\0';
-
-    fiber->m_func = func;
-    fiber->m_arg = arg;
-    fiber->m_stack = stack;
-    fiber->m_stack_size = stack_size;
-    fiber->m_priority = priority;
-    fiber->m_type = X_FIBER_OBJTYPE_TASK;
-    fiber->m_wait_sigs = 0;
-    fiber->m_recv_sigs = 0;
-
-    xvtimer_init_request(&fiber->m_timer_request);
-
-    X__MakeContext(fiber, func, arg, stack, stack_size);
-
-    X_FIBER_ENTER_CRITICAL();
-    {
-        X__PushToReadyQueue(fiber);
-    }
-    X_FIBER_EXIT_CRITICAL();
-
-    *o_fiber = fiber;
-    fiber = NULL;
-    stack = NULL;
-
-x__exit:
-    X__Free(fiber);
-    X__Free(stack);
-
-    return err;
 }
 
 
@@ -415,6 +345,80 @@ XError xfiber_kernel_start_scheduler(void)
 }
 
 
+void xfiber_kernel_end_scheduler(void)
+{
+    X__EndSchedule();
+}
+
+
+XFiber* xfiber_self(void)
+{
+    return priv->m_cur_task;
+}
+
+
+void xfiber_yield()
+{
+    X__Schedule();
+}
+
+
+XError xfiber_create(XFiber** o_fiber,
+                     int priority,
+                     const char* name,
+                     size_t stack_size,
+                     XFiberFunc func,
+                     void* arg)
+{
+    XError err = X_ERR_NONE;
+
+    XFiber* fiber = X__Malloc(x_roundup_multiple(
+                sizeof(XFiber), X_ALIGN_OF(XMaxAlign)) + stack_size);
+    if (!fiber)
+    {
+        err = X_ERR_NO_MEMORY;
+        goto x__exit;
+    }
+
+    uint8_t* stack = ((uint8_t*)fiber) + x_roundup_multiple(
+            sizeof(XFiber), X_ALIGN_OF(XMaxAlign));
+
+    if (name)
+        x_strlcpy(fiber->m_name, name, sizeof(fiber->m_name));
+    else
+        fiber->m_name[0] = '\0';
+
+    fiber->m_func = func;
+    fiber->m_arg = arg;
+    fiber->m_stack = stack;
+    fiber->m_stack_size = stack_size;
+    fiber->m_priority = priority;
+    fiber->m_type = X_FIBER_OBJTYPE_TASK;
+    fiber->m_wait_sigs = 0;
+    fiber->m_recv_sigs = 0;
+
+    xvtimer_init_request(&fiber->m_timer_request);
+
+    X__MakeContext(fiber, func, arg, stack, stack_size);
+
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PushToReadyQueue(fiber);
+        priv->m_num_objects[X_FIBER_OBJTYPE_TASK]++;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    X_ASSIGN_NOT_NULL(o_fiber, fiber);
+    fiber = NULL;
+    stack = NULL;
+
+x__exit:
+    X__Free(fiber);
+
+    return err;
+}
+
+
 const char* xfiber_name(const XFiber* fiber)
 {
     if (!fiber)
@@ -423,7 +427,7 @@ const char* xfiber_name(const XFiber* fiber)
 }
 
 
-XError xfiber_event_create(XFiberEvent** o_event, const char* name)
+XError xfiber_event_create(XFiberEvent** o_event)
 {
     XError err = X_ERR_NONE;
     XFiberEvent* event = X__Malloc(sizeof(*event));
@@ -433,7 +437,6 @@ XError xfiber_event_create(XFiberEvent** o_event, const char* name)
         goto x__exit;
     }
 
-    strcpy(event->m_name, name);
     event->m_pattern = 0;
     xilist_init(&event->m_pending_tasks);
     event->m_type = X_FIBER_OBJTYPE_EVENT;
@@ -570,15 +573,46 @@ XError xfiber_event_set(XFiberEvent* event, XBits pattern)
 }
 
 
-XError xfiber_event_clear(XFiberEvent* event, XBits pattern)
+XBits xfiber_event_clear(XFiberEvent* event, XBits pattern)
 {
+    XBits prev;
     X_FIBER_ENTER_CRITICAL();
     {
+        prev = event->m_pattern;
         event->m_pattern &= ~pattern;
     }
     X_FIBER_EXIT_CRITICAL();
 
-    return X_ERR_NONE;
+    return prev;
+}
+
+
+XError xfiber_event_clear_isr(XFiberEvent* event, XBits pattern)
+{
+    const XBits prev = event->m_pattern;
+    event->m_pattern &= ~pattern;
+    return prev;
+}
+
+
+
+XBits xfiber_event_get(XFiberEvent* event)
+{
+    XBits cur;
+    X_FIBER_ENTER_CRITICAL();
+    {
+        cur = event->m_pattern;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    return cur;
+}
+
+
+XBits xfiber_event_get_isr(XFiberEvent* event)
+{
+    const XBits cur = event->m_pattern;
+    return cur;
 }
 
 
@@ -1789,9 +1823,12 @@ static void X__Schedule(void)
         {
             X_FIBER_EXIT_CRITICAL();
 
-            const int ret = priv->m_idlehook();
-            if (ret != 0)
-                X__EndSchedule();
+            if (priv->m_idlehook)
+            {
+                const int ret = priv->m_idlehook();
+                if (ret != 0)
+                    X__EndSchedule();
+            }
 
             now = x_ticks_now();
             step = now - priv->m_timepoint;
@@ -1855,9 +1892,19 @@ static void X__FiberMain(XFiber* fiber)
 
     X__LOG((X__TAG, "end '%s' %p", fiber->m_name, fiber));
 
-    X__Free(fiber);
+    X__DestroyFiber(fiber);
     priv->m_cur_task = NULL;
     X__Schedule();
+}
+
+
+static void X__DestroyFiber(XFiber* fiber)
+{
+    X_FIBER_ENTER_CRITICAL();
+    xvtimer_remove_requst(&priv->m_vtimer, &fiber->m_timer_request);
+    X__Free(fiber);
+    priv->m_num_objects[X_FIBER_OBJTYPE_TASK]--;
+    X_FIBER_EXIT_CRITICAL();
 }
 
 

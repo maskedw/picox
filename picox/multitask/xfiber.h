@@ -77,8 +77,10 @@ typedef struct XFiberSemaphore XFiberSemaphore;
 typedef struct XFiberMutex XFiberMutex;
 typedef XIntrusiveNode XFiberMessage;
 
+
 XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook);
 XError xfiber_kernel_start_scheduler(void);
+void   xfiber_kernel_end_scheduler(void);
 
 XError xfiber_create(XFiber** o_fiber, int priority, const char* name, size_t stack_size, XFiberFunc func, void* arg);
 void xfiber_delay(XTicks time);
@@ -88,15 +90,17 @@ void xfiber_yield();
 XFiber* xfiber_self();
 const char* xfiber_name(const XFiber* fiber);
 
-XError xfiber_event_create(XFiberEvent** o_event, const char* name);
+XError xfiber_event_create(XFiberEvent** o_event);
 void xfiber_event_destroy(XFiberEvent* event);
 XError xfiber_event_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result);
 XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result, XTicks timeout);
 XError xfiber_event_set(XFiberEvent* event, XBits pattern);
 XError xfiber_event_set_isr(XFiberEvent* event, XBits pattern);
-XError xfiber_event_clear(XFiberEvent* event, XBits pattern);
-const char* xfiber_event_name(const XFiberEvent* event);
+XBits xfiber_event_clear(XFiberEvent* event, XBits pattern);
+XBits xfiber_event_clear_isr(XFiberEvent* event, XBits pattern);
+XBits xfiber_event_get(XFiberEvent* event);
+XBits xfiber_event_get_isr(XFiberEvent* event);
 
 XError xfiber_signal_wait(XBits sigs, XBits* result);
 XError xfiber_signal_try_wait(XBits sigs, XBits* result);
