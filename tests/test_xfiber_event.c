@@ -56,7 +56,54 @@ static void SetTask(void* a)
 }
 
 
-static void SetWaitTaskMain(void* a)
+static void GetTaskMain(void* a)
+{
+    X_UNUSED(a);
+
+    XError err;
+    XFiberEvent* event;
+
+    err = xfiber_event_create(&event);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_NOT_NULL(event);
+    TEST_ASSERT_EQUAL_HEX(0x00, xfiber_event_get(event));
+
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_event_set(event, 0x01));
+    TEST_ASSERT_EQUAL_HEX(0x01, xfiber_event_get(event));
+
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_event_set(event, 0xB0));
+    TEST_ASSERT_EQUAL_HEX(0xB1, xfiber_event_get(event));
+
+    xfiber_event_destroy(event);
+    xfiber_kernel_end_scheduler();
+}
+
+
+static void ClearTaskMain(void* a)
+{
+    X_UNUSED(a);
+
+    XError err;
+    XFiberEvent* event;
+
+    err = xfiber_event_create(&event);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_NOT_NULL(event);
+    TEST_ASSERT_EQUAL_HEX(0x00, xfiber_event_get(event));
+
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_event_set(event, 0x33));
+    TEST_ASSERT_EQUAL_HEX(0x33, xfiber_event_clear(event, 0x21));
+    TEST_ASSERT_EQUAL_HEX(0x12, xfiber_event_get(event));
+
+    TEST_ASSERT_EQUAL_HEX(0x12, xfiber_event_clear(event, 0xFF));
+    TEST_ASSERT_EQUAL_HEX(0x00, xfiber_event_get(event));
+
+    xfiber_event_destroy(event);
+    xfiber_kernel_end_scheduler();
+}
+
+
+static void WaitClearOnExitTaskMain(void* a)
 {
     X_UNUSED(a);
 
@@ -85,14 +132,30 @@ static void SetWaitTaskMain(void* a)
     TEST_ASSERT_EQUAL_HEX(0x13, result_pattern);
     TEST_ASSERT_EQUAL_HEX(0x00, xfiber_event_get(event));
 
-    for (int i = 0; i < 0; i++)
-        xfiber_yield();
+    xfiber_event_destroy(event);
+    xfiber_kernel_end_scheduler();
+}
+
+
+static void WaitTaskMain(void* a)
+{
+    X_UNUSED(a);
+
+    XError err;
+    XFiberEvent* event;
+    XBits result_pattern;
+    SetArg* arg;
+
+    err = xfiber_event_create(&event);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_NOT_NULL(event);
+
     arg = CreateSetArg(event, 0, 0x10, X_ERR_NONE);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task4", STACK_SIZE, SetTask, arg));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task1", STACK_SIZE, SetTask, arg));
     arg = CreateSetArg(event, 0, 0x01, X_ERR_NONE);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task5", STACK_SIZE, SetTask, arg));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task2", STACK_SIZE, SetTask, arg));
     arg = CreateSetArg(event, 0, 0x02, X_ERR_NONE);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task6", STACK_SIZE, SetTask, arg));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task3", STACK_SIZE, SetTask, arg));
     err = xfiber_event_wait(
             event,
             X_FIBER_EVENT_WAIT_AND,
@@ -101,13 +164,29 @@ static void SetWaitTaskMain(void* a)
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_EQUAL_HEX(0x13, result_pattern);
     TEST_ASSERT_EQUAL_HEX(0x13, xfiber_event_get(event));
-    TEST_ASSERT_EQUAL_HEX(0x13, xfiber_event_clear(event, 0x13));
-    TEST_ASSERT_EQUAL_HEX(0x00, xfiber_event_get(event));
+
+    xfiber_event_destroy(event);
+    xfiber_kernel_end_scheduler();
+}
+
+
+static void WaitTimeoutTaskMain(void* a)
+{
+    X_UNUSED(a);
+
+    XError err;
+    XFiberEvent* event;
+    XBits result_pattern;
+    SetArg* arg;
+
+    err = xfiber_event_create(&event);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_NOT_NULL(event);
 
     arg = CreateSetArg(event, 0, 0x10, X_ERR_NONE);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task7", STACK_SIZE, SetTask, arg));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task1", STACK_SIZE, SetTask, arg));
     arg = CreateSetArg(event, 0, 0x01, X_ERR_NONE);
-    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task8", STACK_SIZE, SetTask, arg));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task2", STACK_SIZE, SetTask, arg));
     err = xfiber_event_timed_wait(
             event,
             X_FIBER_EVENT_WAIT_AND,
@@ -115,22 +194,57 @@ static void SetWaitTaskMain(void* a)
             &result_pattern,
             x_msec_to_ticks(50));
     TEST_ASSERT_EQUAL(X_ERR_TIMED_OUT, err);
-    TEST_ASSERT_EQUAL_HEX(0x11, xfiber_event_get(event));
 
     xfiber_event_destroy(event);
     xfiber_kernel_end_scheduler();
 }
 
 
-TEST(xfiber_event, set)
+TEST(xfiber_event, get)
 {
     xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
-    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, SetWaitTaskMain, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, GetTaskMain, NULL);
+    xfiber_kernel_start_scheduler();
+}
+
+
+TEST(xfiber_event, clear)
+{
+    xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, ClearTaskMain, NULL);
+    xfiber_kernel_start_scheduler();
+}
+
+
+TEST(xfiber_event, wait_clear_on_exit)
+{
+    xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, WaitClearOnExitTaskMain, NULL);
+    xfiber_kernel_start_scheduler();
+}
+
+
+TEST(xfiber_event, wait)
+{
+    xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, WaitTaskMain, NULL);
+    xfiber_kernel_start_scheduler();
+}
+
+
+TEST(xfiber_event, wait_timeout)
+{
+    xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, WaitTimeoutTaskMain, NULL);
     xfiber_kernel_start_scheduler();
 }
 
 
 TEST_GROUP_RUNNER(xfiber_event)
 {
-    RUN_TEST_CASE(xfiber_event, set);
+    RUN_TEST_CASE(xfiber_event, get);
+    RUN_TEST_CASE(xfiber_event, clear);
+    RUN_TEST_CASE(xfiber_event, wait_clear_on_exit);
+    RUN_TEST_CASE(xfiber_event, wait);
+    RUN_TEST_CASE(xfiber_event, wait_timeout);
 }
