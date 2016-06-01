@@ -16,6 +16,10 @@ libfixmath_dir      = $$external_dir/libfixmath/port_picox
 
 DEFINES += X_CONF_USE_USER_CONFIG=1
 DEFINES += UNITY_INCLUDE_DOUBLE
+# DEFINES += _FORTIFY_SOURCE=0
+#
+DEFINES += _POSIX_C_SOURCE=200809L
+QMAKE_CFLAGS += -std=c99 -O0 -Wall -Wextra -Wpedantic
 
 INCLUDEPATH += ./
 INCLUDEPATH += ./config

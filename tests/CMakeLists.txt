@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(picox-tests)
 
 set(CMAKE_BUILD_TYPE    Debug)
-# set(CMAKE_BUILD_TYPE  Release)
+#set(CMAKE_BUILD_TYPE  Release)
 set(CMAKE_CXX_COMPILER  g++)
 set(CMAKE_C_COMPILER    gcc)
 
@@ -17,12 +17,14 @@ include_directories(./)
 include_directories(./config)
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_BINARY_DIR})
-set(CMAKE_C_FLAGS "-std=c99 -Og -Wall -Wextra -Wpedantic -Wchar-subscripts")
+set(CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -Wpedantic -Wchar-subscripts")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
 
+remove_definitions(
+)
 add_definitions(
     -DX_CONF_USE_USER_CONFIG=1
-    -D_POSIX_C_SOURCE=200112L
+    -D_POSIX_C_SOURCE=200809L
     -DX_INTERNAL_DEVMODE
     -DUNITY_INCLUDE_DOUBLE
 )
@@ -55,6 +57,8 @@ set(test_sources
     test_xdynamic_string.c
     test_xstream.c
     test_minIni.c
+    test_xfiber.c
+    test_xfiber_event.c
     romfsimg.c
     glue/fatfs_glue.c
 )
@@ -78,8 +82,8 @@ add_dependencies(picox_tests picox)
 #     COMMAND ./picox_tests
 #     )
 
-add_custom_target(run_tests ALL DEPENDS picox_tests)
-add_custom_command(TARGET run_tests POST_BUILD
-    COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
-    COMMAND ./$<TARGET_FILE_NAME:picox_tests>
-    )
+# add_custom_target(run_tests ALL DEPENDS picox_tests)
+# add_custom_command(TARGET run_tests POST_BUILD
+#     COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
+#     COMMAND ./$<TARGET_FILE_NAME:picox_tests>
+#     )
