@@ -295,6 +295,7 @@ static void X__SwapContext(XFiber* from, XFiber* to);
 static void X__SetContext(XFiber* to);
 static void* X__ResolvePtr(const XFiber* fiber, const void* ptr);
 static void X__DestroyFiber(XFiber* fiber);
+static void X__PargePendingTasks(XIntrusiveList* list);
 
 #if X_CONF_FIBER_IMPL_TYPE == X_FIBER_IMPL_TYPE_COPY_STACK
 static void X__GetStackPtr(uint8_t** volatile dst);
@@ -450,7 +451,10 @@ x__exit:
 
 void xfiber_event_destroy(XFiberEvent* event)
 {
+    X_FIBER_ENTER_CRITICAL();
+    X__PargePendingTasks(&event->m_pending_tasks);
     X__Free(event);
+    X_FIBER_EXIT_CRITICAL();
 }
 
 
@@ -1905,6 +1909,21 @@ static void X__DestroyFiber(XFiber* fiber)
     X__Free(fiber);
     priv->m_num_objects[X_FIBER_OBJTYPE_TASK]--;
     X_FIBER_EXIT_CRITICAL();
+}
+
+
+static void X__PargePendingTasks(XIntrusiveList* list)
+{
+    XIntrusiveNode* ite = xilist_front(&event->m_pending_tasks);
+    XIntrusiveNode* const end = xilist_end(&event->m_pending_tasks);
+
+    while (ite != end)
+    {
+        XFiber* const fiber = X__NODE_TO_FIBER(ite);
+        XIntrusiveNode* const next = ite->next;
+        X__ReleaseWaiting(fiber, X_ERR_CANCELED);
+        ite = next;
+    }
 }
 
 
