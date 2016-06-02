@@ -1677,12 +1677,23 @@ XError xfiber_pool_create(XFiberPool** o_pool, size_t block_size, size_t num_blo
     xfalloc_init(&pool->m_allocator,
                  (uint8_t*)pool + x_roundup_multiple(sizeof(*pool), X_ALIGN_OF(XMaxAlign)),
                  block_size * num_blocks,
-                 block_size,
-                 X_ALIGN_OF(XMaxAlign));
+                 block_size);
+
     pool->m_type = X_FIBER_OBJTYPE_POOL;
     *o_pool = pool;
 
     return err;
+}
+
+
+void xfiber_pool_destroy(XFiberPool* pool)
+{
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PargePendingTasks(&pool->m_pending_tasks);
+        X__Free(pool);
+    }
+    X_FIBER_EXIT_CRITICAL();
 }
 
 
@@ -1722,7 +1733,10 @@ XError xfiber_pool_timed_get(XFiberPool* pool, void** o_mem, XTicks timeout)
     X_FIBER_EXIT_CRITICAL();
 
     if (scheduling_request)
+    {
         X__Schedule();
+        err = cur_task->m_result_waiting;
+    }
 
 x__exit:
     return err;

@@ -18,7 +18,7 @@ static void run_all_tests(void)
     // RUN_TEST_GROUP(xpalloc);
     // RUN_TEST_GROUP(xutils);
     // RUN_TEST_GROUP(xsalloc);
-    // RUN_TEST_GROUP(xfalloc);
+    RUN_TEST_GROUP(xfalloc);
     // RUN_TEST_GROUP(xstring);
     // RUN_TEST_GROUP(xtokenizer);
     // RUN_TEST_GROUP(xargparser);
@@ -41,6 +41,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xfiber_signal);
     RUN_TEST_GROUP(xfiber_mutex);
     RUN_TEST_GROUP(xfiber_semaphore);
+    RUN_TEST_GROUP(xfiber_pool);
 }
 
 
