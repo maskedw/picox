@@ -59,6 +59,7 @@ set(test_sources
     test_minIni.c
     test_xfiber.c
     test_xfiber_event.c
+    test_xfiber_signal.c
     romfsimg.c
     glue/fatfs_glue.c
 )
@@ -68,8 +69,8 @@ add_executable(picox_tests ${test_sources})
 target_link_libraries(picox_tests picox)
 
 add_custom_command(OUTPUT romfsimg.c romfsimg.h
-    COMMAND ${tooldir}/xromfs_builder.py -o romfs.img ${CMAKE_SOURCE_DIR}/romfs
-    COMMAND ${tooldir}/xbin2c.py -o romfsimg romfs.img
+    COMMAND python3 ${tooldir}/xromfs_builder.py -o romfs.img ${CMAKE_SOURCE_DIR}/romfs
+    COMMAND python3 ${tooldir}/xbin2c.py -o romfsimg romfs.img
 )
 
 add_custom_target(generate_romfs DEPENDS romfsimg.c romfsimg.h)
@@ -82,8 +83,8 @@ add_dependencies(picox_tests picox)
 #     COMMAND ./picox_tests
 #     )
 
-# add_custom_target(run_tests ALL DEPENDS picox_tests)
-# add_custom_command(TARGET run_tests POST_BUILD
-#     COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
-#     COMMAND ./$<TARGET_FILE_NAME:picox_tests>
-#     )
+add_custom_target(run_tests ALL DEPENDS picox_tests)
+add_custom_command(TARGET run_tests POST_BUILD
+    COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
+    COMMAND ./$<TARGET_FILE_NAME:picox_tests>
+    )

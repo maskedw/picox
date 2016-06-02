@@ -42,6 +42,24 @@ static SetArg* CreateSetArg(XFiberEvent* event, XTicks delay, XBits bits, XError
 }
 
 
+typedef struct
+{
+    XTicks          delay;
+    XFiberEvent*    event;
+} DestroyArg;
+
+
+static DestroyArg* CreateDestroyArg(XFiberEvent* event, XTicks delay)
+{
+    DestroyArg* ret = x_malloc(sizeof(DestroyArg));
+    X_ASSERT(ret);
+
+    ret->delay = delay;
+    ret->event = event;
+    return ret;
+}
+
+
 static void SetTask(void* a)
 {
     SetArg* arg = a;
@@ -52,6 +70,18 @@ static void SetTask(void* a)
     const XError err = xfiber_event_set(arg->event, arg->bits);
     TEST_ASSERT_EQUAL(arg->expect_err, err);
 
+    x_free(arg);
+}
+
+
+static void DestroyTask(void* a)
+{
+    DestroyArg* arg = a;
+
+    if (arg->delay > 0)
+        xfiber_delay(arg->delay);
+
+    xfiber_event_destroy(arg->event);
     x_free(arg);
 }
 
@@ -244,6 +274,29 @@ static void TryWaitTaskMain(void* a)
 }
 
 
+static void DestroyTaskMain(void* a)
+{
+    X_UNUSED(a);
+
+    XError err;
+    XFiberEvent* event;
+    XBits result_pattern;
+    DestroyArg* arg;
+
+    err = xfiber_event_create(&event);
+    TEST_ASSERT_EQUAL(X_ERR_NONE, err);
+    TEST_ASSERT_NOT_NULL(event);
+
+    arg = CreateDestroyArg(event, x_msec_to_ticks(30));
+    TEST_ASSERT_EQUAL(X_ERR_NONE, xfiber_create(NULL, PRIORITY, "task1", STACK_SIZE, DestroyTask, arg));
+    err = xfiber_event_wait(
+            event,
+            X_FIBER_EVENT_WAIT_AND,
+            0x13,
+            &result_pattern);
+    TEST_ASSERT_EQUAL(X_ERR_CANCELED, err);
+    xfiber_kernel_end_scheduler();
+}
 
 
 TEST(xfiber_event, get)
@@ -281,7 +334,7 @@ TEST(xfiber_event, wait)
 TEST(xfiber_event, wait_timeout)
 {
     xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
-    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, TryWaitTaskMain, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, WaitTimeoutTaskMain, NULL);
     xfiber_kernel_start_scheduler();
 }
 
@@ -294,6 +347,14 @@ TEST(xfiber_event, try_wait)
 }
 
 
+TEST(xfiber_event, destroy)
+{
+    xfiber_kernel_init(NULL, KERNEL_WORK_SIZE, NULL);
+    xfiber_create(NULL, PRIORITY, "main", STACK_SIZE, DestroyTaskMain, NULL);
+    xfiber_kernel_start_scheduler();
+}
+
+
 TEST_GROUP_RUNNER(xfiber_event)
 {
     RUN_TEST_CASE(xfiber_event, get);
@@ -302,4 +363,5 @@ TEST_GROUP_RUNNER(xfiber_event)
     RUN_TEST_CASE(xfiber_event, wait);
     RUN_TEST_CASE(xfiber_event, wait_timeout);
     RUN_TEST_CASE(xfiber_event, try_wait);
+    RUN_TEST_CASE(xfiber_event, destroy);
 }

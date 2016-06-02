@@ -107,6 +107,8 @@ XError xfiber_signal_try_wait(XBits sigs, XBits* result);
 XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout);
 XError xfiber_signal_raise(XFiber* fiber, XBits sigs);
 XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs);
+XBits xfiber_signal_get(XFiber* fiber);
+XBits xfiber_signal_get_isr(XFiber* fiber);
 
 XError xfiber_queue_create(XFiberQueue** o_queue, size_t queue_len, size_t item_size);
 void xfiber_queue_destroy(XFiberQueue* queue);

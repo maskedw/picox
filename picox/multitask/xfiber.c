@@ -452,8 +452,10 @@ x__exit:
 void xfiber_event_destroy(XFiberEvent* event)
 {
     X_FIBER_ENTER_CRITICAL();
-    X__PargePendingTasks(&event->m_pending_tasks);
-    X__Free(event);
+    {
+        X__PargePendingTasks(&event->m_pending_tasks);
+        X__Free(event);
+    }
     X_FIBER_EXIT_CRITICAL();
 }
 
@@ -472,9 +474,10 @@ XError xfiber_event_try_wait(XFiberEvent* event, XMode mode, XBits wait_pattern,
 
 XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_pattern, XBits* result, XTicks timeout)
 {
-    volatile XError err = X_ERR_NONE;
+    XError err = X_ERR_NONE;
     XFiber* const fiber = xfiber_self();
 
+    X_ASSIGN_NOT_NULL(result, 0);
     X_FIBER_ENTER_CRITICAL();
     {
         if (X__TestEvent(event, mode, wait_pattern, result))
@@ -501,9 +504,8 @@ XError xfiber_event_timed_wait(XFiberEvent* event, XMode mode, XBits wait_patter
     X_FIBER_EXIT_CRITICAL();
 
     X__Schedule();
-
-    *result = fiber->m_result_event_patten;
     err = fiber->m_result_waiting;
+    X_ASSIGN_NOT_NULL(result, fiber->m_result_event_patten);
 
 x__exit:
     return err;
@@ -724,6 +726,26 @@ XError xfiber_signal_raise_isr(XFiber* fiber, XBits sigs)
     }
 
     return err;
+}
+
+
+XBits xfiber_signal_get(XFiber* fiber)
+{
+    XBits ret;
+    X_FIBER_ENTER_CRITICAL();
+    {
+        ret = fiber->m_recv_sigs;
+    }
+    X_FIBER_EXIT_CRITICAL();
+
+    return ret;
+}
+
+
+XBits xfiber_signal_get_isr(XFiber* fiber)
+{
+    const XBits ret = fiber->m_recv_sigs;
+    return ret;
 }
 
 
@@ -1914,8 +1936,8 @@ static void X__DestroyFiber(XFiber* fiber)
 
 static void X__PargePendingTasks(XIntrusiveList* list)
 {
-    XIntrusiveNode* ite = xilist_front(&event->m_pending_tasks);
-    XIntrusiveNode* const end = xilist_end(&event->m_pending_tasks);
+    XIntrusiveNode* ite = xilist_front(list);
+    XIntrusiveNode* const end = xilist_end(list);
 
     while (ite != end)
     {
