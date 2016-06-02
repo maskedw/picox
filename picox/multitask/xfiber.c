@@ -1443,6 +1443,17 @@ XError xfiber_semaphore_create(XFiberSemaphore** o_semaphore, int initial_count)
 }
 
 
+void xfiber_semaphore_destroy(XFiberSemaphore* semaphore)
+{
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PargePendingTasks(&semaphore->m_pending_tasks);
+        X__Free(semaphore);
+    }
+    X_FIBER_EXIT_CRITICAL();
+}
+
+
 XError xfiber_semaphore_take(XFiberSemaphore* semaphore)
 {
     return xfiber_semaphore_timed_take(semaphore, X_TICKS_FOREVER);
@@ -1478,7 +1489,10 @@ XError xfiber_semaphore_timed_take(XFiberSemaphore* semaphore, XTicks timeout)
     X_FIBER_EXIT_CRITICAL();
 
     if (scheduling_request)
+    {
         X__Schedule();
+        err = cur_task->m_result_waiting;
+    }
 
 x__exit:
     return err;

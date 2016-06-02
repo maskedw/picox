@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(picox-tests)
 
-set(CMAKE_BUILD_TYPE    Debug)
-#set(CMAKE_BUILD_TYPE  Release)
+# set(CMAKE_BUILD_TYPE    Debug)
+set(CMAKE_BUILD_TYPE  Release)
 set(CMAKE_CXX_COMPILER  g++)
 set(CMAKE_C_COMPILER    gcc)
 
@@ -61,6 +61,7 @@ set(test_sources
     test_xfiber_event.c
     test_xfiber_signal.c
     test_xfiber_mutex.c
+    test_xfiber_semaphore.c
     romfsimg.c
     glue/fatfs_glue.c
 )
@@ -84,8 +85,8 @@ add_dependencies(picox_tests picox)
 #     COMMAND ./picox_tests
 #     )
 
-add_custom_target(run_tests ALL DEPENDS picox_tests)
-add_custom_command(TARGET run_tests POST_BUILD
-    COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
-    COMMAND ./$<TARGET_FILE_NAME:picox_tests>
-    )
+# add_custom_target(run_tests ALL DEPENDS picox_tests)
+# add_custom_command(TARGET run_tests POST_BUILD
+#     COMMAND size ./$<TARGET_FILE_NAME:picox_tests>
+#     COMMAND ./$<TARGET_FILE_NAME:picox_tests>
+#     )

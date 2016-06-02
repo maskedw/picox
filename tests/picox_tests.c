@@ -40,6 +40,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xfiber_event);
     RUN_TEST_GROUP(xfiber_signal);
     RUN_TEST_GROUP(xfiber_mutex);
+    RUN_TEST_GROUP(xfiber_semaphore);
 }
 
 
