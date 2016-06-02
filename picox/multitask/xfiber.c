@@ -1122,6 +1122,17 @@ XError xfiber_channel_create(XFiberChannel** o_channel, size_t capacity, size_t 
 }
 
 
+void xfiber_channel_destroy(XFiberChannel* channel)
+{
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PargePendingTasks(&channel->m_pending_tasks);
+        X__Free(channel);
+    }
+    X_FIBER_EXIT_CRITICAL();
+}
+
+
 XError xfiber_channel_send(XFiberChannel* channel, const void* src, size_t size)
 {
     return xfiber_channel_timed_send(channel, src, size, X_TICKS_FOREVER);
