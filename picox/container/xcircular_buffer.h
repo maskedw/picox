@@ -44,11 +44,20 @@
 #include <picox/core/xcore.h>
 
 
+/** @addtogroup container
+ *  @{
+ *  @addtogroup xcircular_buffer
+ *  @brief 循環バッファ
+ *  @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 
+/* 内部処理用のマクロ */
 #define XCBUF__CAPACITY()    ((size_t)(self->m_end - self->m_buff))
 #define XCBUF__ADD(p, n)     ((p) + ((n) < (size_t)(self->m_end - (p)) ? (n) : (n) - XCBUF__CAPACITY()))
 #define XCBUf__SUB(p, n)     ((p) - ((n) > ((p) - self->m_buff) ? (n) - XCBUF__CAPACITY() : (n)))
@@ -56,6 +65,8 @@ extern "C" {
 #define XCBUF__INCREMENT(p)  do { if (++p == self->m_end) p = self->m_buff; } while (0)
 
 
+/** 循環バッファ管理構造体
+ */
 typedef struct
 {
 /** @privatesection */
@@ -68,6 +79,14 @@ typedef struct
 } XCircularBuffer;
 
 
+
+/** @brief 循環バッファを初期化します
+ *
+ *  @param buffer   データの格納領域
+ *  @param capacity bufferのバイト数
+ *
+ *  bufferがNULLの時はcapacityバイトのメモリをx_malloc()で確保します
+ */
 static inline bool
 xcbuf_init(XCircularBuffer* self, void* buffer, size_t capacity)
 {
@@ -87,6 +106,8 @@ xcbuf_init(XCircularBuffer* self, void* buffer, size_t capacity)
 }
 
 
+/** @brief バッファの終了処理を行います
+ */
 static inline void
 xcbuf_deinit(XCircularBuffer* self)
 {
@@ -97,6 +118,8 @@ xcbuf_deinit(XCircularBuffer* self)
 }
 
 
+/** @brief バッファを空にします
+ */
 static inline void
 xcbuf_clear(XCircularBuffer* self)
 {
@@ -105,6 +128,8 @@ xcbuf_clear(XCircularBuffer* self)
 }
 
 
+/** @brief バッファの先頭アドレスを返します
+ */
 static inline uint8_t*
 xcbuf_data(XCircularBuffer* self)
 {
@@ -112,6 +137,8 @@ xcbuf_data(XCircularBuffer* self)
 }
 
 
+/** @brief バッファのコンストな先頭アドレスを返します
+ */
 static inline const uint8_t*
 xcbuf_const_data(const XCircularBuffer* self)
 {
@@ -119,6 +146,13 @@ xcbuf_const_data(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファの先頭側の配列を返します
+ *
+ *  リングバッファなので、バッファ内のデータはアドレスの直線上に並んでいることは
+ *  保証されません。
+ *  array_one, array_twoの順にアクセスすることで、順に要素にアクセスすることがで
+ *  きます。
+ */
 static inline const uint8_t*
 xcbuf_array_one(const XCircularBuffer* self, size_t* o_size)
 {
@@ -129,6 +163,8 @@ xcbuf_array_one(const XCircularBuffer* self, size_t* o_size)
 }
 
 
+/** @brief バッファの後方側の配列を返します
+ */
 static inline const uint8_t*
 xcbuf_array_two(const XCircularBuffer* self, size_t* o_size)
 {
@@ -138,6 +174,8 @@ xcbuf_array_two(const XCircularBuffer* self, size_t* o_size)
 }
 
 
+/** @brief バッファの要素を直線に並べ替えます
+ */
 static inline uint8_t*
 xcbuf_linearize(XCircularBuffer* self)
 {
@@ -179,6 +217,8 @@ xcbuf_linearize(XCircularBuffer* self)
 }
 
 
+/** @brief バッファの要素が直線に並んでいるかどうかを返します
+ */
 static inline bool
 xcbuf_is_linearized(const XCircularBuffer* self)
 {
@@ -186,6 +226,8 @@ xcbuf_is_linearized(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファの要素数を返します
+ */
 static inline size_t
 xcbuf_size(const XCircularBuffer* self)
 {
@@ -193,6 +235,8 @@ xcbuf_size(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファがからかどうかを返します
+ */
 static inline bool
 xcbuf_empty(const XCircularBuffer* self)
 {
@@ -200,6 +244,8 @@ xcbuf_empty(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファに格納可能な最大要素数を返します
+ */
 static inline size_t
 xcbuf_capacity(const XCircularBuffer* self)
 {
@@ -207,6 +253,8 @@ xcbuf_capacity(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファが満タンかどうかを返します
+ */
 static inline bool
 xcbuf_full(const XCircularBuffer* self)
 {
@@ -214,6 +262,8 @@ xcbuf_full(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファに格納可能な残り要素数を返します
+ */
 static inline size_t
 xcbuf_reserve(const XCircularBuffer* self)
 {
@@ -221,6 +271,10 @@ xcbuf_reserve(const XCircularBuffer* self)
 }
 
 
+/** @brief バッファ末尾に要素を追加します
+ *
+ *  バッファが満タンの場合は先頭要素が除去されます
+ */
 static inline void
 xcbuf_push_back(XCircularBuffer* self, uint8_t value)
 {
@@ -239,6 +293,10 @@ xcbuf_push_back(XCircularBuffer* self, uint8_t value)
 }
 
 
+/** @brief バッファ末尾にnバイトを追加します
+ *
+ *  バッファに入りきらないぶんは先頭から除去されます
+ */
 static inline void
 xcbuf_push_back_n(XCircularBuffer* self, const void* src, size_t n)
 {
@@ -263,6 +321,10 @@ xcbuf_push_back_n(XCircularBuffer* self, const void* src, size_t n)
 }
 
 
+/** @brief バッファ先頭に要素を追加します
+ *
+ *  バッファが満タンの場合は後方要素が除去されます
+ */
 static inline void
 xcbuf_push_front(XCircularBuffer* self, uint8_t value)
 {
@@ -281,6 +343,10 @@ xcbuf_push_front(XCircularBuffer* self, uint8_t value)
 }
 
 
+/** @brief バッファ先頭にnバイトを追加します
+ *
+ *  バッファに入りきらないぶんは後方から除去されます
+ */
 static inline void
 xcbuf_push_front_n(XCircularBuffer* self, const void* src, size_t n)
 {
@@ -305,6 +371,8 @@ xcbuf_push_front_n(XCircularBuffer* self, const void* src, size_t n)
 }
 
 
+/** @brief バッファの末尾要素を返します
+ */
 static inline uint8_t
 xcbuf_back(XCircularBuffer* self)
 {
@@ -314,6 +382,8 @@ xcbuf_back(XCircularBuffer* self)
 }
 
 
+/** @brief バッファの先頭要素を返します
+ */
 static inline uint8_t
 xcbuf_front(XCircularBuffer* self)
 {
@@ -321,6 +391,8 @@ xcbuf_front(XCircularBuffer* self)
 }
 
 
+/** @brief バッファの末尾要素を返し、末尾要素は除去されます
+ */
 static inline uint8_t
 xcbuf_pop_back(XCircularBuffer* self)
 {
@@ -331,6 +403,8 @@ xcbuf_pop_back(XCircularBuffer* self)
 }
 
 
+/** @brief バッファの先頭要素を返し、先頭要素は除去されます
+ */
 static inline uint8_t
 xcbuf_pop_front(XCircularBuffer* self)
 {
@@ -341,6 +415,10 @@ xcbuf_pop_front(XCircularBuffer* self)
 }
 
 
+/** @brief バッファの先頭からnバイトを除去し、dstにコピーします
+ *
+ *  dstがNULLの場合は要素の除去だけが行われます
+ */
 static inline void
 xcbuf_pop_front_n(XCircularBuffer* self, void* dst, size_t n)
 {
@@ -366,6 +444,10 @@ xcbuf_pop_front_n(XCircularBuffer* self, void* dst, size_t n)
 }
 
 
+/** @brief バッファの後方からnバイトを除去し、dstにコピーします
+ *
+ *  dstがNULLの場合は要素の除去だけが行われます
+ */
 static inline void
 xcbuf_pop_back_n(XCircularBuffer* self, void* dst, size_t n)
 {
@@ -391,6 +473,8 @@ xcbuf_pop_back_n(XCircularBuffer* self, void* dst, size_t n)
 }
 
 
+/** @brief バッファから位置を指定してnバイトをdstにコピーします
+ */
 static inline void
 xcbuf_copy_to_mem(const XCircularBuffer* self, size_t pos, void* dst, size_t n)
 {
@@ -406,9 +490,21 @@ xcbuf_copy_to_mem(const XCircularBuffer* self, size_t pos, void* dst, size_t n)
 }
 
 
+#undef XCBUF__CAPACITY
+#undef XCBUF__ADD
+#undef XCBUf__SUB
+#undef XCBUF__DECREMENT
+#undef XCBUF__INCREMENT
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+
+/** @} end of addtogroup xcircular_buffer
+ *  @} end of addtogroup container
+ */
 
 
 #endif /* picox_container_xcircular_buffer_h_ */
