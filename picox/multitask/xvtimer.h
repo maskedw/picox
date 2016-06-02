@@ -46,6 +46,18 @@
 #include <picox/container/xintrusive_list.h>
 
 
+/** @addtogroup multitask
+ *  @{
+ *  @addtogroup xvtimer
+ *  @brief  時間管理によるコールバック関数呼び出し
+ *
+ *  組込み開発ではタイマーを使った時間指定によるコールバック呼び出しは必須ですよね。
+ *  このモジュールではコールバック関数のスケジューリングを支援します。
+ *  排他処理は行っていないのでタイマのハードウェア割り込みを伴う用途に使用する場
+ *  合は、このモジュールの関数を適当にラップしてやってください。
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -57,15 +69,22 @@ typedef struct XVTimer XVTimer;
 typedef struct XVTimerRequest XVTimerRequest;
 
 
+/** @brief コールバック関数ポインタ型です */
 typedef void (*XVTimerCallBack)(void* arg);
 
 
+/** @brief コールバックリクエスト構造体です
+ *
+ *  このオブジェクトはスタック以外の領域に確保する必要があります。
+ */
 struct XVTimerRequest
 {
+    /** @readonlysection */
     XVTimerCallBack     callback;
     void*               arg;
     XTicks              delay;
     XTicks              interval;
+    XDeleter            deleter;
 
     /** @privatesection */
     XIntrusiveNode      m_node;
@@ -78,6 +97,8 @@ struct XVTimerRequest
 };
 
 
+/** @brief 仮想タイマー構造体です
+ */
 struct XVTimer
 {
 /** @privatesection */
@@ -88,25 +109,70 @@ struct XVTimer
 };
 
 
+/** @brief 仮想タイマオブジェクトを初期化します
+ */
 void xvtimer_init(XVTimer* self);
+
+
+/** @brief コールバックリクエストオブジェクトを初期化します
+ */
 void xvtimer_init_request(XVTimerRequest* request);
-void xvtimer_deinit(XVTimer* self, XDeleter deleter);
+
+
+/** @brief リクエストを全て除去します
+ */
+void xvtimer_deinit(XVTimer* self);
+
+
+/** @brief コールバックリクエストを追加します
+ *
+ *  @param request  初期化済みのリクエストオブジェクト
+ *  @param callback コールバック関数
+ *  @param arg      コールバック関数の引数
+ *  @param delay    intervalのカウントを開始するまでの遅延時間
+ *  @param interval コールバックの呼び出し周期
+ *  @param once     初回のコールバック呼び出しでリクエストを除去するかどうか
+ *  @param deleter  リクエストを除去する時に呼び出すデリータ
+ */
 void xvtimer_add_request(XVTimer* self,
                          XVTimerRequest* request,
                          XVTimerCallBack callback,
                          void* arg,
                          XTicks delay,
                          XTicks interval,
-                         bool once);
+                         bool once,
+                         XDeleter deleter);
+
+
+/** @brief リクエストを除去します
+ *
+ *  コールバック関数の呼び出し中に自分自身や他のリクエストを除去することも可能で
+ *  す
+ */
 void xvtimer_remove_requst(XVTimer* self, XVTimerRequest* request);
+
+
+/** @brief 仮想タイマのカウントをstep数ぶん進めます
+ *
+ *  タイマのカウントは自動的には行われないので、利用者がこの関数を呼び出して自分
+ *  でカウントを進める必要があります。
+ */
 void xvtimer_schedule(XVTimer* self, XTicks step);
+
+
+/** @brief 仮想タイマの現在時刻を返します
+ */
 XTicks xvtimer_now(const XVTimer* self);
-XTicks xvtimer_elapsed(const XVTimer* self, XTicks start);
 
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+
+/** @} end of addtogroup xvtimer
+ *  @} end of addtogroup multitask
+ */
 
 
 #endif /* picox_multitask_xvtimer_h_ */

@@ -1858,7 +1858,8 @@ static void X__AddTimerEvent(XFiber* fiber, XFiberTimeEventHandler handler, XTic
                         fiber,
                         0,
                         time,
-                        true);
+                        true,
+                        NULL);
 }
 
 

@@ -307,8 +307,20 @@ typedef void* (*XMallocFunc)(size_t size);
 typedef void (*XFreeFunc)(void* ptr);
 
 
-/** @brief オブジェクトを削除する関数ポインタ型です */
+/** @brief オブジェクトを削除する関数ポインタ型です
+ *
+ *  XFreeFuncと同じインターフェースですが、XFreeFuncがメモリの開放だけを意図して
+ *  いるのに対して、XDeleterはオブジェクトの終了処理を意識しているという、文脈の
+ *  違いがあります。
+ */
 typedef void (*XDeleter)(void* ptr);
+
+
+/** @brief 何もしないデリータです*/
+static inline void x_null_deleter(void* ptr)
+{
+    (void)(ptr);
+}
 
 
 /** @brief 組込み型の最大アライメント型です。

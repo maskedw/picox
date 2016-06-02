@@ -42,6 +42,7 @@
 
 
 static void X__RemoveRequest(XVTimerRequest* request);
+static void X__RemoveAll(XIntrusiveList* requests);
 
 
 void xvtimer_init(XVTimer* self)
@@ -68,29 +69,15 @@ void xvtimer_init_request(XVTimerRequest* request)
 }
 
 
-void xvtimer_deinit(XVTimer* self, XDeleter deleter)
+void xvtimer_deinit(XVTimer* self)
 {
     if (!self)
         return;
 
-    XIntrusiveNode* ite;
-
-    if (deleter)
-    {
-        xilist_foreach(&self->m_requests, ite)
-        {
-            XVTimerRequest* const req = xnode_entry(ite, XVTimerRequest, m_node);
-            deleter(req);
-        }
-
-        xilist_foreach(&self->m_pending_requests, ite)
-        {
-            XVTimerRequest* const req = xnode_entry(ite, XVTimerRequest, m_node);
-            deleter(req);
-        }
-    }
-
-    xvtimer_init(self);
+    self->m_tick_count = 0;
+    self->m_in_scheduling = false;
+    X__RemoveAll(&self->m_requests);
+    X__RemoveAll(&self->m_pending_requests);
 }
 
 
@@ -100,7 +87,8 @@ void xvtimer_add_request(XVTimer* self,
                          void* arg,
                          XTicks delay,
                          XTicks interval,
-                         bool once)
+                         bool once,
+                         XDeleter deleter)
 {
     X_ASSERT_SELF(self);
     X_ASSERT_NULL(request);
@@ -112,6 +100,7 @@ void xvtimer_add_request(XVTimer* self,
     request->arg = arg;
     request->delay = delay;
     request->interval = interval;
+    request->deleter = (!deleter) ? x_null_deleter : deleter;
     request->m_count = 0;
     request->m_has_marked_for_deletion = false;
     request->m_pending = (self->m_in_scheduling);
@@ -214,16 +203,27 @@ XTicks xvtimer_now(const XVTimer* self)
 }
 
 
-XTicks xvtimer_elapsed(const XVTimer* self, XTicks start)
-{
-    return self->m_tick_count - start;
-}
-
-
 static void X__RemoveRequest(XVTimerRequest* request)
 {
     request->m_holder = NULL;
     request->m_has_marked_for_deletion = false;
     request->m_pending = false;
     xnode_unlink(&request->m_node);
+    request->deleter(request);
+}
+
+
+static void X__RemoveAll(XIntrusiveList* requests)
+{
+    XIntrusiveNode* ite = xilist_front(requests);
+    XIntrusiveNode* const end = xilist_end(requests);
+
+    while (ite != end)
+    {
+        XVTimerRequest* const req = xnode_entry(ite, XVTimerRequest, m_node);
+        XIntrusiveNode* next = ite->next;
+        req->deleter(req);
+        ite = next;
+    }
+    xilist_init(requests);
 }
