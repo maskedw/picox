@@ -47,6 +47,7 @@
 #include <picox/multitask/xvtimer.h>
 
 
+#define X_FIBER_PRIORITY_MAX       (8)
 #define X__NODE_TO_FIBER(node)     xnode_entry(node, XFiber, m_node)
 #define X__CHECK_POLL(timeout)       \
     do                                  \
@@ -263,7 +264,8 @@ struct XFiberPool
 typedef struct X__Kernel
 {
     XFiber*             m_cur_task;
-    XIntrusiveList      m_ready_queue;
+    uint_fast8_t        m_priority_map;
+    XIntrusiveList      m_ready_queue[X_FIBER_PRIORITY_MAX];
     XIntrusiveList      m_delay_queue;
     XPicoAllocator      m_alloc;
     XFiberIdleHook      m_idlehook;
@@ -315,11 +317,16 @@ X__Kernel        x_g_fiber_kernel;
 
 XError xfiber_kernel_init(void* heap, size_t heapsize, XFiberIdleHook idlehook)
 {
-    xilist_init(&priv->m_ready_queue);
+    int i;
+
+    for (i = 0; i < X_FIBER_PRIORITY_MAX; ++i)
+        xilist_init(&priv->m_ready_queue[i]);
+
     xilist_init(&priv->m_delay_queue);
     xpalloc_init(&priv->m_alloc, heap, heapsize, X_ALIGN_OF(XMaxAlign));
     xvtimer_init(&priv->m_vtimer);
     priv->m_idlehook = idlehook;
+    priv->m_priority_map = 0;
     memset(priv->m_num_objects, 0, sizeof(priv->m_num_objects));
 
     return X_ERR_NONE;
@@ -1890,18 +1897,28 @@ static void X__TimeoutHandler(XFiber* fiber)
 static void X__PushToReadyQueue(XFiber* fiber)
 {
     /* priority */
+    const int priority = fiber->m_priority;
+    XIntrusiveList* const ready_queue = &priv->m_ready_queue[priority];
+
     fiber->m_state = X_FIBER_STATE_READY;
-    xilist_push_back(&priv->m_ready_queue, &fiber->m_node);
+    xilist_push_back(ready_queue, &fiber->m_node);
+    priv->m_priority_map |= 1 << priority;
+
 }
 
 
 static XFiber* X__PopFromReadyQueue(void)
 {
-    XIntrusiveNode* const next = xilist_front(&priv->m_ready_queue);
-    X_ASSERT(next != xilist_end(&priv->m_ready_queue) && "dead lock!!");
+    X_ASSERT((priv->m_priority_map) && "dead lock!!");
 
-    xnode_unlink(next);
+    const int priority = x_find_msb_pos8(priv->m_priority_map);
+    XIntrusiveList* const ready_queue = &priv->m_ready_queue[priority];
+    XIntrusiveNode* const next = xilist_pop_front(ready_queue);
     XFiber* const fiber = xnode_entry(next, XFiber, m_node);
+
+    if (xilist_empty(ready_queue))
+        priv->m_priority_map &= ~(1 << priority);
+
     return fiber;
 }
 
@@ -1922,7 +1939,7 @@ static void X__Schedule(void)
 
         xvtimer_schedule(&priv->m_vtimer, step);
 
-        while (xilist_empty(&priv->m_ready_queue))
+        while (!priv->m_priority_map)
         {
             X_FIBER_EXIT_CRITICAL();
 

@@ -4,7 +4,7 @@
 
 #define KERNEL_WORK_SIZE    (1024 * 20)
 #define STACK_SIZE          (2048 * 2)
-#define PRIORITY            (8)
+#define PRIORITY            (4)
 
 
 TEST_GROUP(xfiber);
