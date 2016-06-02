@@ -109,6 +109,7 @@
  *  http://www.atdot.net/~ko1/activities/shiba-prosym2010-paper.pdf
  *
  *  興味のある方は是非ソースコードを覗いてみてください。
+ *  @{
  */
 
 
