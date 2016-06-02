@@ -862,6 +862,17 @@ XError xfiber_queue_create(XFiberQueue** o_queue, size_t queue_len, size_t item_
 }
 
 
+void xfiber_queue_destroy(XFiberQueue* queue)
+{
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PargePendingTasks(&queue->m_pending_tasks);
+        X__Free(queue);
+    }
+    X_FIBER_EXIT_CRITICAL();
+}
+
+
 XError xfiber_queue_send_back(XFiberQueue* queue, const void* src)
 {
     return xfiber_queue_timed_send_back(queue, src, X_TICKS_FOREVER);

@@ -65,6 +65,7 @@ set(test_sources
     test_xfiber_pool.c
     test_xfiber_mailbox.c
     test_xfiber_channel.c
+    test_xfiber_queue.c
     romfsimg.c
     glue/fatfs_glue.c
 )

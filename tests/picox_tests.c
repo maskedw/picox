@@ -44,6 +44,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(xfiber_pool);
     RUN_TEST_GROUP(xfiber_mailbox);
     RUN_TEST_GROUP(xfiber_channel);
+    RUN_TEST_GROUP(xfiber_queue);
 }
 
 
