@@ -1313,6 +1313,17 @@ XError xfiber_mutex_create(XFiberMutex** o_mutex)
 }
 
 
+void xfiber_mutex_destroy(XFiberMutex* mutex)
+{
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PargePendingTasks(&mutex->m_pending_tasks);
+        X__Free(mutex);
+    }
+    X_FIBER_EXIT_CRITICAL();
+}
+
+
 XError xfiber_mutex_lock(XFiberMutex* mutex)
 {
     return xfiber_mutex_timed_lock(mutex, X_TICKS_FOREVER);
@@ -1368,7 +1379,7 @@ XError xfiber_mutex_unlock(XFiberMutex* mutex)
         if (!mutex->m_holder)
         {
             /* ロックされていない */
-            err = X_ERR_INVALID;
+            err = X_ERR_PROTOCOL;
             X_FIBER_EXIT_CRITICAL();
             goto x__exit;
         }
@@ -1399,7 +1410,7 @@ XError xfiber_mutex_unlock_isr(XFiberMutex* mutex)
 {
     XError err = X_ERR_NONE;
     if (!mutex->m_holder)
-        return X_ERR_INVALID;
+        return X_ERR_PROTOCOL;
 
     mutex->m_holder = NULL;
     if (xilist_empty(&mutex->m_pending_tasks))

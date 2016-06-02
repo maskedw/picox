@@ -60,6 +60,7 @@ set(test_sources
     test_xfiber.c
     test_xfiber_event.c
     test_xfiber_signal.c
+    test_xfiber_mutex.c
     romfsimg.c
     glue/fatfs_glue.c
 )
