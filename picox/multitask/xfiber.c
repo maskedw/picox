@@ -304,7 +304,8 @@ static void X__SaveStack(XFiber* fiber, const uint8_t* stack_end);
 #endif
 
 
-#define X__LOG      X_LOG_NOTI
+// #define X__LOG      X_LOG_NOTI
+#define X__LOG(x)
 static const char* const X__TAG = "XFiber";
 
 
@@ -1562,6 +1563,17 @@ XError xfiber_mailbox_create(XFiberMailbox** o_mailbox)
 }
 
 
+void xfiber_mailbox_destroy(XFiberMailbox* mailbox)
+{
+    X_FIBER_ENTER_CRITICAL();
+    {
+        X__PargePendingTasks(&mailbox->m_pending_tasks);
+        X__Free(mailbox);
+    }
+    X_FIBER_EXIT_CRITICAL();
+}
+
+
 XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message)
 {
     XError err = X_ERR_NONE;
@@ -1645,7 +1657,10 @@ XError xfiber_mailbox_timed_receive(XFiberMailbox* mailbox, XFiberMessage** o_me
     X_FIBER_EXIT_CRITICAL();
 
     if (scheduling_request)
+    {
         X__Schedule();
+        err = cur_task->m_result_waiting;
+    }
 
 x__exit:
     return err;

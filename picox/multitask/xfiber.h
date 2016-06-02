@@ -154,7 +154,7 @@ XError xfiber_semaphore_give_isr(XFiberSemaphore* semaphore);
 
 
 XError xfiber_mailbox_create(XFiberMailbox** o_mailbox);
-void xfiber_mailbox_destory(XFiberMailbox* mailbox);
+void xfiber_mailbox_destroy(XFiberMailbox* mailbox);
 XError xfiber_mailbox_send(XFiberMailbox* mailbox, XFiberMessage* message);
 XError xfiber_mailbox_send_isr(XFiberMailbox* mailbox, XFiberMessage* message);
 XError xfiber_mailbox_receive(XFiberMailbox* mailbox, XFiberMessage** o_message);
