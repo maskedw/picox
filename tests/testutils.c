@@ -23,32 +23,6 @@ void disk_deinit(BYTE pdrv);
 static XVirtualFs* vfs;
 
 
-void x_escape_assertion_failed(const char* expr, const char* msg, const char* func, const char* file, int line)
-{
-    X_UNUSED(expr);
-    X_UNUSED(msg);
-    X_UNUSED(func);
-    X_UNUSED(file);
-    X_UNUSED(line);
-
-    longjmp(g_xjmp, 1);
-}
-
-
-static void X__PostAssertionFailed(void)
-{
-    fflush(stdout);
-    while (1);
-}
-
-
-void x_init_test(void)
-{
-    x_putc_stdout = (XCharPutFunc)putchar;
-    x_post_assertion_failed = (XAssertionFailedFunc)X__PostAssertionFailed;
-}
-
-
 void x_test_init_fs()
 {
     vfs = x_malloc(sizeof(*vfs));
@@ -128,5 +102,3 @@ void x_test_stream(XStream* stream)
     TEST_ASSERT_EQUAL(0, xstream_gets(stream, buf, sizeof(buf), NULL, NULL));
     TEST_ASSERT_EQUAL_STRING(buf, "hello world");
 }
-
-

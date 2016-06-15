@@ -358,20 +358,6 @@ extern "C" {
 #endif
 
 
-
-/** @def   X_CONF_PORT_GETTIMEOFDAY
- *  @brief 時刻を取得する関数が利用可能かどうかを指定します
- *
- *  時刻を取得する関数x_gettimeofday()には、このコンフィグ値が1の時には
- *  x_port_gettimeofday()が、0の時は、常に0を返すx_default_gettimeofday()が使用
- *  されます。
- *  x_port_gettimeofday()をユーザーが提供できる場合は1をセットしてください。
- */
-#ifndef X_CONF_PORT_GETTIMEOFDAY
-#define X_CONF_PORT_GETTIMEOFDAY (0)
-#endif
-
-
 #define X_XFS_TYPE_UNION_FS     (0)
 #define X_XFS_TYPE_SINGLE_FS    (1)
 
@@ -407,7 +393,192 @@ extern "C" {
  *  strerror()で取得した文字列を追加で出力します。
  */
 #ifndef X_CONF_HAS_ERRNO_AND_STRERROR
-#define X_CONF_HAS_ERRNO_AND_STRERROR (0)
+    #define X_CONF_HAS_ERRNO_AND_STRERROR (0)
+#endif
+
+
+/** @def   X_CONF_TICKS_PER_SEC
+ *  @brief 1秒あたりのチック数を設定します
+ */
+#ifndef X_CONF_TICKS_PER_SEC
+    #define X_CONF_TICKS_PER_SEC  1000
+#endif
+
+
+/** @brief @see X_CONF_TICKS_NOW_IMPL_TYPE */
+#define X_TICKS_NOW_IMPL_TYPE_GETTIMEOFDAY   (0)
+
+/** @brief @see X_CONF_TICKS_NOW_IMPL_TYPE */
+#define X_TICKS_NOW_IMPL_TYPE_USERPORT       (1)
+
+
+/** @def   X_CONF_TICKS_NOW_IMPL_TYPE
+ *  @brief x_port_ticks_now()の実装方法を設定します
+ *
+ *  picox自身はチック割り込みに関与しません。ユーザーが定義したチックの周期を
+ *  picoxが知るために必要な設定値です。
+ *
+ *  設定可能な値は以下の通りです
+ *
+ *  + X_TICKS_NOW_IMPL_TYPE_GETTIMEOFDAY (default) <br>
+ *      x_port_ticks_now()を、x_gettimeofday()を使用して実装します。ホスト環境で
+ *      のデバッグ時や、組込みLinuxで使用する場合を想定した設定です
+ *
+ *  + X_TICKS_NOW_IMPL_TYPE_USERPORT
+ *      x_port_ticks_now()をユーザー自身が実装します
+ */
+#ifndef X_CONF_TICKS_NOW_IMPL_TYPE
+#define X_CONF_TICKS_NOW_IMPL_TYPE  X_TICKS_NOW_IMPL_TYPE_GETTIMEOFDAY
+#endif
+
+
+/** @brief @see X_CONF_GETTIMEOFDAY_IMPL_TYPE */
+#define X_GETTIMEOFDAY_IMPL_TYPE_ZERO      (0)
+
+/** @brief @see X_CONF_GETTIMEOFDAY_IMPL_TYPE */
+#define X_GETTIMEOFDAY_IMPL_TYPE_USERPORT  (1)
+
+/** @brief @see X_CONF_GETTIMEOFDAY_IMPL_TYPE */
+#define X_GETTIMEOFDAY_IMPL_TYPE_POSIX     (2)
+
+
+/** @def   X_CONF_GETTIMEOFDAY_IMPL_TYPE
+ *  @brief x_port_gettimeofday()の実装方法を設定します
+ *
+ *  設定可能な値は以下の通りです
+ *
+ *  + X_GETTIMEOFDAY_IMPL_TYPE_ZERO (default) <br>
+ *      常に0を返すダミー実装です
+ *
+ *  + X_GETTIMEOFDAY_IMPL_TYPE_USERPORT <br>
+ *      x_port_gettimeofday()をユーザー自身が実装します
+ *
+ *  + X_GETTIMEOFDAY_IMPL_TYPE_POSIX <br>
+ *      POSIX標準のgettimeofday()を使用します
+ */
+#ifndef X_CONF_GETTIMEOFDAY_IMPL_TYPE
+#define X_CONF_GETTIMEOFDAY_IMPL_TYPE    X_GETTIMEOFDAY_IMPL_TYPE_ZERO
+#endif
+
+
+/** @brief @see X_CONF_MSLEEP_IMPL_TYPE */
+#define X_MSLEEP_IMPL_TYPE_MDELAY               (0)
+
+/** @brief @see X_CONF_MSLEEP_IMPL_TYPE */
+#define X_MSLEEP_IMPL_TYPE_USERPORT             (1)
+
+/** @brief @see X_CONF_MSLEEP_IMPL_TYPE */
+#define X_MSLEEP_IMPL_TYPE_POSIX_NANOSLEEP      (2)
+
+
+/** @def   X_CONF_MSLEEP_IMPL_TYPE
+ *  @brief x_port_msleep()の実装方法を設定します
+ *
+ *  設定可能な値は以下の通りです
+ *
+ *  + X_MSLEEP_IMPL_TYPE_MDELAY (default) <br>
+ *      x_mdelay()を使用して実装します
+ *
+ *  + X_MSLEEP_IMPL_TYPE_USERPORT <br>
+ *      x_port_msleep()をユーザー自身が実装します
+ *
+ *  + X_MSLEEP_IMPL_TYPE_POSIX_NANOSLEEP <br>
+ *      PISIX標準のnanosleep()を使用します
+ */
+#ifndef X_CONF_MSLEEP_IMPL_TYPE
+#define X_CONF_MSLEEP_IMPL_TYPE     X_MSLEEP_IMPL_TYPE_MDELAY
+#endif
+
+
+/** @brief @see X_CONF_USLEEP_IMPL_TYPE */
+#define X_USLEEP_IMPL_TYPE_UDELAY               (0)
+
+/** @brief @see X_CONF_USLEEP_IMPL_TYPE */
+#define X_USLEEP_IMPL_TYPE_USERPORT             (1)
+
+/** @brief @see X_CONF_USLEEP_IMPL_TYPE */
+#define X_USLEEP_IMPL_TYPE_POSIX_NANOSLEEP      (2)
+
+
+/** @def   X_CONF_USLEEP_IMPL_TYPE
+ *  @brief x_port_usleep()の実装方法を設定します
+ *
+ *  設定可能な値は以下の通りです
+ *
+ *  + X_USLEEP_IMPL_TYPE_MDELAY (default) <br>
+ *      x_udelay()を使用して実装します
+ *
+ *  + X_USLEEP_IMPL_TYPE_USERPORT <br>
+ *      x_port_usleep()をユーザー自身が実装します
+ *
+ *  + X_USLEEP_IMPL_TYPE_POSIX_NANOSLEEP <br>
+ *      PISIX標準のnanosleep()を使用します
+ */
+#ifndef X_CONF_USLEEP_IMPL_TYPE
+#define X_CONF_USLEEP_IMPL_TYPE     X_USLEEP_IMPL_TYPE_UDELAY
+#endif
+
+
+/** @brief @see X_CONF_MDELAY_IMPL_TYPE */
+#define X_MDELAY_IMPL_TYPE_TICKS_BUSYWAIT       (0)
+
+/** @brief @see X_CONF_MDELAY_IMPL_TYPE */
+#define X_MDELAY_IMPL_TYPE_USERPORT             (1)
+
+/** @brief @see X_CONF_MDELAY_IMPL_TYPE */
+#define X_MDELAY_IMPL_TYPE_POSIX_NANOSLEEP      (2)
+
+
+/** @def   X_CONF_MDELAY_IMPL_TYPE
+ *  @brief x_port_mdelay()の実装方法を設定します
+ *
+ *  sleepよりも微小な待ち時間に対して使用することを想定しており、呼び
+ *  出し側はsleepよりも精度がよいことを期待します。
+ *
+ *  設定可能な値は以下の通りです
+ *
+ *  + X_MDELAY_IMPL_TYPE_TICKS_BUSYWAIT (default) <br>
+ *      x_ticks_now()を使用したビジーウエイトで実装します
+ *
+ *  + X_MDELAY_IMPL_TYPE_USERPORT <br>
+ *      x_port_mdelay()をユーザー自身が実装します
+ *
+ *  + X_MDELAY_IMPL_TYPE_POSIX_NANOSLEEP <br>
+ *      PISIX標準のnanosleep()を使用します
+ */
+#ifndef X_CONF_MDELAY_IMPL_TYPE
+#define X_CONF_MDELAY_IMPL_TYPE     X_MDELAY_IMPL_TYPE_TICKS_BUSYWAIT
+#endif
+
+
+/** @brief @see X_CONF_UDELAY_IMPL_TYPE */
+#define X_UDELAY_IMPL_TYPE_TICKS_BUSYWAIT       (0)
+
+/** @brief @see X_CONF_UDELAY_IMPL_TYPE */
+#define X_UDELAY_IMPL_TYPE_USERPORT             (1)
+
+/** @brief @see X_CONF_UDELAY_IMPL_TYPE */
+#define X_UDELAY_IMPL_TYPE_POSIX_NANOSLEEP      (2)
+
+
+/** @def   X_CONF_UDELAY_IMPL_TYPE
+ *  @brief x_port_udelay()の実装方法を設定します
+ *
+ *  x_mdelay()と同じく、x_udelay()よりも精度のよい待ちを期待します
+ *
+ *  設定可能な値は以下の通りです
+ *
+ *  + X_UDELAY_IMPL_TYPE_TICKS_BUSYWAIT (default) <br>
+ *      x_ticks_now()を使用したビジーウエイトで実装します
+ *
+ *  + X_UDELAY_IMPL_TYPE_USERPORT <br>
+ *      x_port_udelay()をユーザー自身が実装します
+ *
+ *  + X_UDELAY_IMPL_TYPE_POSIX_NANOSLEEP <br>
+ *      PISIX標準のnanosleep()を使用します
+ */
+#ifndef X_CONF_UDELAY_IMPL_TYPE
+#define X_CONF_UDELAY_IMPL_TYPE     X_UDELAY_IMPL_TYPE_TICKS_BUSYWAIT
 #endif
 
 

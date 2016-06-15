@@ -29,6 +29,7 @@ set(picox_sources
     ${picox_dir}/core/detail/xstream.c
     ${picox_dir}/core/detail/xstring.c
     ${picox_dir}/core/detail/xrandom.c
+    ${picox_dir}/core/detail/xtime.c
     ${picox_dir}/filesystem/xposixfs.c
     ${picox_dir}/filesystem/xfatfs.c
     ${picox_dir}/filesystem/xramfs.c
@@ -44,6 +45,8 @@ set(picox_sources
     ${picox_dir}/string/xdynamic_string.c
     ${picox_dir}/misc/xtokenizer.c
     ${picox_dir}/misc/xargparser.c
+    ${picox_dir}/multitask/xfiber.c
+    ${picox_dir}/multitask/xvtimer.c
     ${sds_dir}/sds.c
     ${fatfs_dir}/ff.c
     ${spiffs_dir}/spiffs_cache.c

@@ -116,16 +116,14 @@ typedef struct XFixedAllocator
  *  + heap != NULL
  *  + heap_size  > 0
  *  + block_size > 0
- *  + alignment >= X_ALIGN_OF(size_t)
- *  + alignment == 2のべき乗
  *
  *  @attention
- *  heapが指すアドレスと、block_sizeはアライメントに切り上げられます。
- *  その結果、意図したブロック分けができていない場合がありますので、はじめからア
- *  ラインメントを意識した引数を用意するか初期化後に、必要量を満たせているか確認
- *  した方がよいでしょう。
+ *  heapが指すアドレスと、block_sizeはsizeof(void*)のアライメントに切り上げられ
+ *  ます。その結果、意図したブロック分けができていない場合がありますので、はじめ
+ *  からアラインメントを意識した引数を用意するか初期化後に、必要量を満たせている
+ *  か確認した方がよいでしょう。
  */
-void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size, size_t alignment);
+void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size);
 
 
 /** ヒープから1ブロックを取り出して返します
@@ -183,17 +181,6 @@ xfalloc_remain_blocks(const XFixedAllocator* self)
     X_ASSERT(self);
     return self->remain_blocks;
 }
-
-
-/** ブロックのアラインメントを返します
- */
-static inline size_t
-xfalloc_alignment(const XFixedAllocator* self)
-{
-    X_ASSERT(self);
-    return self->alignment;
-}
-
 
 
 #ifdef __cplusplus

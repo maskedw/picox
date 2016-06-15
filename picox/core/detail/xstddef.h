@@ -207,6 +207,9 @@ extern "C" {
 #define X_MSBOF_LONG     (ULONG_MAX   & (~(ULONG_MAX   >> 1)))
 #define X_MSBOF_INTPTR   (UINTPTR_MAX & (~(UINTPTR_MAX >> 1)))
 #define X_MSBOF_SIZE     (SIZE_MAX    & (~(SIZE_MAX    >> 1)))
+#define X_MSBOF_INT8     (1U << 7)
+#define X_MSBOF_INT16    (1U << 15)
+#define X_MSBOF_INT32    (X_UINT32_C(1) << 31)
 
 
 /** @} endof name X_MSBOF_XXX
@@ -282,28 +285,14 @@ typedef uint32_t XTag;
     | ((uint32_t)(d) <<  0) )
 
 
-/** @brief time_tの代替をするシステム時刻を格納するための型です
- *
- *  POSIX互換システム風にUNIX時間1970年1月1日0時0分0秒(ただしタイムゾーンは考慮
- *  しない)からの経過秒数を表します。
- *  旧いシステムではtime_tは32bit符号ありで実装されることが多く、2038年問題があ
- *  りますが、XTimeは符号なしなので2106年まで保持可能です。
- */
-typedef uint32_t XTime;
-
-
-/** @brief struct timevalの代替をする高精度のシステム時刻を格納するための型です
- */
-typedef struct
-{
-    XTime   tv_sec;     /** 秒 */
-    int32_t tv_usec;    /** マイクロ秒 */
-} XTimeVal;
-
-
 /** @brief 何らかのビットフラグを格納することを意図した型です
  */
 typedef uint32_t XMode;
+
+
+/** @brief XModeと同じくビットフラグを格納しますが、よりビットを意識した型です
+ */
+typedef uint32_t XBits;
 
 
 /** @brief qsort()互換の比較関数ポインタ型です */
@@ -314,8 +303,24 @@ typedef int (*XCompareFunc)(const void* a, const void* b);
 typedef void* (*XMallocFunc)(size_t size);
 
 
-/** @brief free()互換のメモリ確保関数ポインタ型です */
+/** @brief free()互換のメモリ開放関数ポインタ型です */
 typedef void (*XFreeFunc)(void* ptr);
+
+
+/** @brief オブジェクトを削除する関数ポインタ型です
+ *
+ *  XFreeFuncと同じインターフェースですが、XFreeFuncがメモリの開放だけを意図して
+ *  いるのに対して、XDeleterはオブジェクトの終了処理を意識しているという、文脈の
+ *  違いがあります。
+ */
+typedef void (*XDeleter)(void* ptr);
+
+
+/** @brief 何もしないデリータです*/
+static inline void x_null_deleter(void* ptr)
+{
+    (void)(ptr);
+}
 
 
 /** @brief 組込み型の最大アライメント型です。

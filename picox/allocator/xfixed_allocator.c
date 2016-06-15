@@ -43,18 +43,17 @@ static void X__MakeBlocks(XFixedAllocator* self);
 #define X__IS_VALID_RANGE(x) (x_is_within_ptr(x, self->top, self->top + 1 + (self->block_size * (self->num_blocks - 1))))
 
 
-void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size, size_t alignment)
+void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size)
 {
     X_ASSERT(self);
     X_ASSERT(heap);
     X_ASSERT(heap_size > 0);
     X_ASSERT(block_size > 0);
-    X_ASSERT(x_is_alignment(alignment));
 
     self->heap = heap;
 
     /* heapをアライメントで切り上げたアドレスが実際のtop位置になる。 */
-    uint8_t* const p = X_ROUNDUP_MULTIPLE_PTR(heap, alignment);
+    uint8_t* const p = X_ROUNDUP_MULTIPLE_PTR(heap, X_ALIGN_OF(XMaxAlign));
     self->top = p;
 
     /* 切り上げた結果heapサイズに不整合がでていないか？ */
@@ -62,9 +61,11 @@ void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t bl
     X_ASSERT(heap_size > (size_t)(self->top - self->heap));
     heap_size -= self->top - self->heap;
 
-    /* 1ブロックのサイズもアライメントに切り上げないとまずいよね。 */
+    /* ブロックにアドレスを埋め込むのでブロックサイズはポインタのアライメントに
+     * 切り上げる必要がある
+     */
     X_ASSERT(block_size > 0);
-    block_size = X_ROUNDUP_MULTIPLE(block_size, alignment);
+    block_size = X_ROUNDUP_MULTIPLE(block_size, X_ALIGN_OF(void*));
     X_ASSERT(heap_size >= block_size);
 
     /* ここでブロックサイズと数が確定する。*/
@@ -72,7 +73,6 @@ void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t bl
     self->num_blocks = heap_size / block_size;
     X_ASSERT(self->num_blocks > 0);
 
-    self->alignment = alignment;
     X__MakeBlocks(self);
 }
 
@@ -110,7 +110,6 @@ void xfalloc_deallocate(XFixedAllocator* self, void* ptr)
     if (! ptr)
         return;
 
-    X_ASSERT(x_is_aligned(ptr, self->alignment));
     X_ASSERT(x_is_multiple((uint8_t*)ptr - self->top, self->block_size));
     X_ASSERT(X__IS_VALID_RANGE((uint8_t*)ptr));
 

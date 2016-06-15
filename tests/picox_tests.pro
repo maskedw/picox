@@ -16,6 +16,10 @@ libfixmath_dir      = $$external_dir/libfixmath/port_picox
 
 DEFINES += X_CONF_USE_USER_CONFIG=1
 DEFINES += UNITY_INCLUDE_DOUBLE
+# DEFINES += _FORTIFY_SOURCE=0
+#
+DEFINES += _POSIX_C_SOURCE=200809L
+QMAKE_CFLAGS += -std=c99 -O0 -Wall -Wextra -Wpedantic
 
 INCLUDEPATH += ./
 INCLUDEPATH += ./config
@@ -51,6 +55,7 @@ SOURCES += $$picox_dir/allocator/xpico_allocator.c
 SOURCES += $$picox_dir/string/xdynamic_string.c
 SOURCES += $$picox_dir/misc/xtokenizer.c
 SOURCES += $$picox_dir/misc/xargparser.c
+SOURCES += $$picox_dir/multitask/xfiber.c
 SOURCES += $$sds_dir/sds.c
 SOURCES += $$fatfs_dir/ff.c
 SOURCES += $$spiffs_dir/spiffs_cache.c
@@ -109,6 +114,7 @@ HEADERS += $$picox_dir/filesystem/xsinglefs.h
 HEADERS += $$picox_dir/misc/xargparser.h
 HEADERS += $$picox_dir/misc/xtokenizer.h
 HEADERS += $$picox_dir/string/xdynamic_string.h
+HEADERS += $$picox_dir/multitask/xfiber.h
 HEADERS += $$picox_dir/xconfig.h
 
 SOURCES += ./picox_tests.c
@@ -139,4 +145,5 @@ SOURCES += ./test_xprintf.c
 SOURCES += ./test_xdynamic_string.c
 SOURCES += ./test_xstream.c
 SOURCES += ./test_minIni.c
+SOURCES += ./test_xfiber.c
 SOURCES += ./glue/fatfs_glue.c
