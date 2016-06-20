@@ -1,5 +1,5 @@
 /**
- *       @file  xrenesas.h
+ *       @file  stdarg.h
  *      @brief
  *
  *    @details
@@ -7,7 +7,7 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2016/03/27
+ *     Created  2016/06/17
  * ===================================================================
  */
 
@@ -16,14 +16,14 @@
  * Copyright (c) <2016> <MaskedW [maskedw00@gmail.com]>
  *
  * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
+ * obtaining a copy of self software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
  * modify, merge, publish, distribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be
+ * The above copyright notice and self permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
@@ -35,40 +35,23 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#ifndef picox_core_detail_compiler_xrenesas_h_
-#define picox_core_detail_compiler_xrenesas_h_
-
-
-#if !defined(__RX) && !defined(__CA78K0R__) && !defined(__CCRL__)
-    #error This compiler does not support
-#endif
+#ifndef stdarg_h_
+#define stdarg_h_
 
 
-#if defined(__CCRL__)
-    #define X_FUNC                  NULL
-    #define X_COMPILER_NO_BOOL      (1)
-    #define X_INLINE                static __inline
-#endif
+#if defined(__CNV_CA78K0R__)
+#define va_starttop(ap,parmN)    va_start(ap,parmN)
+#endif  /* __CNV_CA78K0R__ */
+
+typedef char __near *va_list;
+void __near __builtin_va_start(va_list);
+// #define va_start(ap,parmN)  __builtin_va_start(ap)
+// #define va_arg(ap,type)     (*(type *)((ap+=((sizeof(type) + 1) & ~1))-((sizeof(type) + 1) & ~1)))
+
+/* http://japan.renesasrulz.com/mobile/Places/Application/Content/3146?applicationId=82&applicationType=forum */
+#define va_start(ap,parmN)  do{ap=(va_list)0;__builtin_va_start(ap);}while(0)
+#define va_arg(ap,type)     (*(type *)(void*)((ap+=((sizeof(type) + 1) & ~1))-((sizeof(type) + 1) & ~1)))
+#define va_end(ap)          (ap=(va_list)0, (void)0)
 
 
-#if defined(__CA78K0R__)
-    #define X_INLINE                static
-    #define X_FUNC                  NULL
-    #define X_COMPILER_NO_INLINE    (1)
-    #define X_COMPILER_NO_LONGLONG  (1)
-    #define X_COMPILER_NO_BOOL      (1)
-    #define X_COMPILER_NO_STDINT    (1)
-    #define X_COMPILER_NO_64BIT_INT (1)
-#endif
-
-
-#if defined(__RX)
-    #define X_PACKED_PRE_BEGIN  _Pragma("pack")
-    #define X_PACKED_POST_BEGIN
-    #define X_PACKED_PRE_END
-    #define X_PACKED_POST_END   _Pragma("unpack")
-#endif
-
-
-#endif /* picox_core_detail_compiler_xrenesas_h_ */
+#endif /* stdarg_h_ */

@@ -26,10 +26,12 @@ include_directories(${libfixmath_dir})
 set(picox_sources
     ${picox_dir}/core/detail/xdebug.c
     ${picox_dir}/core/detail/xstdio.c
+    ${picox_dir}/core/detail/xstdlib.c
     ${picox_dir}/core/detail/xstream.c
     ${picox_dir}/core/detail/xstring.c
     ${picox_dir}/core/detail/xrandom.c
     ${picox_dir}/core/detail/xtime.c
+    ${picox_dir}/core/detail/xutils.c
     ${picox_dir}/filesystem/xposixfs.c
     ${picox_dir}/filesystem/xfatfs.c
     ${picox_dir}/filesystem/xramfs.c

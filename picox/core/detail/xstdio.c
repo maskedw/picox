@@ -58,7 +58,7 @@
         } while (0)
 
 
-typedef int (*X__Putc)(void* ptr, char c);
+typedef int (*X__Putc)(void* ptr, int c);
 typedef struct
 {
     void*   dst;
@@ -71,9 +71,9 @@ typedef struct
     XCharPutFunc char_put_func;
 } X__CharPutcContext;
 
-static int X__MemPutc(void* ptr, char c);
-static int X__StreamPutc(void* ptr, char c);
-static int X__SomewherePutc(void* ptr, char c);
+static int X__MemPutc(void* ptr, int c);
+static int X__StreamPutc(void* ptr, int c);
+static int X__SomewherePutc(void* ptr, int c);
 static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list args);
 XCharPutFunc x_putc_stdout;
 
@@ -116,9 +116,10 @@ int x_puts2(const char* str)
 
 int x_snprintf(char* buf, size_t size, const char* fmt, ...)
 {
+    int len;
     va_list args;
     va_start(args, fmt);
-    const int len = x_vsnprintf(buf, size, fmt, args);
+    len = x_vsnprintf(buf, size, fmt, args);
     va_end(args);
     return len;
 }
@@ -126,9 +127,10 @@ int x_snprintf(char* buf, size_t size, const char* fmt, ...)
 
 int x_sprintf(char* buf, const char* fmt, ...)
 {
+    int len;
     va_list args;
     va_start(args, fmt);
-    const int len = x_vsnprintf(buf, SIZE_MAX, fmt, args);
+    len = x_vsnprintf(buf, SIZE_MAX, fmt, args);
     va_end(args);
     return len;
 }
@@ -136,12 +138,13 @@ int x_sprintf(char* buf, const char* fmt, ...)
 
 int x_vsnprintf(char* buf, size_t size, const char* fmt, va_list args)
 {
+    int len;
     X__MemPutcContext context;
     context.dst = buf;
     context.pos = 0;
     context.size = size - 1;
 
-    const int len = X__VPrintf(X__MemPutc, &context, fmt, args);
+    len = X__VPrintf(X__MemPutc, &context, fmt, args);
     if (len < 0)
         buf[0] = '\0';
     else
@@ -158,9 +161,10 @@ int x_vsprintf(char* buf, const char* fmt, va_list args)
 
 int x_printf(const char* fmt, ...)
 {
+    int len;
     va_list args;
     va_start(args, fmt);
-    const int len = x_vprintf(fmt, args);
+    len = x_vprintf(fmt, args);
     va_end(args);
     return len;
 }
@@ -168,9 +172,10 @@ int x_printf(const char* fmt, ...)
 
 int x_printf_to_cputter(XCharPutFunc cputter, const char* fmt, ...)
 {
+    int len;
     va_list args;
     va_start(args, fmt);
-    const int len = x_vprintf_to_cputter(cputter, fmt, args);
+    len = x_vprintf_to_cputter(cputter, fmt, args);
     va_end(args);
     return len;
 }
@@ -178,9 +183,10 @@ int x_printf_to_cputter(XCharPutFunc cputter, const char* fmt, ...)
 
 int x_printf_to_stream(XStream* stream, const char* fmt, ...)
 {
+    int len;
     va_list args;
     va_start(args, fmt);
-    const int len = x_vprintf_to_stream(stream, fmt, args);
+    len = x_vprintf_to_stream(stream, fmt, args);
     va_end(args);
     return len;
 }
@@ -188,14 +194,16 @@ int x_printf_to_stream(XStream* stream, const char* fmt, ...)
 
 int x_vprintf(const char* fmt, va_list args)
 {
-    X__CharPutcContext ctx = {(XCharPutFunc)x_putc};
+    X__CharPutcContext ctx;
+    ctx.char_put_func = (XCharPutFunc)x_putc;
     return X__VPrintf(X__SomewherePutc, &ctx, fmt, args);
 }
 
 
 int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args)
 {
-    X__CharPutcContext ctx = {(XCharPutFunc)cputter};
+    X__CharPutcContext ctx;
+    ctx.char_put_func = (XCharPutFunc)cputter;
     return X__VPrintf(X__SomewherePutc, &ctx, fmt, args);
 }
 
@@ -206,26 +214,26 @@ int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args)
 }
 
 
-static int X__MemPutc(void* ptr, char c)
+static int X__MemPutc(void* ptr, int c)
 {
     X__MemPutcContext* context = ptr;
     if (context->pos <  context->size)
     {
-        (*((char*)(context->dst) + context->pos)) = c;
+        (*((char*)(context->dst) + context->pos)) = (char)c;
         context->pos++;
     }
     return 0;
 }
 
 
-static int X__StreamPutc(void* ptr, char c)
+static int X__StreamPutc(void* ptr, int c)
 {
     XStream* stream = ptr;
     return xstream_putc(stream, c);
 }
 
 
-static int X__SomewherePutc(void* ptr, char c)
+static int X__SomewherePutc(void* ptr, int c)
 {
     XCharPutFunc putc_func = ((X__CharPutcContext*)ptr)->char_put_func;
     return putc_func(c);
@@ -243,15 +251,22 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
     char c, digit;
 #if ULONG_MAX == 0xFFFFFFFF
     char s[32];
-#elif ULONG_MAX == 0xFFFFFFFFFFFFFFFF
+#elif !defined(X_COMPILER_NO_64BIT_INT)
+    #if ULONG_MAX == 0xFFFFFFFFFFFFFFFF
     char s[64];
+    #endif
 #else
     #error unspported platform
 #endif
 
 #if X_CONF_USE_FLOATING_POINT_PRINTF
     unsigned char precision;
-    double f;
+    /* fの0初期化は必要ないように見えるが、gccの最適化レベルを上げると、未初期化
+     * 変数を使用していますという警告が出る。最適化の結果によって、そういうルー
+     * トができてしまうのか？それはそれでまずいバグになりそーなのだが・・・。と
+     * りあえず0で初期化して警告を黙らせておく。
+     */
+    double f = 0;
 #endif
 
     for (;;)
@@ -284,7 +299,7 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
 
         for (i = 0; isdigit((int)c); c = *fmt++)
             i = i * 10 + c - '0';
-        minimum_width = i;
+        minimum_width = (unsigned char)i;
 
 #if X_CONF_USE_FLOATING_POINT_PRINTF
         precision = 0xFF;
@@ -300,7 +315,7 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
                 c = *fmt++;
                 for (i = 0; isdigit((int)c); c = *fmt++)
                     i = i * 10 + c - '0';
-                precision = i;
+                precision = (unsigned char)i;
             }
         }
 #endif
@@ -427,8 +442,13 @@ X__PRINT_STRING:
             digit = (char)(v % base);
             v /= base;
             if (digit > 9)
-                digit += ((c == 'x') || (c == 'p')) ? 0x27 : 0x07;
-            s[i++] = digit + '0';
+            {
+                if ((c == 'x') || (c == 'p'))
+                    digit += 0x27;
+                else
+                    digit += 0x07;
+            }
+            s[i++] = (char)(digit + '0');
         } while (v && i < sizeof(s));
 
 
@@ -460,7 +480,10 @@ X__PRINT_STRING:
             X__PUTC(s[--i]);
         }
 
-        digit = (flags & X__FLAG_ZERO_PADDING) ? '0' : ' ';
+        if (flags & X__FLAG_ZERO_PADDING)
+            digit = '0';
+        else
+            digit = ' ';
         while ((!(flags & X__FLAG_LEFT_ALIGN)) &&
                (j++ < minimum_width))
             X__PUTC(digit);

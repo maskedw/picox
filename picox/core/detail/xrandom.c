@@ -47,25 +47,25 @@ static uint32_t xor32 = 1;
 
 void x_srand(uint32_t seed)
 {
-    xor8 = seed;
-    xor16 = seed;
+    xor8 = (uint8_t)seed;
+    xor16 = (uint16_t)seed;
     xor32 = seed;
 
     /* 以下参考リンクによるとseedは0以外なら何でもいいらしい。
      * hexadrive.sblo.jp/article/63660775.html
      */
-    xor8 = (xor8 == 0) ? 1 : xor8;
-    xor16 = (xor16 == 0) ? 1 : xor16;
-    xor32 = (xor32 == 0) ? 1 : xor32;
+    if (!xor8) xor8 = 1;
+    if (!xor16) xor16 = 1;
+    if (!xor32) xor32 = 1;
 }
 
 
 uint8_t x_rand8(void)
 {
     /* http://www.arklyffe.com/main/2010/08/29/xorshift-pseudorandom-number-generator/ */
-    xor8 ^= (xor8 << 7);
-    xor8 ^= (xor8 >> 5);
-    return xor8 ^= (xor8 << 3);
+    xor8 ^= (uint8_t)(xor8 << 7);
+    xor8 ^= (uint8_t)(xor8 >> 5);
+    return xor8 ^= (uint8_t)(xor8 << 3);
 }
 
 

@@ -241,11 +241,12 @@ char* x_strrstrip(char* str, const char* space)
 int32_t x_strtoint32(const char* str, int32_t def, bool* ok)
 {
     bool sub;
+    uint32_t dst;
+    int32_t ret;
     if (! ok) ok = &sub;
 
-    uint32_t dst;
     *ok = X__ToInt(str, &dst, true);
-    const int32_t ret = *ok ? (int32_t)dst : def;
+    ret = *ok ? (int32_t)dst : def;
 
     return ret;
 }
@@ -254,11 +255,13 @@ int32_t x_strtoint32(const char* str, int32_t def, bool* ok)
 uint32_t x_strtouint32(const char* str, uint32_t def, bool* ok)
 {
     bool sub;
+    uint32_t dst;
+    uint32_t ret;
+
     if (! ok) ok = &sub;
 
-    uint32_t dst;
     *ok = X__ToInt(str, &dst, false);
-    const uint32_t ret = *ok ? dst : def;
+    ret = *ok ? dst : def;
 
     return ret;
 }
@@ -266,17 +269,19 @@ uint32_t x_strtouint32(const char* str, uint32_t def, bool* ok)
 
 float x_strtofloat(const char* str, float def, bool* ok)
 {
-#if X_CONF_HAS_C99_MATH != 0
+#if X_CONF_HAS_C99_MATH == 0
     return x_strtodouble(str, def, ok);
 #else
 
     bool sub;
-    if (! ok) ok = &sub;
-
     char* endptr;
-    const float v  = strtof(str, &endptr);
+    float v;
+    float ret;
+
+    if (! ok) ok = &sub;
+    v  = strtof(str, &endptr);
     *ok = (endptr[0] == '\0');
-    const float ret = *ok ? v : def;
+    ret = *ok ? v : def;
 
     return ret;
 #endif
@@ -287,12 +292,14 @@ float x_strtofloat(const char* str, float def, bool* ok)
 double x_strtodouble(const char* str, double def, bool* ok)
 {
     bool sub;
-    if (! ok) ok = &sub;
-
     char* endptr;
-    const double v  = strtod(str, &endptr);
+    double v;
+    double ret;
+
+    if (! ok) ok = &sub;
+    v  = strtod(str, &endptr);
     *ok = (endptr[0] == '\0');
-    const double ret = *ok ? v : def;
+    ret = *ok ? v : def;
 
     return ret;
 }
@@ -329,12 +336,14 @@ bool x_strtobool(const char* str, bool def, bool* ok)
 
 char* x_strrpbrk(const char* str, const char* accept)
 {
+    const char* top;
+    const char* p;
+    const char* c;
     if (str[0] == '\0')
         return NULL;
 
-    const char* top = str;
-    const char* p = str + strlen(str) - 1;
-    const char* c;
+    top = str;
+    p = str + strlen(str) - 1;
 
     for (;;)
     {
@@ -360,11 +369,11 @@ char* x_strrpbrk(const char* str, const char* accept)
 
 char* x_strcasepbrk(const char* str, const char* accept)
 {
-    if (str[0] == '\0')
-        return NULL;
-
     const char* p = str;
     const char* c;
+
+    if (str[0] == '\0')
+        return NULL;
 
     for (;;)
     {
@@ -391,12 +400,14 @@ char* x_strcasepbrk(const char* str, const char* accept)
 
 char* x_strcaserpbrk(const char* str, const char* accept)
 {
+    const char* top;
+    const char* p;
+    const char* c;
     if (str[0] == '\0')
         return NULL;
 
-    const char* top = str;
-    const char* p = str + strlen(str) - 1;
-    const char* c;
+    top = str;
+    p = str + strlen(str) - 1;
 
     for (;;)
     {
@@ -425,7 +436,7 @@ char* x_strtolower(char* str)
     char* p = str;
     while (*p)
     {
-        *p = tolower((int)*p);
+        *p = (char)(tolower((int)*p));
         p++;
     }
 
@@ -438,7 +449,7 @@ char* x_strtoupper(char* str)
     char* p = str;
     while (*p)
     {
-        *p = toupper((int)*p);
+        *p = (char)(toupper((int)*p));
         p++;
     }
 
@@ -448,11 +459,12 @@ char* x_strtoupper(char* str)
 
 size_t x_strlcpy(char* dst, const char* src, size_t n)
 {
+    size_t len, size;
     if (n == 0)
         return 0;
 
-    const size_t len = strlen(src);
-    const size_t size = (n > len) ? len : n - 1;
+    len = strlen(src);
+    size = (n > len) ? len : n - 1;
     memcpy(dst, src, size);
     dst[size] = '\0';
 
@@ -634,13 +646,14 @@ char* x_stpcpy(char* dst, const char* src)
 char* x_stprcpy(char* dst, const char* src)
 {
     const size_t len = strlen(src);
+    const char* p;
     if (len == 0)
     {
         *dst = '\0';
         return dst;
     }
 
-    const char* p = src + len - 1;
+    p = src + len - 1;
     do
     {
         *dst++ = *p--;
@@ -653,7 +666,6 @@ char* x_stprcpy(char* dst, const char* src)
 
 char* x_stpncpy(char* dst, const char* src, size_t n)
 {
-
     for (; n--; dst++, src++)
     {
         if (!(*dst = *src))
@@ -671,7 +683,6 @@ char* x_stpncpy(char* dst, const char* src, size_t n)
 
 char* x_stpncpy2(char* dst, const char* src, size_t n)
 {
-
     for (; n--; dst++, src++)
     {
         if (!(*dst = *src))
@@ -692,7 +703,7 @@ char* x_strncpy2(char* dst, const char* src, size_t n)
 
 char* x_strchrnul(const char* s, int c)
 {
-    const char ch = c;
+    const char ch = (char)c;
     for (;; ++s) {
         if ((*s == ch) || (*s == '\0'))
             return (char *)s;
@@ -720,11 +731,11 @@ XOpenMode x_strtomode(const char* strmode)
 {
     const size_t len = strlen(strmode);
     XOpenMode mode = X_OPEN_MODE_UNKNOWN;
+    char buf[4];
 
     if (len == 0 || len > 3)
         return mode;
 
-    char buf[4];
     strcpy(buf, strmode);
 
     if (buf[len - 1] == 'b')
@@ -785,7 +796,7 @@ void x_memrandom(void* p, size_t n)
     size_t i;
 
     for (i = 0; i < n; i++)
-        *up++ = x_rand();
+        *up++ = (uint8_t)x_rand();
 }
 
 
@@ -798,6 +809,51 @@ void x_memrandom_alpha(void* p, size_t n)
 
     for (i = 0; i < n; i++)
         *up++ = alpha[x_rand() % sizeof(alpha)];
+}
+
+
+const char* x_btos(bool cond)
+{
+    return cond ? "true" : "false";
+}
+
+
+const char* x_strerror(XError err)
+{
+    const char* ret = NULL;
+    switch (err)
+    {
+        case X_ERR_NONE:                ret = "ERR_NONE";           break;
+        case X_ERR_IO:                  ret = "ERR_IO";             break;
+        case X_ERR_INVALID:             ret = "ERR_INVALID";        break;
+        case X_ERR_TIMED_OUT:           ret = "ERR_TIMED_OUT";      break;
+        case X_ERR_BUSY:                ret = "ERR_BUSY";           break;
+        case X_ERR_AGAIN:               ret = "ERR_AGAIN";          break;
+        case X_ERR_CANCELED:            ret = "ERR_CANCELED";       break;
+        case X_ERR_NO_MEMORY:           ret = "ERR_NO_MEMORY";      break;
+        case X_ERR_EXIST:               ret = "ERR_EXIST";          break;
+        case X_ERR_NOT_READY:           ret = "ERR_NOT_READY";      break;
+        case X_ERR_ACCESS:              ret = "ERR_ACCESS";         break;
+        case X_ERR_NO_ENTRY:            ret = "ERR_NO_ENTRY";       break;
+        case X_ERR_NOT_SUPPORTED:       ret = "ERR_NOT_SUPPORTED";  break;
+        case X_ERR_DISCONNECTED:        ret = "ERR_DISCONNECTED";   break;
+        case X_ERR_INPROGRESS:          ret = "ERR_INPROGRESS";     break;
+        case X_ERR_PROTOCOL:            ret = "ERR_PROTOCOL";       break;
+        case X_ERR_MANY:                ret = "ERR_MANY";           break;
+        case X_ERR_RANGE:               ret = "ERR_RANGE";          break;
+        case X_ERR_BROKEN:              ret = "ERR_BROKEN";         break;
+        case X_ERR_NAME_TOO_LONG:       ret = "ERR_NAME_TOO_LONG";  break;
+        case X_ERR_INVALID_NAME:        ret = "ERR_INVALID_NAME";   break;
+        case X_ERR_IS_DIRECTORY:        ret = "ERR_IS_DIRECTORY";   break;
+        case X_ERR_NOT_DIRECTORY:       ret = "ERR_NOT_DIRECTORY";  break;
+        case X_ERR_NOT_EMPTY:           ret = "ERR_NOT_EMPTY";      break;
+        case X_ERR_NO_SPACE:            ret = "ERR_NO_SPACE";       break;
+        case X_ERR_INTERNAL:            ret = "ERR_INTERNAL";       break;
+        case X_ERR_OTHER:               ret = "ERR_OTHER";          break;
+        default:                        ret = "ERR_UNKNOWN";        break;
+    }
+
+    return ret;
 }
 
 
@@ -890,6 +946,10 @@ static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
     int c;
     bool minus = false;
     bool sign = false;
+    int base;
+    uint32_t cutoff;
+    uint32_t acc;
+    int cutlimit;
 
     /* 先頭の空白はすっ飛ばす。*/
     do { c = *s++; } while (isspace(c));
@@ -906,7 +966,6 @@ static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
         c = *s++;
     }
 
-    int base;
     /* 基数の確認。 2, 10, 16進数に対応する。 */
     if (c == '0' && (*s == 'x' || *s == 'X'))
     {
@@ -936,11 +995,10 @@ static bool X__ToInt(const char* s, uint32_t* dst, bool negativable)
     if (c == '\0')
         return false;
 
-    uint32_t cutoff = (minus ? -((uint32_t)INT32_MIN) : negativable ? INT32_MAX : UINT32_MAX);
-    const int cutlimit = cutoff % base;
+    cutoff = (minus ? -((uint32_t)INT32_MIN) : negativable ? INT32_MAX : UINT32_MAX);
+    cutlimit = (int)(cutoff % base);
     cutoff /= base;
 
-    uint32_t acc;
     for (acc = 0;; c = *s++)
     {
         if (isdigit(c))

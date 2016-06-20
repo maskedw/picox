@@ -436,10 +436,12 @@ void x_memrandom_alpha(void* p, size_t n);
 
 /** @brief 真偽値に対応する"true" or "false"の文字列を返します
  */
-static inline const char* x_btos(bool cond)
-{
-    return cond ? "true" : "false";
-}
+const char* x_btos(bool cond);
+
+
+/** @brief エラーコードに対応する文字列を返します
+ */
+const char* x_strerror(XError err);
 
 
 #ifdef __cplusplus

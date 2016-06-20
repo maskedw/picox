@@ -39,6 +39,11 @@
 #include <picox/core/xcore.h>
 
 
+#if X_CONF_HAS_ERRNO_AND_STRERROR != 0
+    #include <errno.h>
+#endif
+
+
 typedef struct X__Debug
 {
     int level;
@@ -78,13 +83,13 @@ static void X__PreAssertionFailed(const char* expr, const char* msg, const char*
 
 static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
+    volatile int i = 0;
     X_UNUSED(expr);
     X_UNUSED(msg);
     X_UNUSED(func);
     X_UNUSED(file);
     X_UNUSED(line);
 
-    volatile int i = 0;
     for (;;)
     {
         i++;
@@ -253,8 +258,8 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
     const char* win_style = strrchr(file, '\\');
     const char* unix_style = strrchr(file, '/');
     const char* p = win_style ? win_style : unix_style;
-    file = p ? p + 1 : file;
     const char* none = "none";
+    file = p ? p + 1 : file;
 
     x_pre_assertion_failed(expr, msg, func, file, line);
 
@@ -264,6 +269,10 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
     x_printf("[FUNC] %s\n", func ? func : none);
     x_printf("[FILE] %s\n", file ? file : none);
     x_printf("[LINE] %d\n", line);
+#if X_CONF_HAS_ERRNO_AND_STRERROR != 0
+    x_printf("[ERR ] %s\n", strerror(errno));
+#endif
+
     x_printf("************************\n");
 
     x_post_assertion_failed(expr, msg, func, file, line);

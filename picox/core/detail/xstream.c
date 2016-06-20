@@ -71,10 +71,11 @@ void xstream_init(XStream* self)
 
 int xstream_read(XStream* self, void* dst, size_t size, size_t* nread)
 {
+    int ret;
     X_ASSERT(self);
     X_ASSERT(dst);
     X_ASSERT(nread);
-    const int ret = self->read_func(self->driver, dst, size, nread);
+    ret = self->read_func(self->driver, dst, size, nread);
     self->error = ret;
     return ret;
 }
@@ -82,10 +83,11 @@ int xstream_read(XStream* self, void* dst, size_t size, size_t* nread)
 
 int xstream_write(XStream* self, const void* src, size_t size, size_t* nwritten)
 {
+    int ret;
     X_ASSERT(self);
     X_ASSERT(src);
     X_ASSERT(nwritten);
-    const int ret = self->write_func(self->driver, src, size, nwritten);
+    ret = self->write_func(self->driver, src, size, nwritten);
     self->error = ret;
     return ret;
 }
@@ -93,8 +95,9 @@ int xstream_write(XStream* self, const void* src, size_t size, size_t* nwritten)
 
 int xstream_close(XStream* self)
 {
+    int ret;
     X_ASSERT(self);
-    const int ret = self->close_func(self->driver);
+    ret = self->close_func(self->driver);
     self->error = ret;
     return ret;
 }
@@ -102,8 +105,9 @@ int xstream_close(XStream* self)
 
 int xstream_flush(XStream* self)
 {
+    int ret;
     X_ASSERT(self);
-    const int ret = self->flush_func(self->driver);
+    ret = self->flush_func(self->driver);
     self->error = ret;
     return ret;
 }
@@ -111,9 +115,10 @@ int xstream_flush(XStream* self)
 
 int xstream_seek(XStream* self, XOffset offset, XSeekMode mode)
 {
+    int ret;
     X_ASSERT(self);
     X_ASSERT(x_is_within(mode, X_SEEK_SET, X_SEEK_END + 1));
-    const int ret = self->seek_func(self->driver, offset, mode);
+    ret = self->seek_func(self->driver, offset, mode);
     self->error = ret;
     return ret;
 }
@@ -121,9 +126,10 @@ int xstream_seek(XStream* self, XOffset offset, XSeekMode mode)
 
 int xstream_tell(XStream* self, XSize* pos)
 {
+    int ret;
     X_ASSERT(self);
     X_ASSERT(pos);
-    const int ret = self->tell_func(self->driver, pos);
+    ret = self->tell_func(self->driver, pos);
     self->error = ret;
     return ret;
 }
@@ -147,7 +153,7 @@ int xstream_putc(XStream* self, int c)
 {
     bool ok;
     size_t nwritten;
-    uint8_t byte = c;
+    uint8_t byte = (uint8_t)c;
 
     do
     {
@@ -178,12 +184,13 @@ int xstream_getc(XStream* self)
 
 int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* overflow)
 {
+    size_t total = 0;
+    int c = '\0';
+
     X_ASSERT(self);
     X_ASSERT(dst);
     X_ASSERT(size > 1);
 
-    size_t total = 0;
-    int c = '\0';
     dst[0] = '\0';
 
     while (total < size - 1)
@@ -192,7 +199,7 @@ int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* ove
         X_BREAK_IF(c == EOF);
         X_CONTINUE_IF(c == '\r');
         X_BREAK_IF(c == '\n');
-        dst[total++] = c;
+        dst[total++] = (char)c;
     }
 
     dst[total] = '\0';
@@ -205,9 +212,10 @@ int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* ove
 
 int xstream_printf(XStream* self, const char* fmt, ...)
 {
+    int len;
     va_list args;
     va_start(args, fmt);
-    const int len = x_vprintf_to_stream(self, fmt, args);
+    len = x_vprintf_to_stream(self, fmt, args);
     va_end(args);
     return (self->error == 0) ? len : -1;
 }
@@ -239,7 +247,7 @@ void xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity)
 static int X__MemStreamWrite(XMemStream* self, const void* src, size_t size, size_t* nwritten)
 {
     const size_t to_write = ((self->pos + size) <= self->capacity)
-                            ? size : (self->capacity - self->pos);
+                            ? size : (size_t)(self->capacity - self->pos);
     memcpy(self->mem + self->pos, src, to_write);
     self->pos += to_write;
     *nwritten = to_write;
@@ -252,7 +260,7 @@ static int X__MemStreamWrite(XMemStream* self, const void* src, size_t size, siz
 static int X__MemStreamRead(XMemStream* self, void* dst, size_t size, size_t* nread)
 {
     const size_t to_read = ((self->pos + size) <= self->size)
-                            ? size : (self->size - self->pos);
+                            ? size : (size_t)(self->size - self->pos);
     memcpy(dst, self->mem + self->pos, to_read);
     self->pos += to_read;
     *nread = to_read;

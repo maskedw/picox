@@ -354,11 +354,7 @@ void xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity);
 
 /** @brief tagがXMemStreamと一致していなければNULLを返します
  */
-static inline XMemStream* x_memstream_cast(XStream* stream)
-{
-    X_ASSERT(stream);
-    return (stream->tag == X_MEMSTREAM_TAG) ? (XMemStream*)stream : NULL;
-}
+#define x_memstream_cast(stream)    ((stream->tag == X_MEMSTREAM_TAG) ? (XMemStream*)stream : NULL)
 
 
 #ifdef __cplusplus

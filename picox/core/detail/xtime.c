@@ -87,13 +87,18 @@ XTicks x_port_ticks_now(void)
 {
 #if X_CONF_TICKS_NOW_IMPL_TYPE == X_TICKS_NOW_IMPL_TYPE_GETTIMEOFDAY
 
+    const XTimeVal tv = x_gettimeofday2();
+#ifndef X_COMPILER_NO_64BIT_INT
+    const XTicks ret = (XTicks)((int64_t)(tv.tv_sec) * X_TICKS_PER_SEC + x_usec_to_ticks(tv.tv_usec));
+#else
+    const XTicks ret = (XTicks)((tv.tv_sec) * X_TICKS_PER_SEC + x_usec_to_ticks(tv.tv_usec));
+#endif
+
 #if X_CONF_GETTIMEOFDAY_IMPL_TYPE == X_GETTIMEOFDAY_IMPL_TYPE_ZERO
     /* X_GETTIMEOFDAY_IMPL_TYPE_ZEROは常に0を返すので、ticksが機能しない */
     X_ASSERT(0 && "This combination will cause an infinite loop");
 #endif
 
-    const XTimeVal tv = x_gettimeofday2();
-    const XTicks ret = (int64_t)(tv.tv_sec) * X_TICKS_PER_SEC + x_usec_to_ticks(tv.tv_usec);
     return ret;
 
 #else
@@ -221,3 +226,40 @@ void x_port_udelay(XUSeconds usec)
 #endif
 }
 #endif /* if X_CONF_UDELAY_IMPL_TYPE != X_UDELAY_IMPL_TYPE_USERPORT */
+
+
+
+XTicks x_msec_to_ticks(XMSeconds msec)
+{
+    const XTicks ret = X_DIV_ROUNDUP(msec * X_TICKS_PER_SEC, 1000);
+    return ret;
+}
+
+
+XTicks x_usec_to_ticks(XUSeconds usec)
+{
+    const XTicks ret = X_DIV_ROUNDUP(usec * X_TICKS_PER_SEC, 1000) / 1000;
+    return ret;
+}
+
+
+XMSeconds x_ticks_to_msec(XTicks ticks)
+{
+    const XMSeconds ret = (ticks * 1000) / X_TICKS_PER_SEC;
+    return ret;
+}
+
+
+XUSeconds x_ticks_to_usec(XTicks ticks)
+{
+    const XUSeconds ret = ((ticks * 1000) / X_TICKS_PER_SEC) * 1000;
+    return ret;
+}
+
+
+XTimeVal x_gettimeofday2(void)
+{
+    XTimeVal tv;
+    x_gettimeofday(&tv, NULL);
+    return tv;
+}

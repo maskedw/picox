@@ -82,7 +82,7 @@ typedef uint32_t XTime;
 
 /** @brief  高精度のシステム時刻を格納するための型です
  */
-typedef struct
+typedef struct HogeHoge
 {
     XTime   tv_sec;     /** 秒 */
     int32_t tv_usec;    /** マイクロ秒 */
@@ -194,38 +194,22 @@ void x_port_udelay(XUSeconds usec);
 
 /** @brief ミリ秒をチックに変換した値を返します
  */
-static inline XTicks x_msec_to_ticks(XMSeconds msec)
-{
-    const XTicks ret = X_DIV_ROUNDUP(msec * X_TICKS_PER_SEC, 1000);
-    return ret;
-}
+XTicks x_msec_to_ticks(XMSeconds msec);
 
 
 /** @brief マイクロ秒をチックに変換した値を返します
  */
-static inline XTicks x_usec_to_ticks(XUSeconds usec)
-{
-    const XTicks ret = X_DIV_ROUNDUP(usec * X_TICKS_PER_SEC, 1000) / 1000;
-    return ret;
-}
+XTicks x_usec_to_ticks(XUSeconds usec);
 
 
 /** @brief チックをミリ秒に変換した値を返します
  */
-static inline XMSeconds x_ticks_to_msec(XTicks ticks)
-{
-    const XMSeconds ret = (ticks * 1000) / X_TICKS_PER_SEC;
-    return ret;
-}
+XMSeconds x_ticks_to_msec(XTicks ticks);
 
 
 /** @brief チックをマイクロ秒に変換した値を返します
  */
-static inline XUSeconds x_ticks_to_usec(XTicks ticks)
-{
-    const XUSeconds ret = ((ticks * 1000) / X_TICKS_PER_SEC) * 1000;
-    return ret;
-}
+XUSeconds x_ticks_to_usec(XTicks ticks);
 
 
 /** @} end of name time_convertions
@@ -292,12 +276,7 @@ static inline XUSeconds x_ticks_to_usec(XTicks ticks)
 
 /** @brief 現在時刻を返します
  */
-static inline XTimeVal x_gettimeofday2(void)
-{
-    XTimeVal tv;
-    x_gettimeofday(&tv, NULL);
-    return tv;
-}
+XTimeVal x_gettimeofday2(void);
 
 
 #ifdef __cplusplus

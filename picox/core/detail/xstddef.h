@@ -158,16 +158,24 @@ extern "C" {
     #define X_SIZEOF_INT    (2)
 #elif UINT_MAX == 0xFFFFFFFF
     #define X_SIZEOF_INT    (4)
-#elif UINT_MAX == 0xFFFFFFFFFFFFFFFF
-    #define X_SIZEOF_INT    (8)
+#elif !defined(X_COMPILER_NO_64BIT_INT)
+    #if UINT_MAX == 0xFFFFFFFFFFFFFFFF
+        #define X_SIZEOF_INT    (8)
+    #else
+        #error unspported platform
+    #endif
 #else
     #error unspported platform
 #endif
 
 #if ULONG_MAX == 0xFFFFFFFF
     #define X_SIZEOF_LONG   (4)
-#elif ULONG_MAX == 0xFFFFFFFFFFFFFFFF
-    #define X_SIZEOF_LONG   (8)
+#elif !defined(X_COMPILER_NO_64BIT_INT)
+    #if ULONG_MAX == 0xFFFFFFFFFFFFFFFF
+        #define X_SIZEOF_LONG   (8)
+    #else
+        #error unspported platform
+    #endif
 #else
     #error unspported platform
 #endif
@@ -176,8 +184,12 @@ extern "C" {
     #define X_SIZEOF_INTPTR    (2)
 #elif UINTPTR_MAX == 0xFFFFFFFF
     #define X_SIZEOF_INTPTR    (4)
-#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
-    #define X_SIZEOF_INTPTR    (8)
+#elif !defined(X_COMPILER_NO_64BIT_INT)
+    #if UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF
+        #define X_SIZEOF_INTPTR    (8)
+    #else
+        #error unspported platform
+    #endif
 #else
     #error unspported platform
 #endif
@@ -186,8 +198,12 @@ extern "C" {
     #define X_SIZEOF_SIZE    (2)
 #elif SIZE_MAX == 0xFFFFFFFF
     #define X_SIZEOF_SIZE    (4)
-#elif SIZE_MAX == 0xFFFFFFFFFFFFFFFF
-    #define X_SIZEOF_SIZE    (8)
+#elif !defined(X_COMPILER_NO_64BIT_INT)
+    #if SIZE_MAX == 0xFFFFFFFFFFFFFFFF
+        #define X_SIZEOF_SIZE    (8)
+    #else
+        #error unspported platform
+    #endif
 #else
     #error unspported platform
 #endif
@@ -230,13 +246,15 @@ extern "C" {
     #define X_UINT32_C(c)   c
 #endif
 
-#if X_SIZEOF_LONG < 8
-    #define X_INT64_C(c)    c ## LL
-    #define X_UINT64_C(c)   c ## ULL
-#else
+
+#if X_SIZEOF_LONG >= 8
     #define X_INT64_C(c)    c ## L
     #define X_UINT64_C(c)   c ## UL
+#elif !defined(X_COMPILER_NO_LONGLONG)
+    #define X_INT64_C(c)    c ## LL
+    #define X_UINT64_C(c)   c ## ULL
 #endif
+
 
 /** @} end of name X_XXX_C
  */
@@ -317,18 +335,18 @@ typedef void (*XDeleter)(void* ptr);
 
 
 /** @brief 何もしないデリータです*/
-static inline void x_null_deleter(void* ptr)
-{
-    (void)(ptr);
-}
+void x_null_deleter(void* ptr);
 
 
 /** @brief 組込み型の最大アライメント型です。
  */
 typedef union XMaxAlign
 {
-    char c; int i; long l; long long ll; void* p;
+    char c; int i; long l; void* p;
     float f; double d; long double ld; void(*fp)(void);
+#ifndef X_COMPILER_NO_LONGLONG
+    long long ll;
+#endif
 } XMaxAlign;
 
 
