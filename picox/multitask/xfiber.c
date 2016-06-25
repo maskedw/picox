@@ -47,7 +47,6 @@
 #include <picox/multitask/xvtimer.h>
 
 
-#define X_FIBER_PRIORITY_MAX       (8)
 #define X__NODE_TO_FIBER(node)     xnode_entry(node, XFiber, m_node)
 #define X__CHECK_POLL(timeout)       \
     do                                  \
@@ -59,20 +58,6 @@
             goto x__exit;               \
         }                               \
     } while (0)
-
-#define X_FIBER_ENTER_CRITICAL()
-#define X_FIBER_EXIT_CRITICAL()
-
-#define X_FIBER_IMPL_TYPE_COPY_STACK        (0)
-#define X_FIBER_IMPL_TYPE_UCONTEXT          (1)
-#define X_FIBER_IMPL_TYPE_PLATFORM_DEPEND   (2)
-
-#define X_CONF_FIBER_IMPL_TYPE          X_FIBER_IMPL_TYPE_COPY_STACK
-// #define X_CONF_FIBER_IMPL_TYPE          X_FIBER_IMPL_TYPE_UCONTEXT
-
-#ifndef X_CONF_FIBER_IMPL_TYPE
-#define X_CONF_FIBER_IMPL_TYPE          X_FIBER_IMPL_TYPE_COPY_STACK
-#endif
 
 
 #if X_CONF_FIBER_IMPL_TYPE == X_FIBER_IMPL_TYPE_COPY_STACK

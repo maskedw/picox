@@ -118,6 +118,21 @@ extern "C" {
 #endif /* __cplusplus */
 
 
+/** @brief タスク優先度の最大値です(0 ~ 7の8段階)
+ */
+#define X_FIBER_PRIORITY_MAX       (8)
+
+
+/** @brief @see X_CONF_FIBER_ENTER_CRITICAL
+ */
+#define X_FIBER_ENTER_CRITICAL     X_CONF_FIBER_ENTER_CRITICAL
+
+
+/** @brief @see X_CONF_FIBER_EXIT_CRITICAL
+ */
+#define X_FIBER_EXIT_CRITICAL      X_CONF_FIBER_EXIT_CRITICAL
+
+
 /** @brief タスクのメイン関数ポインタ型です
  *
  *  引数のポインタが指すアドレスはスタック以外である必要があります。
