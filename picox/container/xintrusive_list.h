@@ -117,164 +117,6 @@ typedef struct XIntrusiveList
 #define xnode_entry(ptr, type, member)  X_CONTAINER_OF(ptr, type, member)
 
 
-/** @brief ノードのリンクを解除します
- *
- *  @pre
- *  + nodeはどこかのリストに格納済みであること
- */
-static inline void
-xnode_unlink(XIntrusiveNode* node)
-{
-   node->next->prev = node->prev;
-   node->prev->next = node->next;
-}
-
-
-/** @brief p1の後ろにp2を挿入します
- */
-static inline void
-xnode_insert_prev(XIntrusiveNode* p1, XIntrusiveNode* p2)
-{
-    p2->prev        = p1->prev;
-    p2->next        = p1;
-    p1->prev->next  = p2;
-    p1->prev        = p2;
-}
-
-
-/** @brief p1の前にp2を挿入します
- */
-static inline void
-xnode_insert_next(XIntrusiveNode* p1, XIntrusiveNode* p2)
-{
-    p2->prev        = p1;
-    p2->next        = p1->next;
-    p1->next->prev  = p2;
-    p1->next        = p2;
-}
-
-
-/** @brief p1のリンクをにp2に置換えます
- */
-static inline void
-xnode_replace(XIntrusiveNode* p1, XIntrusiveNode* p2)
-{
-    p2->next       = p1->next;
-    p2->next->prev = p2;
-    p2->prev       = p1->prev;
-    p2->prev->next = p2;
-}
-
-
-/** @brief prev, next間にlistを連結します
- */
-static inline void
-xnode_splice(XIntrusiveNode* prev, XIntrusiveNode* next, XIntrusiveList* list)
-{
-    XIntrusiveNode* first = list->head.next;
-    XIntrusiveNode* last  = list->head.prev;
-
-    first->prev = prev;
-    prev->next  = first;
-    last->next  = next;
-    next->prev  = last;
-}
-
-
-/** @brief コンテナを初期化します
- */
-static inline void
-xilist_init(XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    self->head.next = self->head.prev = &self->head;
-}
-
-
-/** @brief コンテナのルートノードのポインタを返します
- */
-static inline XIntrusiveNode*
-xilist_head(XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    return &self->head;
-}
-
-
-/** @brief コンテナを空にします
- */
-static inline void
-xilist_clear(XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    xilist_init(self);
-}
-
-
-/** @brief コンテナが空かどうかを返します
- */
-static inline bool
-xilist_empty(const XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    return self->head.next == &self->head;
-}
-
-
-/** @brief コンテナの終端を指すノードを返します
- */
-static inline XIntrusiveNode*
-xilist_end(const XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    return (XIntrusiveNode*)(&self->head);
-}
-
-
-/** @brief コンテナの先頭ノードを返します
- */
-static inline XIntrusiveNode*
-xilist_front(const XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    return self->head.next;
-}
-
-
-/** @brief 先頭ノードをコンテナから除去して返します
- */
-static inline XIntrusiveNode*
-xilist_pop_front(const XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    XIntrusiveNode* front = self->head.next;
-    xnode_unlink(front);
-    return front;
-}
-
-
-/** @brief コンテナの末尾ノードを返します
- */
-static inline XIntrusiveNode*
-xilist_back(const XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    return self->head.prev;
-}
-
-
-/** @brief 末尾ノードをコンテナから除去して返します
- */
-static inline XIntrusiveNode*
-xilist_pop_back(const XIntrusiveList* self)
-{
-    X_ASSERT(self);
-    XIntrusiveNode* back = self->head.prev;
-    xnode_unlink(back);
-    return back;
-}
-
-
 /** @brief コンテナ先頭から順方向走査します
  *
  *  @param ite  XIntrusiveNode*
@@ -345,13 +187,174 @@ xilist_pop_back(const XIntrusiveList* self)
          ite  = ite->prev)
 
 
-/** @brief ノード数を返します
+#ifndef X_COMPILER_NO_INLINE
+
+/** @brief ノードのリンクを解除します
+ *
+ *  @pre
+ *  + nodeはどこかのリストに格納済みであること
  */
-static inline size_t
-xilist_size(const XIntrusiveList* self)
+X_INLINE void
+xnode_unlink(XIntrusiveNode* node)
+{
+   node->next->prev = node->prev;
+   node->prev->next = node->next;
+}
+
+
+/** @brief p1の後ろにp2を挿入します
+ */
+X_INLINE void
+xnode_insert_prev(XIntrusiveNode* p1, XIntrusiveNode* p2)
+{
+    p2->prev        = p1->prev;
+    p2->next        = p1;
+    p1->prev->next  = p2;
+    p1->prev        = p2;
+}
+
+
+/** @brief p1の前にp2を挿入します
+ */
+X_INLINE void
+xnode_insert_next(XIntrusiveNode* p1, XIntrusiveNode* p2)
+{
+    p2->prev        = p1;
+    p2->next        = p1->next;
+    p1->next->prev  = p2;
+    p1->next        = p2;
+}
+
+
+/** @brief p1のリンクをにp2に置換えます
+ */
+X_INLINE void
+xnode_replace(XIntrusiveNode* p1, XIntrusiveNode* p2)
+{
+    p2->next       = p1->next;
+    p2->next->prev = p2;
+    p2->prev       = p1->prev;
+    p2->prev->next = p2;
+}
+
+
+/** @brief prev, next間にlistを連結します
+ */
+X_INLINE void
+xnode_splice(XIntrusiveNode* prev, XIntrusiveNode* next, XIntrusiveList* list)
+{
+    XIntrusiveNode* first = list->head.next;
+    XIntrusiveNode* last  = list->head.prev;
+
+    first->prev = prev;
+    prev->next  = first;
+    last->next  = next;
+    next->prev  = last;
+}
+
+
+/** @brief コンテナを初期化します
+ */
+X_INLINE void
+xilist_init(XIntrusiveList* self)
 {
     X_ASSERT(self);
+    self->head.next = self->head.prev = &self->head;
+}
+
+
+/** @brief コンテナのルートノードのポインタを返します
+ */
+X_INLINE XIntrusiveNode*
+xilist_head(XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    return &self->head;
+}
+
+
+/** @brief コンテナを空にします
+ */
+X_INLINE void
+xilist_clear(XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    xilist_init(self);
+}
+
+
+/** @brief コンテナが空かどうかを返します
+ */
+X_INLINE bool
+xilist_empty(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    return self->head.next == &self->head;
+}
+
+
+/** @brief コンテナの終端を指すノードを返します
+ */
+X_INLINE XIntrusiveNode*
+xilist_end(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    return (XIntrusiveNode*)(&self->head);
+}
+
+
+/** @brief コンテナの先頭ノードを返します
+ */
+X_INLINE XIntrusiveNode*
+xilist_front(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    return self->head.next;
+}
+
+
+/** @brief 先頭ノードをコンテナから除去して返します
+ */
+X_INLINE XIntrusiveNode*
+xilist_pop_front(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    XIntrusiveNode* front = self->head.next;
+    xnode_unlink(front);
+    return front;
+}
+
+
+/** @brief コンテナの末尾ノードを返します
+ */
+X_INLINE XIntrusiveNode*
+xilist_back(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    return self->head.prev;
+}
+
+
+/** @brief 末尾ノードをコンテナから除去して返します
+ */
+X_INLINE XIntrusiveNode*
+xilist_pop_back(const XIntrusiveList* self)
+{
+    X_ASSERT(self);
+    XIntrusiveNode* back = self->head.prev;
+    xnode_unlink(back);
+    return back;
+}
+
+
+/** @brief ノード数を返します
+ */
+X_INLINE size_t
+xilist_size(const XIntrusiveList* self)
+{
     size_t n = 0;
+    X_ASSERT(self);
+
     XIntrusiveNode* ite;
     xilist_foreach(self, ite)
         n++;
@@ -362,7 +365,7 @@ xilist_size(const XIntrusiveList* self)
 
 /** @brief ノード数が1つかどうかを返します
  */
-static inline bool
+X_INLINE bool
 xilist_is_singular(const XIntrusiveList* self)
 {
     X_ASSERT(self);
@@ -375,7 +378,7 @@ xilist_is_singular(const XIntrusiveList* self)
  *  @pre
  *  + node != NULL
  */
-static inline void
+X_INLINE void
 xilist_push_front(XIntrusiveList* self, XIntrusiveNode* node)
 {
     X_ASSERT(self);
@@ -389,7 +392,7 @@ xilist_push_front(XIntrusiveList* self, XIntrusiveNode* node)
  *  @pre
  *  + node != NULL
  */
-static inline void
+X_INLINE void
 xilist_push_back(XIntrusiveList* self, XIntrusiveNode* node)
 {
     X_ASSERT(self);
@@ -403,7 +406,7 @@ xilist_push_back(XIntrusiveList* self, XIntrusiveNode* node)
  *  @pre
  *  + node != NULL
  */
-static inline void
+X_INLINE void
 xilist_move_front(XIntrusiveList* self, XIntrusiveNode* node)
 {
     X_ASSERT(self);
@@ -418,7 +421,7 @@ xilist_move_front(XIntrusiveList* self, XIntrusiveNode* node)
  *  @pre
  *  + node != NULL
  */
-static inline void
+X_INLINE void
 xilist_move_back(XIntrusiveList* self, XIntrusiveNode* node)
 {
     X_ASSERT(self);
@@ -433,7 +436,7 @@ xilist_move_back(XIntrusiveList* self, XIntrusiveNode* node)
  *  @pre
  *  + other != NULL
  */
-static inline void
+X_INLINE void
 xilist_splice_front(XIntrusiveList* self, XIntrusiveList* other)
 {
     X_ASSERT(self);
@@ -451,7 +454,7 @@ xilist_splice_front(XIntrusiveList* self, XIntrusiveList* other)
  *  @pre
  *  + other != NULL
  */
-static inline void
+X_INLINE void
 xilist_splice_back(XIntrusiveList* self, XIntrusiveList* other)
 {
     X_ASSERT(self);
@@ -469,17 +472,18 @@ xilist_splice_back(XIntrusiveList* self, XIntrusiveList* other)
  *  @pre
  *  + other != NULL
  */
-static inline void
+X_INLINE void
 xilist_swap(XIntrusiveList* self, XIntrusiveList* other)
 {
+    bool empty_self, empty_other;
     X_ASSERT(self);
     X_ASSERT(other);
 
     if (self == other)
         return;
 
-    const bool empty_self = xilist_empty(self);
-    const bool empty_other = xilist_empty(other);
+    empty_self = xilist_empty(self);
+    empty_other = xilist_empty(other);
 
     X_SWAP(self->head, other->head, XIntrusiveNode);
 
@@ -502,21 +506,22 @@ xilist_swap(XIntrusiveList* self, XIntrusiveList* other)
  *  + pos   != NULL
  *  + posはotherに含まれる要素であること
  */
-static inline void
+X_INLINE void
 xilist_transfer_front(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode* pos)
 {
+    XIntrusiveNode* new_first;
     X_ASSERT(self);
     X_ASSERT(pos);
     X_ASSERT(other);
     X_ASSERT(!xilist_empty(other));
 
-    XIntrusiveNode* const new_first = pos->next;
-    pos->next                       = self->head.next;
-    self->head.next                 = other->head.next;
-    self->head.next->prev           = &self->head;
-    self->head.prev                 = pos;
-    other->head.next                = new_first;
-    new_first->prev                 = &other->head;
+    new_first               = pos->next;
+    pos->next               = self->head.next;
+    self->head.next         = other->head.next;
+    self->head.next->prev   = &self->head;
+    self->head.prev         = pos;
+    other->head.next        = new_first;
+    new_first->prev         = &other->head;
 }
 
 
@@ -527,22 +532,56 @@ xilist_transfer_front(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNod
  *  + pos   != NULL
  *  + posはotherに含まれる要素であること
  */
-static inline void
+X_INLINE void
 xilist_transfer_back(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode* pos)
 {
+    XIntrusiveNode* new_first;
     X_ASSERT(self);
     X_ASSERT(pos);
     X_ASSERT(other);
     X_ASSERT(!xilist_empty(other));
 
-    XIntrusiveNode* const new_first = pos->next;
-    pos->next                       = &self->head;
-    pos->prev                       = self->head.prev;
-    self->head.prev->next           = other->head.next;
-    self->head.prev                 = pos;
-    other->head.next                = new_first;
-    new_first->prev                 = &other->head;
+    new_first               = pos->next;
+    pos->next               = &self->head;
+    pos->prev               = self->head.prev;
+    self->head.prev->next   = other->head.next;
+    self->head.prev         = pos;
+    other->head.next        = new_first;
+    new_first->prev         = &other->head;
 }
+
+
+#else /* ifndef X_COMPILER_NO_INLINE */
+
+
+void xnode_unlink(XIntrusiveNode* node);
+void xnode_insert_prev(XIntrusiveNode* p1, XIntrusiveNode* p2);
+void xnode_insert_next(XIntrusiveNode* p1, XIntrusiveNode* p2);
+void xnode_replace(XIntrusiveNode* p1, XIntrusiveNode* p2);
+void xnode_splice(XIntrusiveNode* prev, XIntrusiveNode* next, XIntrusiveList* list);
+void xilist_init(XIntrusiveList* self);
+XIntrusiveNode* xilist_head(XIntrusiveList* self);
+void xilist_clear(XIntrusiveList* self);
+bool xilist_empty(const XIntrusiveList* self);
+XIntrusiveNode* xilist_end(const XIntrusiveList* self);
+XIntrusiveNode* xilist_front(const XIntrusiveList* self);
+XIntrusiveNode* xilist_pop_front(const XIntrusiveList* self);
+XIntrusiveNode* xilist_back(const XIntrusiveList* self);
+XIntrusiveNode* xilist_pop_back(const XIntrusiveList* self);
+size_t xilist_size(const XIntrusiveList* self);
+bool xilist_is_singular(const XIntrusiveList* self);
+void xilist_push_front(XIntrusiveList* self, XIntrusiveNode* node);
+void xilist_push_back(XIntrusiveList* self, XIntrusiveNode* node);
+void xilist_move_front(XIntrusiveList* self, XIntrusiveNode* node);
+void xilist_move_back(XIntrusiveList* self, XIntrusiveNode* node);
+void xilist_splice_front(XIntrusiveList* self, XIntrusiveList* other);
+void xilist_splice_back(XIntrusiveList* self, XIntrusiveList* other);
+void xilist_swap(XIntrusiveList* self, XIntrusiveList* other);
+void xilist_transfer_front(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode* pos);
+void xilist_transfer_back(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode* pos);
+
+
+#endif /* ifndef X_COMPILER_NO_INLINE */
 
 
 #ifdef __cplusplus
