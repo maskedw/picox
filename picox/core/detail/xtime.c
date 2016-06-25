@@ -96,7 +96,7 @@ XTicks x_port_ticks_now(void)
 
 #if X_CONF_GETTIMEOFDAY_IMPL_TYPE == X_GETTIMEOFDAY_IMPL_TYPE_ZERO
     /* X_GETTIMEOFDAY_IMPL_TYPE_ZEROは常に0を返すので、ticksが機能しない */
-    X_ASSERT(0 && "This combination will cause an infinite loop");
+    X_ABORT("This combination will cause an infinite loop");
 #endif
 
     return ret;

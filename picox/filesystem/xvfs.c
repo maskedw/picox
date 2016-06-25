@@ -373,7 +373,7 @@ XError xvfs_gets(XFile* fp, char* dst, size_t size, char** result, bool* overflo
 {
     XStream fstream;
     xvfs_init_stream(&fstream, fp);
-    return xstream_gets(&fstream, dst, size, result, overflow);
+    return (XError)xstream_gets(&fstream, dst, size, result, overflow);
 }
 
 
@@ -522,16 +522,15 @@ XError xvfs_makedirs(XVirtualFs* vfs, const char* path, bool exist_ok)
 {
     XError err = X_ERR_NONE;
     char buf[X_PATH_MAX];
-    const char* next;
     const char* endptr = path;
 
     if (strlen(path) >= X_PATH_MAX)
         return X_ERR_NAME_TOO_LONG;
 
-    while ((next = xfpath_top(endptr, (char**)&endptr)))
+    while (xfpath_top(endptr, (char**)&endptr))
     {
         memcpy(buf, path, endptr - path);
-        buf[endptr - path] = '\0';
+        buf[(size_t)(endptr - path)] = '\0';
 
         err = xvfs_mkdir(vfs, buf);
         if ((err != X_ERR_NONE) && (err != X_ERR_EXIST))
@@ -584,7 +583,7 @@ XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, vo
         char* endptr;
         char* p = xfpath_name(tmp, &endptr);
         memcpy(work->dirent->name, p, endptr - p);
-        work->dirent->name[endptr - p] = '\0';
+        work->dirent->name[(size_t)(endptr - p)] = '\0';
     }
 
     x_strlcpy(work->path, path, X_PATH_MAX);

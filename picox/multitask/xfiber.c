@@ -372,16 +372,17 @@ XError xfiber_create(XFiber** o_fiber,
                      void* arg)
 {
     XError err = X_ERR_NONE;
-
+    uint8_t* stack;
     XFiber* fiber = X__Malloc(x_roundup_multiple(
                 sizeof(XFiber), X_ALIGN_OF(XMaxAlign)) + stack_size);
+
     if (!fiber)
     {
         err = X_ERR_NO_MEMORY;
         goto x__exit;
     }
 
-    uint8_t* stack = ((uint8_t*)fiber) + x_roundup_multiple(
+    stack = ((uint8_t*)fiber) + x_roundup_multiple(
             sizeof(XFiber), X_ALIGN_OF(XMaxAlign));
 
     if (name)
@@ -593,13 +594,12 @@ XBits xfiber_event_clear(XFiberEvent* event, XBits pattern)
 }
 
 
-XError xfiber_event_clear_isr(XFiberEvent* event, XBits pattern)
+XBits xfiber_event_clear_isr(XFiberEvent* event, XBits pattern)
 {
     const XBits prev = event->m_pattern;
     event->m_pattern &= ~pattern;
     return prev;
 }
-
 
 
 XBits xfiber_event_get(XFiberEvent* event)
@@ -637,13 +637,15 @@ XError xfiber_signal_try_wait(XBits sigs, XBits* result)
 XError xfiber_signal_timed_wait(XBits sigs, XBits* result, XTicks timeout)
 {
     volatile XError err = X_ERR_NONE;
+    XFiber* fiber;
+
     if (!sigs)
     {
         *result = 0;
         goto x__exit;
     }
 
-    XFiber* const fiber = xfiber_self();
+    fiber = xfiber_self();
     X_FIBER_ENTER_CRITICAL();
     {
         *result = sigs & fiber->m_recv_sigs;
@@ -1901,7 +1903,8 @@ static void X__PushToReadyQueue(XFiber* fiber)
 
 static XFiber* X__PopFromReadyQueue(void)
 {
-    X_ASSERT((priv->m_priority_map) && "dead lock!!");
+    /* Check dead lock */
+    X_ASSERT(priv->m_priority_map);
 
     const int priority = x_find_msb_pos8(priv->m_priority_map);
     XIntrusiveList* const ready_queue = &priv->m_ready_queue[priority];

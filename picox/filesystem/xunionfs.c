@@ -161,6 +161,8 @@ XError xunionfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
     XError err;
     char buf[X_PATH_MAX];
     X__MountPoint* mp = NULL;
+    XIntrusiveNode* ite;
+    X__MountPoint* parent;
 
     if (!priv->m_curdir)
     {
@@ -182,7 +184,6 @@ XError xunionfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
     }
 
     /* 同じパスがすでにマウントされていたらエラー */
-    XIntrusiveNode* ite;
     xilist_foreach(&priv->m_mplist, ite)
     {
         const X__MountPoint* const mp = xnode_entry(ite, const X__MountPoint, m_node);
@@ -194,7 +195,7 @@ XError xunionfs_mount(XVirtualFs* vfs, const char* vpath, const char* realpath)
     }
 
     /* "/"以外のマウントパスは、ディレクトリとして実体が存在している必要がある */
-    X__MountPoint* parent = NULL;
+    parent = NULL;
     if (!x_strequal(buf, "/"))
     {
         XStat statbuf;
@@ -250,6 +251,8 @@ XError xunionfs_umount(const char* path)
     XError err = X_ERR_NONE;
     char buf[X_PATH_MAX];
     const X__MountPoint* found_mp = NULL;
+    size_t len;
+    XIntrusiveNode* ite;
 
     err = xfpath_resolve(buf, priv->m_curdir, path, X_PATH_MAX);
     if (err)
@@ -262,8 +265,7 @@ XError xunionfs_umount(const char* path)
         goto x__exit;
     }
 
-    const size_t len = strlen(buf);
-    XIntrusiveNode* ite;
+    len = strlen(buf);
     xilist_foreach(&priv->m_mplist, ite)
     {
         const X__MountPoint* mp = xnode_entry(ite, const X__MountPoint, m_node);
@@ -628,16 +630,15 @@ XError xunionfs_makedirs(const char* path, bool exist_ok)
 {
     XError err = X_ERR_NONE;
     char buf[X_PATH_MAX];
-    const char* next;
     const char* endptr = path;
 
     if (strlen(path) >= X_PATH_MAX)
         return X_ERR_NAME_TOO_LONG;
 
-    while ((next = xfpath_top(endptr, (char**)&endptr)))
+    while (xfpath_top(endptr, (char**)&endptr))
     {
         memcpy(buf, path, endptr - path);
-        buf[endptr - path] = '\0';
+        buf[(size_t)(endptr - path)] = '\0';
 
         err = xunionfs_mkdir(buf);
         if ((err != X_ERR_NONE) && (err != X_ERR_EXIST))
@@ -658,6 +659,9 @@ XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
     X_ASSERT_ARG(walker);
 
     X__WalkTreeWorkBuf* work = x_malloc(sizeof(X__WalkTreeWorkBuf));
+    char* tmp;
+    char* endptr;
+
     if (!work)
         return X_ERR_NO_MEMORY;
 
@@ -678,8 +682,7 @@ XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
         goto x__exit;
     }
 
-    char* tmp = work->realpath;
-    char* endptr;
+    tmp = work->realpath;
     xfpath_resolve(tmp, priv->m_curdir, path, X_PATH_MAX);
 
     if (xfpath_is_root(tmp))
@@ -688,7 +691,7 @@ XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
     {
         tmp = xfpath_name(tmp, &endptr);
         memcpy(work->dirent->name, tmp, endptr - tmp);
-        work->dirent->name[endptr - tmp] = '\0';
+        work->dirent->name[(size_t)(endptr - tmp)] = '\0';
     }
 
     err = X__DoWalkTree(work, strlen(work->vpath));

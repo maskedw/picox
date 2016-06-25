@@ -40,6 +40,9 @@
 #include <picox/container/xintrusive_list.h>
 
 
+#ifdef X_COMPILER_NO_INLINE
+
+
 void xnode_unlink(XIntrusiveNode* node)
 {
    node->next->prev = node->prev;
@@ -290,3 +293,6 @@ void xilist_transfer_back(XIntrusiveList* self, XIntrusiveList* other, XIntrusiv
     other->head.next        = new_first;
     new_first->prev         = &other->head;
 }
+
+
+#endif /* ifdef X_COMPILER_NO_INLINE */

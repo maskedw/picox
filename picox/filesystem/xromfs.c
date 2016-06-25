@@ -118,6 +118,7 @@ XError xromfs_init(XRomFs* fs, const void* romimage)
     X_ASSERT_NULL(romimage);
 
     XError err = X_ERR_NONE;
+    const char* rootdir;
 
     /* check magic number */
     if (memcmp(romimage, "ROMF", 4) != 0)
@@ -128,7 +129,7 @@ XError xromfs_init(XRomFs* fs, const void* romimage)
 
     /* get root directory */
     fs->m_top = romimage;
-    const char* rootdir = fs->m_top + 4;
+    rootdir = fs->m_top + 4;
 
     if (X__LOAD_U32(rootdir + X__FLAGS)  != X__TYPE_DIR)
     {
@@ -200,6 +201,7 @@ XError xromfs_open(XRomFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 
     XError err;
     const char* ent;
+    X__File* infp;
 
     *o_fp = NULL;
     err = X__FindEntry(fs, path, &ent);
@@ -218,7 +220,7 @@ XError xromfs_open(XRomFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
         goto x__exit;
     }
 
-    X__File* infp = x_malloc(sizeof(X__File));
+    infp = x_malloc(sizeof(X__File));
     if (!infp)
     {
         err = X_ERR_NO_MEMORY;
@@ -349,6 +351,8 @@ XError xromfs_opendir(XRomFs* fs, const char* path, XDir** o_dir)
 
     XError err;
     const char* ent;
+    X__Dir* indirp;
+
     *o_dir = NULL;
 
     err = X__FindEntry(fs, path, &ent);
@@ -361,7 +365,7 @@ XError xromfs_opendir(XRomFs* fs, const char* path, XDir** o_dir)
         goto x__exit;
     }
 
-    X__Dir* indirp = x_malloc(sizeof(X__Dir));
+    indirp = x_malloc(sizeof(X__Dir));
     if (! indirp)
     {
         err = X_ERR_NO_MEMORY;
@@ -548,7 +552,7 @@ static XError X__FindEntry(const XRomFs* fs, const char* path, char const** o_en
         }
 
         memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
+        name[(size_t)(endptr - next)] = '\0';
 
         if (x_strequal(name, "."))
         {

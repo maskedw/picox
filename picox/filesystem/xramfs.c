@@ -134,6 +134,8 @@ void* xalloc_allocate(XAllocator* self, size_t size)
 XError xramfs_init(XRamFs* fs, void* mem, size_t size)
 {
     XError err = X_ERR_NONE;
+    X__DirEntry* root;
+
     fs->m_tag = X_RAMFS_TAG;
 
     /* 具体的に最小何バイト必要というのを決めるのは難しいのだが、とりあえず64バ
@@ -149,7 +151,7 @@ XError xramfs_init(XRamFs* fs, void* mem, size_t size)
                X_ERR_NO_MEMORY);
 
     /* ルートディレクトリを作成する */
-    X__DirEntry* root = X__CreateDir(fs, NULL, "/");
+    root = X__CreateDir(fs, NULL, "/");
     X__EXIT_IF(!root, X_ERR_NO_MEMORY);
     fs->m_rootdir = fs->m_curdir = root;
 
@@ -720,7 +722,7 @@ static XError X__FindEntry(const XRamFs* fs, const char* path, char* name,
         X__EXIT_IF(endptr - next >= X_NAME_MAX, X_ERR_NAME_TOO_LONG);
 
         memcpy(name, next, endptr - next);
-        name[endptr - next] = '\0';
+        name[(size_t)(endptr - next)] = '\0';
 
         if (x_strequal(name, "."))
         {

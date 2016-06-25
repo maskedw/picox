@@ -90,7 +90,7 @@ extern "C" {
 
 /** @brief 型Tの変数として、x, yを交換します。
  */
-#define X_SWAP(x, y, T) do { T tmp = x; x = y; y = tmp; } while (0)
+#define X_SWAP(x, y, T) do { const T tmp = x; x = y; y = tmp; } while (0)
 
 
 /** @brief a,bを比較し、小さい方を返します。
