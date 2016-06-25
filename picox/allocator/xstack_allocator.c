@@ -40,14 +40,14 @@
 #include <picox/allocator/xstack_allocator.h>
 
 
-static inline uint8_t*
+X_INLINE uint8_t*
 X__GetBeginOrigin(XStackAllocator* self)
 {
     return X_ROUNDUP_ALIGNMENT_PTR(self->heap, self->alignment);
 }
 
 
-static inline bool
+X_INLINE bool
 X__IsValidRange(XStackAllocator* self, const void* p)
 {
     const uint8_t* b = X__GetBeginOrigin(self);
@@ -87,11 +87,12 @@ void xsalloc_init(XStackAllocator* self, void* heap, size_t size, size_t alignme
 
 void* xsalloc_allocate(XStackAllocator* self, size_t size)
 {
+    size_t reserve;
+    void* ret;
     X_ASSERT(self);
     X_ASSERT(size > 0);
 
-    const size_t reserve = xsalloc_reserve(self);
-    void* ret;
+    reserve = xsalloc_reserve(self);
 
     X_ASSERT_MALLOC_NULL(reserve >= size);
     X_UNUSED(reserve);
@@ -122,6 +123,8 @@ void xsalloc_clear(XStackAllocator* self)
 
 void xsalloc_rewind(XStackAllocator* self, void* begin, void* end)
 {
+    uint8_t* b;
+    uint8_t* e;
     X_ASSERT(self);
 
     /* 両方がNULLは許容するが、片方だけNULLというのは明らかにおかしいので
@@ -133,8 +136,8 @@ void xsalloc_rewind(XStackAllocator* self, void* begin, void* end)
     X_ASSERT(x_is_aligned(begin, self->alignment));
     X_ASSERT(x_is_aligned(end, self->alignment));
 
-    uint8_t* b = begin;
-    uint8_t* e = end;
+    b = begin;
+    e = end;
 
     X_ASSERT(e >= b);
     X_ASSERT(X__IsValidRange(self, b));
@@ -142,4 +145,78 @@ void xsalloc_rewind(XStackAllocator* self, void* begin, void* end)
 
     self->begin = b;
     self->end   = e;
+}
+
+
+bool xsalloc_growth_direction(XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->growth_upward;
+}
+
+
+/** スタック伸長方向を設定し、変更前の値を返します
+ */
+bool xsalloc_set_growth_direction(XStackAllocator* self, bool growth_upward)
+{
+    bool old;
+    X_ASSERT(self);
+    old = self->growth_upward;
+    self->growth_upward = growth_upward;
+
+    return old;
+}
+
+
+/** 空きメモリバイト数を返します
+ */
+size_t xsalloc_reserve(const XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->end - self->begin;
+}
+
+
+/** ヒープのサイズを返します
+ */
+size_t xsalloc_capacity(const XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->capacity;
+}
+
+
+/** 初期化時に指定したアラインメントを返します
+ */
+size_t xsalloc_alignment(const XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->alignment;
+}
+
+
+/** ヒープメモリを返します
+ */
+uint8_t* xsalloc_heap(const XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->heap;
+}
+
+
+/** 先頭スタックポインタを返します
+ */
+uint8_t* xsalloc_bedin(const XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->begin;
+}
+
+
+/** 終端スタックポインタを返します
+ */
+uint8_t* xsalloc_end(const XStackAllocator* self)
+{
+    X_ASSERT(self);
+    return self->end;
 }

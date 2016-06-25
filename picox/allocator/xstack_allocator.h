@@ -142,82 +142,42 @@ void xsalloc_rewind(XStackAllocator* self, void* begin, void* end);
 
 /** スタック伸長方向を返します
  */
-static inline bool
-xsalloc_growth_direction(XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->growth_upward;
-}
+bool xsalloc_growth_direction(XStackAllocator* self);
 
 
-/** スタック伸長方向を設定します
+/** スタック伸長方向を設定し、変更前の値を返します
  */
-static inline void
-xsalloc_set_growth_direction(XStackAllocator* self, bool growth_upward)
-{
-    X_ASSERT(self);
-    self->growth_upward = growth_upward;
-}
+bool xsalloc_set_growth_direction(XStackAllocator* self, bool growth_upward);
 
 
 /** 空きメモリバイト数を返します
  */
-static inline size_t
-xsalloc_reserve(const XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->end - self->begin;
-}
+size_t xsalloc_reserve(const XStackAllocator* self);
 
 
 /** ヒープのサイズを返します
  */
-static inline size_t
-xsalloc_capacity(const XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->capacity;
-}
+size_t xsalloc_capacity(const XStackAllocator* self);
 
 
 /** 初期化時に指定したアラインメントを返します
  */
-static inline size_t
-xsalloc_alignment(const XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->alignment;
-}
+size_t xsalloc_alignment(const XStackAllocator* self);
 
 
 /** ヒープメモリを返します
  */
-static inline uint8_t*
-xsalloc_heap(const XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->heap;
-}
+uint8_t* xsalloc_heap(const XStackAllocator* self);
 
 
 /** 先頭スタックポインタを返します
  */
-static inline uint8_t*
-xsalloc_bedin(const XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->begin;
-}
+uint8_t* xsalloc_bedin(const XStackAllocator* self);
 
 
 /** 終端スタックポインタを返します
  */
-static inline uint8_t*
-xsalloc_end(const XStackAllocator* self)
-{
-    X_ASSERT(self);
-    return self->end;
-}
+uint8_t* xsalloc_end(const XStackAllocator* self);
 
 
 #ifdef __cplusplus
