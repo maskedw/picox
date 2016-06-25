@@ -316,9 +316,9 @@ int x_find_lsb_pos32(uint32_t x)
 }
 
 
-uint8_t  x_find_lsb8(uint8_t x)  { return x & ((x) + 1); }
-uint16_t x_find_lsb16(uint16_t x) { return x & ((x) + 1); }
-uint32_t x_find_lsb32(uint32_t x) { return x & ((x) + 1); }
+uint8_t  x_find_lsb8(uint8_t x)   { return x & (~x + 1); }
+uint16_t x_find_lsb16(uint16_t x) { return x & (~x + 1); }
+uint32_t x_find_lsb32(uint32_t x) { return x & (~x + 1); }
 
 
 int x_find_msb_pos8(uint8_t x)
