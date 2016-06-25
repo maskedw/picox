@@ -16,11 +16,11 @@ typedef struct
 #define N_SECTORS (SZ_DISK / SZ_SECTOR)
 
 static FakeDiskIO fakeio[5] = {
-    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
-    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
-    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
-    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
-    {STA_NOINIT, 512, (1024 * 1024 * 100) / 512, NULL},
+    {STA_NOINIT, SZ_SECTOR, N_SECTORS, NULL},
+    {STA_NOINIT, SZ_SECTOR, N_SECTORS, NULL},
+    {STA_NOINIT, SZ_SECTOR, N_SECTORS, NULL},
+    {STA_NOINIT, SZ_SECTOR, N_SECTORS, NULL},
+    {STA_NOINIT, SZ_SECTOR, N_SECTORS, NULL},
 };
 
 static FakeDiskIO* const priv = fakeio;

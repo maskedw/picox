@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(picox-tests)
 
-# set(CMAKE_BUILD_TYPE    Debug)
-set(CMAKE_BUILD_TYPE  Release)
+set(CMAKE_BUILD_TYPE    Debug)
+# set(CMAKE_BUILD_TYPE  Release)
 set(CMAKE_CXX_COMPILER  g++)
 set(CMAKE_C_COMPILER    gcc)
 
