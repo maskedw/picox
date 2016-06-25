@@ -430,6 +430,7 @@ XError xvfs_copyfile2(XFile* src, XFile* dst)
             break;
 
         err = xvfs_write(dst, buf, nread, &nwritten);
+        if (err)
             goto x__exit;
 
         if (nread != nwritten)
