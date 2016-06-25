@@ -61,6 +61,7 @@ static void X__Deallocate(XPicoAllocator* self, void* ptr, size_t size);
 
 bool xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignment)
 {
+    X__Chunk* chunk;
     X_ASSERT(self);
     X_ASSERT(alignment);
     X_ASSERT(x_is_power_of_two(alignment));
@@ -90,7 +91,7 @@ bool xpalloc_init(XPicoAllocator* self, void* heap, size_t size, size_t alignmen
     self->capacity = size - (self->top - self->heap);
     self->reserve = self->capacity;
 
-    X__Chunk* chunk = (X__Chunk*)self->top;
+    chunk = (X__Chunk*)self->top;
     chunk->next = NULL;
     chunk->size = self->capacity;
 
@@ -112,10 +113,10 @@ void xpalloc_deinit(XPicoAllocator* self)
 
 void* xpalloc_allocate(XPicoAllocator* self, size_t size)
 {
+    char* ptr;
     X_ASSERT(self);
     X_ASSERT(size > 0);
 
-    char* ptr;
 
     /* サイズ情報確保用の領域を余分に確保する。 */
     size = x_roundup_multiple(size + X__ALIGN, X__ALIGN);
@@ -127,12 +128,14 @@ void* xpalloc_allocate(XPicoAllocator* self, size_t size)
 
     if (ptr != NULL)
     {
+        size_t used;
+
         X_ASSERT(x_is_aligned(ptr, X_ALIGN_OF(size_t)));
         *(size_t*)(ptr) = size;
         ptr += X__ALIGN;
         self->reserve -= size;
 
-        const size_t used = self->capacity - self->reserve;
+        used = self->capacity - self->reserve;
         if (used > self->max_used)
             self->max_used = used;
     }
@@ -143,19 +146,21 @@ void* xpalloc_allocate(XPicoAllocator* self, size_t size)
 
 void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t new_size)
 {
+    size_t old_size = 0;
+    void* new_mem;
+
     X_ASSERT(self);
     X_ASSERT(new_size > 0);
 
-    size_t old_size = 0;
-
     if (old_mem)
     {
-        X_ASSERT(x_is_aligned(old_mem, X__ALIGN));
         char* const p = ((char*)old_mem) - X__ALIGN;
+
+        X_ASSERT(x_is_aligned(old_mem, X__ALIGN));
         old_size = *(size_t*)p;
     }
 
-    void* const new_mem = xpalloc_allocate(self, new_size);
+    new_mem = xpalloc_allocate(self, new_size);
     if (!new_mem)
         return NULL;
 
@@ -178,6 +183,9 @@ void* xpalloc_reallocate(XPicoAllocator* self, void* old_mem, size_t new_size)
 
 void xpalloc_deallocate(XPicoAllocator* self, void* ptr)
 {
+    char* p;
+    size_t size;
+
     X_ASSERT(self);
 
     if (ptr == NULL)
@@ -188,8 +196,8 @@ void xpalloc_deallocate(XPicoAllocator* self, void* ptr)
     X_ASSERT(x_is_aligned(ptr, X__ALIGN));
 
     /* 解放メモリの前にサイズ情報が仕込まれているのだ。 */
-    char* const p = ((char*)ptr) - X__ALIGN;
-    const size_t size = *(size_t*)p;
+    p = ((char*)ptr) - X__ALIGN;
+    size = *(size_t*)p;
 
     X__Deallocate(self, p, size);
     self->reserve += size;
@@ -220,10 +228,11 @@ size_t xpalloc_allocation_overhead(const XPicoAllocator* self, size_t n)
 
 void xpalloc_walk_heap(const XPicoAllocator* self, XPicoAllocatorWalker walker, void* user)
 {
+    const X__Chunk* chunk;
     X_ASSERT(self);
     X_ASSERT(walker);
 
-    const X__Chunk* chunk = (const X__Chunk*)self->top;
+    chunk = (const X__Chunk*)self->top;
     while (chunk)
     {
         walker((const uint8_t*)chunk, chunk->size, user);
@@ -235,6 +244,34 @@ void xpalloc_walk_heap(const XPicoAllocator* self, XPicoAllocatorWalker walker, 
 bool xpalloc_is_owner(const XPicoAllocator* self, const void* ptr)
 {
     return x_is_within_ptr(ptr, self->heap, self->heap + self->capacity);
+}
+
+
+uint8_t* xpalloc_heap(const XPicoAllocator* self)
+{
+    X_ASSERT(self);
+    return self->heap;
+}
+
+
+size_t xpalloc_reserve(const XPicoAllocator* self)
+{
+    X_ASSERT(self);
+    return self->reserve;
+}
+
+
+size_t xpalloc_capacity(const XPicoAllocator* self)
+{
+    X_ASSERT(self);
+    return self->capacity;
+}
+
+
+size_t xpalloc_max_used(const XPicoAllocator* self)
+{
+    X_ASSERT(self);
+    return self->max_used;
 }
 
 

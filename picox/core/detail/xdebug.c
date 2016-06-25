@@ -83,13 +83,13 @@ static void X__PreAssertionFailed(const char* expr, const char* msg, const char*
 
 static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
+    volatile int i = 0;
     X_UNUSED(expr);
     X_UNUSED(msg);
     X_UNUSED(func);
     X_UNUSED(file);
     X_UNUSED(line);
 
-    volatile int i = 0;
     for (;;)
     {
         i++;
@@ -258,8 +258,8 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
     const char* win_style = strrchr(file, '\\');
     const char* unix_style = strrchr(file, '/');
     const char* p = win_style ? win_style : unix_style;
-    file = p ? p + 1 : file;
     const char* none = "none";
+    file = p ? p + 1 : file;
 
     x_pre_assertion_failed(expr, msg, func, file, line);
 

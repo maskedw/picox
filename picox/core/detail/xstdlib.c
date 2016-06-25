@@ -1,5 +1,5 @@
 /**
- *       @file  xstdlib.h
+ *       @file  xstdlib.c
  *      @brief  主にmalloc系関数の定義
  *
  *    @details
@@ -7,13 +7,13 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2015/06/28
+ *     Created  2016/06/20
  * ===================================================================
  */
 
 /*
  * License: MIT license
- * Copyright (c) <2015> <MaskedW [maskedw00@gmail.com]>
+ * Copyright (c) <2016> <MaskedW [maskedw00@gmail.com]>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -36,37 +36,46 @@
  * SOFTWARE.
  */
 
-
-#ifndef picox_core_detail_xstdlib_h_
-#define picox_core_detail_xstdlib_h_
+#include <picox/core/xcore.h>
 
 
-/** @addtogroup core
- *  @{
- *  @addtogroup xstdlib
- *  @brief 主にmalloc系の機能を提供します
- *  @{
- */
 
+void* x_malloc(size_t size)
+{
+    void* ptr;
+    if (size == 0)
+        return NULL;
+    ptr = X_CONF_MALLOC(size);
+    X_ASSERT_MALLOC_NULL(ptr);
+    X_UNUSED(ptr);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-/** @brief sizeバイトのメモリを割り当てて返します
- */
-void* x_malloc(size_t size);
+    return ptr;
+}
 
 
 /** @brief ptrが指すメモリ空間を開放します
  */
-void x_free(void* ptr);
+void x_free(void* ptr)
+{
+    /* 規格上、freeにNULLを渡してもOKなはずなのだが、実装によっては微妙にグレー
+     * だったりするのでここでもNULLチェックしておく
+     */
+    if (ptr)
+        X_CONF_FREE(ptr);
+}
 
 
 /** @brief sizeバイトの要素nmemb個からなる配列にメモリを割り当て0初期化して返します
  */
-void* x_calloc(size_t nmemb, size_t size);
+void* x_calloc(size_t nmemb, size_t size)
+{
+    void* ptr;
+    size = nmemb * size;
+    ptr = x_malloc(size);
+    if (ptr)
+        memset(ptr, 0, size);
+    return ptr;
+}
 
 
 /** @brief sizeバイトのメモリを割り当て、0初期化して返します
@@ -76,12 +85,31 @@ void* x_calloc(size_t nmemb, size_t size);
  *  で、単に0初期化した動的メモリ確保を行いたいだけなら、こちらの方がシンプルで
  *  す。
  */
-void* x_calloc2(size_t size);
+void* x_calloc2(size_t size)
+{
+    void* const ptr = x_malloc(size);
+    if (ptr)
+        memset(ptr, 0, size);
+    return ptr;
+}
 
 
 /** @brief old_memが指すメモリブロックをsizeバイトに再割当てして返します
  */
-void* x_realloc(void *old_mem, size_t size);
+void* x_realloc(void *old_mem, size_t size)
+{
+    void* const new_mem = x_malloc(size);
+    if (!new_mem)
+        return NULL;
+
+    if (!old_mem)
+        return new_mem;
+
+    memcpy(new_mem, old_mem, size);
+    x_free(old_mem);
+
+    return new_mem;
+}
 
 
 /** @brief old_memが指すold_sizeバイトのメモリブロックをnew_sizeバイトに再割当てして返します
@@ -93,26 +121,34 @@ void* x_realloc(void *old_mem, size_t size);
  *  普通、メモリの再割当てを行う場合、元のサイズは呼び出し側がわかっていることが
  *  多いため、引数として渡してもらうことで無駄なコピーを防ぎます。
  */
-void* x_realloc2(void *old_mem, size_t old_size, size_t new_size);
+void* x_realloc2(void *old_mem, size_t old_size, size_t new_size)
+{
+    void* new_mem;
+    if (old_size == new_size)
+        return old_mem;
 
+    new_mem = x_malloc(new_size);
+    if (!new_mem)
+        return NULL;
 
-/** @brief x_free()を呼び出したあと、ptrにNULLを代入します
- *
- *  無効なポインタの不正使用によるバグは、C言語で最も避けたいわかりづらいバグの
- *  一つです。開放したポインタにはNULLをセットしておいて不正使用時は即死するよう
- *  にしておくのは良い習慣です。
- */
-#define X_SAFE_FREE(ptr)  (x_free((ptr)), (ptr) = NULL)
+    if (!old_mem)
+        return new_mem;
 
+    /* 新しいサイズより旧いサイズの方が大きかったら新しいサイズ分コピーする。
+     * 古いサイズより新しいサイズの方が大きかったら古いサイズ分コピーする。
+     */
+    if (old_size > new_size)
+        memcpy(new_mem, old_mem, new_size);
+    else
+        memcpy(new_mem, old_mem, old_size);
 
-#ifdef __cplusplus
+    x_free(old_mem);
+
+    return new_mem;
 }
-#endif
 
 
-/** @} end of addtogroup xstdlib
- *  @} end of addtogroup core
- */
-
-
-#endif // picox_core_detail_xstdlib_h_
+void x_null_deleter(void* ptr)
+{
+    (void)(ptr);
+}

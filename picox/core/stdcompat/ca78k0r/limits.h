@@ -1,5 +1,5 @@
 /**
- *       @file  xrenesas.h
+ *       @file  limits.h
  *      @brief
  *
  *    @details
@@ -7,7 +7,7 @@
  *     @author  MaskedW
  *
  *   @internal
- *     Created  2016/03/27
+ *     Created  2016/06/17
  * ===================================================================
  */
 
@@ -16,14 +16,14 @@
  * Copyright (c) <2016> <MaskedW [maskedw00@gmail.com]>
  *
  * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
+ * obtaining a copy of self software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
  * modify, merge, publish, distribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be
+ * The above copyright notice and self permission notice shall be
  * included in all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
@@ -35,40 +35,34 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#ifndef picox_core_detail_compiler_xrenesas_h_
-#define picox_core_detail_compiler_xrenesas_h_
-
-
-#if !defined(__RX) && !defined(__CA78K0R__) && !defined(__CCRL__)
-    #error This compiler does not support
-#endif
+#ifndef limits_h_
+#define limits_h_
 
 
-#if defined(__CCRL__)
-    #define X_FUNC                  NULL
-    #define X_COMPILER_NO_BOOL      (1)
-    #define X_INLINE                static __inline
-#endif
+#define CHAR_BIT            (8)
+#ifndef __CHAR_UNSIGNED__
+#define CHAR_MAX            (+127)
+#define CHAR_MIN            (-128)
+#else   /* !__CHAR_UNSIGNED__ */
+#define CHAR_MAX            (255U)
+#define CHAR_MIN            (0)
+#endif  /* !__CHAR_UNSIGNED__ */
+#define SCHAR_MAX           (+127)
+#define SCHAR_MIN           (-128)
+#define UCHAR_MAX           (255U)
+#define INT_MAX             (+32767)
+#define INT_MIN             (-32768)
+#define SHRT_MAX            (+32767)
+#define SHRT_MIN            (-32768)
+#define UINT_MAX            (65535U)
+#define USHRT_MAX           (65535U)
+#define SINT_MAX            (+32767)
+#define SINT_MIN            (-32768)
+#define SSHRT_MAX           (+32767)
+#define SSHRT_MIN           (-32768)
+#define LONG_MAX            (+2147483647)
+#define LONG_MIN            (-2147483648)
+#define ULONG_MAX           (4294967295U)
 
 
-#if defined(__CA78K0R__)
-    #define X_INLINE                static
-    #define X_FUNC                  NULL
-    #define X_COMPILER_NO_INLINE    (1)
-    #define X_COMPILER_NO_LONGLONG  (1)
-    #define X_COMPILER_NO_BOOL      (1)
-    #define X_COMPILER_NO_STDINT    (1)
-    #define X_COMPILER_NO_64BIT_INT (1)
-#endif
-
-
-#if defined(__RX)
-    #define X_PACKED_PRE_BEGIN  _Pragma("pack")
-    #define X_PACKED_POST_BEGIN
-    #define X_PACKED_PRE_END
-    #define X_PACKED_POST_END   _Pragma("unpack")
-#endif
-
-
-#endif /* picox_core_detail_compiler_xrenesas_h_ */
+#endif /* limits_h_ */

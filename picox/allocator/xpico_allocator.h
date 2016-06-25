@@ -144,41 +144,22 @@ void xpalloc_clear(XPicoAllocator* self);
 
 /** ヒープメモリ自身を返します
  */
-static inline uint8_t*
-xpalloc_heap(const XPicoAllocator* self)
-{
-    X_ASSERT(self);
-    return self->heap;
-}
+uint8_t* xpalloc_heap(const XPicoAllocator* self);
 
 
 /** 空きメモリバイト数を返します
  */
-static inline size_t
-xpalloc_reserve(const XPicoAllocator* self)
-{
-    X_ASSERT(self);
-    return self->reserve;
-}
+size_t xpalloc_reserve(const XPicoAllocator* self);
 
 
 /** ヒープのサイズを返します
  */
-static inline size_t
-xpalloc_capacity(const XPicoAllocator* self)
-{
-    X_ASSERT(self);
-    return self->capacity;
-}
+size_t xpalloc_capacity(const XPicoAllocator* self);
+
 
 /** ヒープの最大使用バイト数を返します
  */
-static inline size_t
-xpalloc_max_used(const XPicoAllocator* self)
-{
-    X_ASSERT(self);
-    return self->max_used;
-}
+size_t xpalloc_max_used(const XPicoAllocator* self);
 
 
 /** nバイトのメモリ確保を行った場合に必要な余分なメモリサイズを返します。

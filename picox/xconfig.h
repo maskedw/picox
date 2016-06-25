@@ -582,6 +582,59 @@ extern "C" {
 #endif
 
 
+/** @brief @see X_CONF_FIBER_IMPL_TYPE */
+#define X_FIBER_IMPL_TYPE_COPY_STACK        (0)
+
+/** @brief @see X_CONF_FIBER_IMPL_TYPE */
+#define X_FIBER_IMPL_TYPE_UCONTEXT          (1)
+
+/** @brief @see X_CONF_FIBER_IMPL_TYPE */
+#define X_FIBER_IMPL_TYPE_PLATFORM_DEPEND   (2)
+
+
+/** @def   X_CONF_FIBER_IMPL_TYPE
+ *  @brief xfiberモジュールのコンテキストスイッチの実装タイプを設定します
+ *
+ *  + X_FIBER_IMPL_TYPE_COPY_STACK (default) <br />
+ *      setjmp,longjmpとスタックのコピーでコンテキストスイッチを行います。C言語
+ *      の標準機能だけでコンテキストスイッチを実現しているため、移植作業がほぼ不
+ *      要なことが利点ですが、スタックのコピーを伴うため実行速度に難があります。
+ *
+ *  + X_FIBER_IMPL_TYPE_UCONTEXT <br />
+ *      POSIX標準の`ucontext.h`を使用して、コンテキストスイッチを行います。組込
+ *      みLinuxやホストPC上でのデバッグ用として想定しています。
+ *
+ *  + X_FIBER_IMPL_TYPE_PLATFORM_DEPEND <br />
+ *      CPUやコンパイラに依存した、プラットフォームごとの専用の方法でコンテキス
+ *      トスイッチを行います。非対応のプラットフォームの場合、コンパイルに失敗し
+ *      ます。
+ */
+#ifndef X_CONF_FIBER_IMPL_TYPE
+#define X_CONF_FIBER_IMPL_TYPE   X_FIBER_IMPL_TYPE_COPY_STACK
+#endif
+
+
+/** @def   X_CONF_FIBER_ENTER_CRITICAL
+ *  @brief xfiberモジュールのクリティカルセクション入口関数を指定します
+ *
+ *  xfiber_xxx_isr()系の割込みハンドラから呼び出す関数を使用する場合、このマクロ
+ *  で割込みを制御し、排他制御を行ってください。
+ */
+#ifndef X_CONF_FIBER_ENTER_CRITICAL
+#define X_CONF_FIBER_ENTER_CRITICAL()   (void)0
+#endif
+
+
+/** @def   X_CONF_FIBER_EXIT_CRITICAL
+ *  @brief xfiberモジュールのクリティカルセクション出口関数を指定します
+ *
+ *  X_CONF_FIBER_ENTER_CRITICAL()と対応する、出口処理を指定してください。
+ */
+#ifndef X_CONF_FIBER_EXIT_CRITICAL
+#define X_CONF_FIBER_EXIT_CRITICAL()   (void)0
+#endif
+
+
 /** @} end of addtogroup config
  */
 

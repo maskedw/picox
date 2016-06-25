@@ -45,6 +45,7 @@ static void X__MakeBlocks(XFixedAllocator* self);
 
 void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t block_size)
 {
+    uint8_t* p;
     X_ASSERT(self);
     X_ASSERT(heap);
     X_ASSERT(heap_size > 0);
@@ -53,7 +54,7 @@ void xfalloc_init(XFixedAllocator* self, void* heap, size_t heap_size, size_t bl
     self->heap = heap;
 
     /* heapをアライメントで切り上げたアドレスが実際のtop位置になる。 */
-    uint8_t* const p = X_ROUNDUP_MULTIPLE_PTR(heap, X_ALIGN_OF(XMaxAlign));
+    p = X_ROUNDUP_MULTIPLE_PTR(heap, X_ALIGN_OF(XMaxAlign));
     self->top = p;
 
     /* 切り上げた結果heapサイズに不整合がでていないか？ */
@@ -88,6 +89,7 @@ void xfalloc_clear(XFixedAllocator* self)
 
 void* xfalloc_allocate(XFixedAllocator* self)
 {
+    uint8_t* block;
     X_ASSERT(self);
     X_ASSERT_MALLOC_NULL(self->next);
 
@@ -95,7 +97,7 @@ void* xfalloc_allocate(XFixedAllocator* self)
 
     /* 次のブロックの先頭領域には次の次のブロックのアドレスが保存されているの
      * だ!! */
-    uint8_t* const block = self->next;
+    block = self->next;
     self->next = *(uint8_t**)block;
     self->remain_blocks--;
 
@@ -105,6 +107,7 @@ void* xfalloc_allocate(XFixedAllocator* self)
 
 void xfalloc_deallocate(XFixedAllocator* self, void* ptr)
 {
+    uint8_t* block;
     X_ASSERT(self);
 
     if (! ptr)
@@ -115,15 +118,45 @@ void xfalloc_deallocate(XFixedAllocator* self, void* ptr)
 
     /* 回収するブロックに次のブロックのポインタを保存してからnextポインタを更新
      * する。*/
-    uint8_t* const block = ptr;
+    block = ptr;
     *(uint8_t**)block = self->next;
     self->next = block;
     self->remain_blocks++;
 }
 
 
+void * xfalloc_heap(const XFixedAllocator* self)
+{
+    X_ASSERT(self);
+    return self->heap;
+}
+
+
+size_t xfalloc_block_size(const XFixedAllocator* self)
+{
+    X_ASSERT(self);
+    return self->block_size;
+}
+
+
+size_t xfalloc_num_blocks(const XFixedAllocator* self)
+{
+    X_ASSERT(self);
+    return self->num_blocks;
+}
+
+
+size_t xfalloc_remain_blocks(const XFixedAllocator* self)
+{
+    X_ASSERT(self);
+    return self->remain_blocks;
+}
+
+
 static void X__MakeBlocks(XFixedAllocator* self)
 {
+    uint8_t* p;
+    size_t i;
     self->next = self->top;
     self->remain_blocks = self->num_blocks;
 
@@ -135,8 +168,7 @@ static void X__MakeBlocks(XFixedAllocator* self)
      * この処理によりブロックに一切ヘッダをつける必要がなくなるので、最高のメモ
      * リ使用効率となる。
      */
-    uint8_t* p = self->top;
-    size_t i;
+    p = self->top;
     for (i = 1; i < self->num_blocks; i++) {
         *(uint8_t**)p = p + self->block_size;
         p = *(uint8_t**)p;

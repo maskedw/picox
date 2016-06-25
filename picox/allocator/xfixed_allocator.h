@@ -145,42 +145,22 @@ void xfalloc_clear(XFixedAllocator* self);
 
 /** ヒープメモリを返します
  */
-static inline void*
-xfalloc_heap(const XFixedAllocator* self)
-{
-    X_ASSERT(self);
-    return self->heap;
-}
+void * xfalloc_heap(const XFixedAllocator* self);
 
 
 /** 1ブロックのサイズを返します
  */
-static inline size_t
-xfalloc_block_size(const XFixedAllocator* self)
-{
-    X_ASSERT(self);
-    return self->block_size;
-}
+size_t xfalloc_block_size(const XFixedAllocator* self);
 
 
 /** heapの総ブロック数を返します
  */
-static inline size_t
-xfalloc_num_blocks(const XFixedAllocator* self)
-{
-    X_ASSERT(self);
-    return self->num_blocks;
-}
+size_t xfalloc_num_blocks(const XFixedAllocator* self);
 
 
 /** heapの残りブロック数を返します
  */
-static inline size_t
-xfalloc_remain_blocks(const XFixedAllocator* self)
-{
-    X_ASSERT(self);
-    return self->remain_blocks;
-}
+size_t xfalloc_remain_blocks(const XFixedAllocator* self);
 
 
 #ifdef __cplusplus

@@ -47,7 +47,6 @@
 #include <picox/multitask/xvtimer.h>
 
 
-#define X_FIBER_PRIORITY_MAX       (8)
 #define X__NODE_TO_FIBER(node)     xnode_entry(node, XFiber, m_node)
 #define X__CHECK_POLL(timeout)       \
     do                                  \
@@ -59,20 +58,6 @@
             goto x__exit;               \
         }                               \
     } while (0)
-
-#define X_FIBER_ENTER_CRITICAL()
-#define X_FIBER_EXIT_CRITICAL()
-
-#define X_FIBER_IMPL_TYPE_COPY_STACK        (0)
-#define X_FIBER_IMPL_TYPE_UCONTEXT          (1)
-#define X_FIBER_IMPL_TYPE_PLATFORM_DEPEND   (2)
-
-#define X_CONF_FIBER_IMPL_TYPE          X_FIBER_IMPL_TYPE_COPY_STACK
-// #define X_CONF_FIBER_IMPL_TYPE          X_FIBER_IMPL_TYPE_UCONTEXT
-
-#ifndef X_CONF_FIBER_IMPL_TYPE
-#define X_CONF_FIBER_IMPL_TYPE          X_FIBER_IMPL_TYPE_COPY_STACK
-#endif
 
 
 #if X_CONF_FIBER_IMPL_TYPE == X_FIBER_IMPL_TYPE_COPY_STACK
@@ -306,9 +291,16 @@ static void X__SaveStack(XFiber* fiber, const uint8_t* stack_end);
 #endif
 
 
-// #define X__LOG      X_LOG_NOTI
-#define X__LOG(x)
-static const char* const X__TAG = "XFiber";
+// #define X__DEBUG_FIBER
+#ifdef X__DEBUG_FIBER
+    #define X__LOG          X_LOG_NOTI
+    #define X__HEXDUMP      X_LOG_HEXDUMP_NOTI
+    static const char* const X__TAG = "XFiber";
+#else
+    #define X__LOG(x)       (void)0
+    #define X__HEXDUMP(x)   (void)0
+    #define X__TAG          0
+#endif
 
 
 X__Kernel        x_g_fiber_kernel;
@@ -1965,9 +1957,15 @@ static void X__Schedule(void)
     X_FIBER_EXIT_CRITICAL();
 
     if (prev)
+    {
+        X__LOG((X__TAG, "swap context from %s to %s\n", prev->m_name, next->m_name));
         X__SwapContext(prev, next);
+    }
     else
+    {
+        X__LOG((X__TAG, "set context to %s\n", next->m_name));
         X__SetContext(next);
+    }
 }
 
 
@@ -2009,6 +2007,14 @@ static void X__FiberMain(XFiber* fiber)
     X__LOG((X__TAG, "start '%s' %p", fiber->m_name, fiber));
 
     fiber->m_func(fiber->m_arg);
+
+    /* @attention
+     * なんかこの辺のスタックの復帰処理がGCCのバージョンによって上手くいかない。
+     * m_func()の実行後、fierの値が変わっていたりするので、無理やり再代入してお
+     * く。
+     * かなり危険な実装だが、今のところこの部分以外のスタックは問題ない。
+     */
+    fiber = priv->m_cur_task;
 
     X__LOG((X__TAG, "end '%s' %p", fiber->m_name, fiber));
 
@@ -2087,7 +2093,7 @@ static void X__SwapContext(XFiber* from, XFiber* to)
 
     if (setjmp(from->m_context.m_jmpbuf) == 0)
     {
-        X__RestoreStack(to, to->m_context.m_machine_stack_end);
+        X__RestoreStack(to, from->m_context.m_machine_stack_end);
         longjmp(to->m_context.m_jmpbuf, 1);
     }
 }
@@ -2115,6 +2121,9 @@ static void X__SaveStack(XFiber* fiber, const uint8_t* stack_end)
             memcpy(fiber->m_stack + fiber->m_stack_size - size,
                    stack_end,
                    size);
+            X__HEXDUMP((
+                X__TAG, stack_end, size, 16,
+                "%s saved stack %d[Bytes]", fiber->m_name, size));
         }
     }
     else
@@ -2128,7 +2137,7 @@ static void X__SaveStack(XFiber* fiber, const uint8_t* stack_end)
 
     if (stackoverflow)
     {
-        X_LOG_HEXDUMP_ERR((X__TAG, stack_end, size, 16,
+        X__HEXDUMP((X__TAG, stack_end, size, 16,
                           "'%s' %p stack overflow",
                           fiber->m_name, fiber));
         X_ABORT(NULL);
@@ -2150,7 +2159,7 @@ static void X__RestoreStack(XFiber* fiber, uint8_t* addr_in_prev_frame)
     }
 
     /* スタックはアドレスの大きい方から小さい方へ伸長する(下方伸長)か? */
-    if (addr_in_prev_frame > &padding[0])
+    if (priv->m_machine_stack_begin > fiber->m_context.m_machine_stack_end)
     {
         if (addr_in_prev_frame > fiber->m_context.m_machine_stack_end)
         {
@@ -2160,6 +2169,14 @@ static void X__RestoreStack(XFiber* fiber, uint8_t* addr_in_prev_frame)
                (fiber->m_stack + fiber->m_stack_size) -
                (priv->m_machine_stack_begin - fiber->m_context.m_machine_stack_end),
                (priv->m_machine_stack_begin - fiber->m_context.m_machine_stack_end));
+
+        X__HEXDUMP((
+                X__TAG,
+                fiber->m_context.m_machine_stack_end,
+                priv->m_machine_stack_begin - fiber->m_context.m_machine_stack_end,
+                16,
+                "%s restore stack %d[Bytes]", fiber->m_name,
+                priv->m_machine_stack_begin - fiber->m_context.m_machine_stack_end));
     }
     else
     {

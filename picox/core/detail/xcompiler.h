@@ -84,7 +84,7 @@
 
     #include <picox/core/detail/compiler/xgcc.h>
 
-#elif defined(__RENESAS__)
+#elif defined(__RENESAS__) || defined(__CA78K0R__)
 
     #include <picox/core/detail/compiler/xrenesas.h>
 
@@ -97,7 +97,11 @@
  *  実際にインライン展開されるかどうかは、コンパイラが判断します。
  */
 #ifndef X_INLINE
-    #define X_INLINE  static inline
+    #ifdef X_COMPILER_NO_INLINE
+        #define X_INLINE    static
+    #else
+        #define X_INLINE    static inline
+    #endif
 #endif
 
 
@@ -108,7 +112,7 @@
  *  ず、必ずインライン化されるようにします。
  */
 #ifndef X_ALWAYS_INLINE
-    #define X_ALWAYS_INLINE static inline
+    #define X_ALWAYS_INLINE     X_INLINE
 #endif
 
 
