@@ -288,8 +288,8 @@ XError xfatfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
         fres = f_read(filehandle, p, to_read, &read);
         X__EXIT_IF(fres != FR_OK, X__ToXError(fres));
 
-        size    -= to_read;
-        p       += to_read;
+        size -= read;
+        p    += read;
 
         /* ファイル終端チェック */
         X_BREAK_IF(to_read != read);
