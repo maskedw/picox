@@ -163,7 +163,11 @@ int x_printf(const char* fmt, ...)
 {
     int len;
     va_list args;
+#ifdef __CA78K0R__
+    va_starttop(args, fmt);
+#else
     va_start(args, fmt);
+#endif
     len = x_vprintf(fmt, args);
     va_end(args);
     return len;
