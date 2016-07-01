@@ -91,49 +91,42 @@ void xnode_splice(XIntrusiveNode* prev, XIntrusiveNode* next, XIntrusiveList* li
 
 void xilist_init(XIntrusiveList* self)
 {
-    X_ASSERT(self);
     self->head.next = self->head.prev = &self->head;
 }
 
 
 XIntrusiveNode* xilist_head(XIntrusiveList* self)
 {
-    X_ASSERT(self);
     return &self->head;
 }
 
 
 void xilist_clear(XIntrusiveList* self)
 {
-    X_ASSERT(self);
     xilist_init(self);
 }
 
 
 bool xilist_empty(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     return self->head.next == &self->head;
 }
 
 
 XIntrusiveNode* xilist_end(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     return (XIntrusiveNode*)(&self->head);
 }
 
 
 XIntrusiveNode* xilist_front(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     return self->head.next;
 }
 
 
 XIntrusiveNode* xilist_pop_front(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     XIntrusiveNode* front = self->head.next;
     xnode_unlink(front);
     return front;
@@ -142,14 +135,12 @@ XIntrusiveNode* xilist_pop_front(const XIntrusiveList* self)
 
 XIntrusiveNode* xilist_back(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     return self->head.prev;
 }
 
 
 XIntrusiveNode* xilist_pop_back(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     XIntrusiveNode* back = self->head.prev;
     xnode_unlink(back);
     return back;
@@ -159,8 +150,6 @@ XIntrusiveNode* xilist_pop_back(const XIntrusiveList* self)
 size_t xilist_size(const XIntrusiveList* self)
 {
     size_t n = 0;
-    X_ASSERT(self);
-
     XIntrusiveNode* ite;
     xilist_foreach(self, ite)
         n++;
@@ -170,31 +159,24 @@ size_t xilist_size(const XIntrusiveList* self)
 
 bool xilist_is_singular(const XIntrusiveList* self)
 {
-    X_ASSERT(self);
     return (! xilist_empty(self)) &&  (xilist_front(self) == xilist_back(self));
 }
 
 
 void xilist_push_front(XIntrusiveList* self, XIntrusiveNode* node)
 {
-    X_ASSERT(self);
-    X_ASSERT(node);
     xnode_insert_next(&self->head, node);
 }
 
 
 void xilist_push_back(XIntrusiveList* self, XIntrusiveNode* node)
 {
-    X_ASSERT(self);
-    X_ASSERT(node);
     xnode_insert_prev(&self->head, node);
 }
 
 
 void xilist_move_front(XIntrusiveList* self, XIntrusiveNode* node)
 {
-    X_ASSERT(self);
-    X_ASSERT(node);
     xnode_unlink(node);
     xilist_push_front(self, node);
 }
@@ -202,8 +184,6 @@ void xilist_move_front(XIntrusiveList* self, XIntrusiveNode* node)
 
 void xilist_move_back(XIntrusiveList* self, XIntrusiveNode* node)
 {
-    X_ASSERT(self);
-    X_ASSERT(node);
     xnode_unlink(node);
     xilist_push_back(self, node);
 }
@@ -211,8 +191,6 @@ void xilist_move_back(XIntrusiveList* self, XIntrusiveNode* node)
 
 void xilist_splice_front(XIntrusiveList* self, XIntrusiveList* other)
 {
-    X_ASSERT(self);
-    X_ASSERT(other);
     if (! xilist_empty(other))
     {
         xnode_splice(&self->head, self->head.next, other);
@@ -223,8 +201,6 @@ void xilist_splice_front(XIntrusiveList* self, XIntrusiveList* other)
 
 void xilist_splice_back(XIntrusiveList* self, XIntrusiveList* other)
 {
-    X_ASSERT(self);
-    X_ASSERT(other);
     if (! xilist_empty(other))
     {
         xnode_splice(self->head.prev, &self->head, other);
@@ -236,8 +212,6 @@ void xilist_splice_back(XIntrusiveList* self, XIntrusiveList* other)
 void xilist_swap(XIntrusiveList* self, XIntrusiveList* other)
 {
     bool empty_self, empty_other;
-    X_ASSERT(self);
-    X_ASSERT(other);
 
     if (self == other)
         return;
@@ -262,10 +236,6 @@ void xilist_swap(XIntrusiveList* self, XIntrusiveList* other)
 void xilist_transfer_front(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode* pos)
 {
     XIntrusiveNode* new_first;
-    X_ASSERT(self);
-    X_ASSERT(pos);
-    X_ASSERT(other);
-    X_ASSERT(!xilist_empty(other));
 
     new_first               = pos->next;
     pos->next               = self->head.next;
@@ -280,10 +250,6 @@ void xilist_transfer_front(XIntrusiveList* self, XIntrusiveList* other, XIntrusi
 void xilist_transfer_back(XIntrusiveList* self, XIntrusiveList* other, XIntrusiveNode* pos)
 {
     XIntrusiveNode* new_first;
-    X_ASSERT(self);
-    X_ASSERT(pos);
-    X_ASSERT(other);
-    X_ASSERT(!xilist_empty(other));
 
     new_first               = pos->next;
     pos->next               = &self->head;
