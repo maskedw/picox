@@ -284,4 +284,9 @@ XTimeVal x_gettimeofday2(void);
 #endif /* __cplusplus */
 
 
+/** @} end of addtogroup xtime
+ *  @} end of addtogroup core
+ */
+
+
 #endif /* picox_core_detail_xtime_h_ */

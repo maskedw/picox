@@ -42,8 +42,8 @@
 
 
 #define X_VERSION_MAJOR     (0)
-#define X_VERSION_MINOR     (4)
-#define X_VERSION_STRING    "0.4"
+#define X_VERSION_MINOR     (5)
+#define X_VERSION_STRING    "0.5"
 
 
 /* 共通で使用するヘッダをまとめてインクルードする。コンパイラがプリコンパイル機
