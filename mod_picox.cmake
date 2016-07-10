@@ -49,6 +49,11 @@ set(picox_sources
     ${picox_dir}/misc/xargparser.c
     ${picox_dir}/multitask/xfiber.c
     ${picox_dir}/multitask/xvtimer.c
+    ${picox_dir}/hal/xgpio.c
+    ${picox_dir}/hal/xuart.c
+    ${picox_dir}/hal/xspi.c
+    ${picox_dir}/hal/xi2c.c
+    ${picox_dir}/hal/xpwm.c
     ${sds_dir}/sds.c
     ${fatfs_dir}/ff.c
     ${spiffs_dir}/spiffs_cache.c
