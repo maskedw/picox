@@ -213,7 +213,7 @@ xfifo_data(const XFifoBuffer* self)
 /** @brief FIFO末尾に要素を追加します。
  */
 static inline void
-xfifo_push(XFifoBuffer* self, uint8_t data)
+xfifo_push_back(XFifoBuffer* self, uint8_t data)
 {
     X_ASSERT(self);
     self->data[self->last] = data;
@@ -224,7 +224,7 @@ xfifo_push(XFifoBuffer* self, uint8_t data)
 /** @brief FIFO先頭から要素を取り出します。
  */
 static inline uint8_t
-xfifo_pop(XFifoBuffer* self)
+xfifo_pop_front(XFifoBuffer* self)
 {
     X_ASSERT(self);
     const uint8_t data = self->data[self->first];
@@ -244,7 +244,7 @@ xfifo_pop(XFifoBuffer* self)
  *  空き容量がssize以下だった場合は、空き容量分だけ書き込みます。
  */
 static inline size_t
-xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
+xfifo_push_back_n(XFifoBuffer* self, const void* src, size_t ssize)
 {
     X_ASSERT(self);
     X_ASSERT(src);
@@ -286,7 +286,7 @@ xfifo_write(XFifoBuffer* self, const void* src, size_t ssize)
  *  格納要素数がdsize以下だった場合は、格納要素数分だけ書き込みます。
  */
 static inline size_t
-xfifo_read(XFifoBuffer* self, void* dst, size_t dsize)
+xfifo_pop_front_n(XFifoBuffer* self, void* dst, size_t dsize)
 {
     X_ASSERT(self);
     X_ASSERT(dst);
