@@ -234,32 +234,24 @@ xfifo_pop_front(XFifoBuffer* self)
 }
 
 
-/** @brief FIFO末尾に指定サイズのデータの書き込みを試みます。
+/** @brief FIFO末尾に指定バイト数の書き込みを行います
  *
  *  @param src      書き込むデータ
  *  @param ssize    srcから取り出すバイト数
- *  @return         書き込めたバイト数
- *
- *  @details
- *  空き容量がssize以下だった場合は、空き容量分だけ書き込みます。
  */
-static inline size_t
+static inline void
 xfifo_push_back_n(XFifoBuffer* self, const void* src, size_t ssize)
 {
     X_ASSERT(self);
     X_ASSERT(src);
+    X_ASSERT(xfifo_reserve(self) >= ssize);
 
-    const size_t reserve = xfifo_reserve(self);
-
-    if ((reserve <= 0) || (ssize <= 0) || (src == NULL))
-        return 0;
-
-    /* 書き込む(書き込める)要素数 */
-    size_t to_write = (reserve >= ssize) ? ssize : reserve;
+    /* 書き込む要素数 */
+    size_t to_write = ssize;
 
     /* to_writeは減算される可能性があるので保存しておく。*/
     const size_t    written      = to_write;
-    volatile size_t wpos         = self->last;
+    size_t          wpos         = self->last;
     const size_t    until_tail   = xfifo_capacity(self) - wpos + 1;
 
     if (to_write > until_tail)
@@ -271,37 +263,27 @@ xfifo_push_back_n(XFifoBuffer* self, const void* src, size_t ssize)
     }
     memcpy(&self->data[wpos], src, to_write);
     self->assigner(&self->last, XFIFO__ADD_LAST(written));
-
-    return written;
 }
 
 
-/** @brief FIFO先頭から指定サイズのデータを読み込みを試みます。
+/** @brief FIFO先頭から指定バイト数の読み出しを行います
  *
  *  @param dst      読み込み先
  *  @param dsize    dstに読み込むバイト数
- *  @return         読み込めたバイト数
- *
- *  @details
- *  格納要素数がdsize以下だった場合は、格納要素数分だけ書き込みます。
  */
-static inline size_t
+static inline void
 xfifo_pop_front_n(XFifoBuffer* self, void* dst, size_t dsize)
 {
     X_ASSERT(self);
     X_ASSERT(dst);
-
-    const size_t size = xfifo_size(self);
-
-    if ((size <= 0) || (dsize <= 0) || (dst == NULL))
-        return 0;
+    X_ASSERT(xfifo_size(self) >= dsize);
 
     /* 読み込む(読み込める)要素数 */
-    size_t to_read = (size >= dsize) ? dsize : size;
+    size_t to_read = dsize;
 
     /* to_readは減算される可能性があるので保存しておく。 */
     const size_t     read        = to_read;
-    volatile size_t  rpos        = self->first;
+    size_t           rpos        = self->first;
     const size_t     until_tail  = xfifo_capacity(self) - rpos + 1;
 
     if (to_read > until_tail)
@@ -313,8 +295,6 @@ xfifo_pop_front_n(XFifoBuffer* self, void* dst, size_t dsize)
     }
     memcpy(dst, &self->data[rpos], to_read);
     self->assigner(&self->first, XFIFO__ADD_FIRST(read));
-
-    return read;
 }
 
 
