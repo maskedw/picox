@@ -49,12 +49,12 @@
 #define X__FLAG_SIZE_T          (X_BIT(3))
 #define X__FLAG_DOUBLE          (X_BIT(4))
 #define X__FLAG_NEGATIVE        (X_BIT(5))
-#define X__PUTC(c)                          \
-        do                                  \
-        {                                   \
-            if (putc_func(context, c) < 0)  \
-                return -1;                  \
-            ++len;                          \
+#define X__PUTC(c)                              \
+        do                                      \
+        {                                       \
+            if (putc_func(context, c) == EOF)   \
+                return -1;                      \
+            ++len;                              \
         } while (0)
 
 
