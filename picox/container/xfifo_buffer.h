@@ -70,6 +70,7 @@ typedef struct XFifoBuffer
     size_t               last;
     size_t               capacity;
     XFifoAtomicAssigner  assigner;
+    bool                 is_heapdata;
 } XFifoBuffer;
 
 
@@ -129,11 +130,18 @@ X_INLINE void
 xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner assigner)
 {
     X_ASSERT(self);
-    X_ASSERT(buffer);
     X_ASSERT(x_is_power_of_two(size));
     X_ASSERT(size > 0);
 
-    self->data = buffer;
+    self->is_heapdata = false;
+    if (!buffer)
+    {
+        buffer = x_malloc(size);
+        X_ASSERT(buffer);
+        self->is_heapdata = true;
+    }
+
+    self->data = (uint8_t*)buffer;
     self->first = self->last = 0;
     self->capacity = size - 1;
 
@@ -141,6 +149,16 @@ xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner ass
         self->assigner = XFifoDefaultAtomicAssign;
     else
         self->assigner = assigner;
+}
+
+
+X_INLINE void
+xfifo_deinit(XFifoBuffer* self)
+{
+    if (self->is_heapdata)
+        x_free(self->data);
+    self->is_heapdata = false;
+    self->data = NULL;
 }
 
 
@@ -314,6 +332,7 @@ xfifo_pop_front_n(XFifoBuffer* self, void* dst, size_t dsize)
 
 void XFifoDefaultAtomicAssign(size_t* dst, size_t value);
 void xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner assigner);
+void xfifo_deinit(XFifoBuffer* self)
 void xfifo_clear(XFifoBuffer* self);
 bool xfifo_empty(const XFifoBuffer* self);
 size_t xfifo_capacity(const XFifoBuffer* self);
