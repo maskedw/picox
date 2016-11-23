@@ -238,12 +238,13 @@ extern "C" {
  *  末尾の`_C`はConstantを表します
  *  @{
  */
-#if X_SIZEOF_INT < 4
+
+#if X_SIZEOF_LONG <= 4
     #define X_INT32_C(c)    c ## L
     #define X_UINT32_C(c)   c ## UL
 #else
     #define X_INT32_C(c)    c
-    #define X_UINT32_C(c)   c
+    #define X_UINT32_C(c)   c ## U
 #endif
 
 
@@ -254,7 +255,6 @@ extern "C" {
     #define X_INT64_C(c)    c ## LL
     #define X_UINT64_C(c)   c ## ULL
 #endif
-
 
 /** @} end of name X_XXX_C
  */
