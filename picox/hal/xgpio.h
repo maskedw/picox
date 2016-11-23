@@ -92,10 +92,10 @@ typedef enum XGpioMode
 typedef enum XGpioLevel
 {
     /** LOWレベル */
-    XGPIO_LEVEL_LOW,
+    XGPIO_LEVEL_LOW = 0,
 
     /** HIGHレベル */
-    XGPIO_LEVEL_HIGH,
+    XGPIO_LEVEL_HIGH = 1,
 } XGpioLevel;
 
 
