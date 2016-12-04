@@ -301,8 +301,12 @@ XError xvfs_exists(XVirtualFs* vfs, const char* path, bool* exists)
 {
     X_ASSERT_NULL(exists);
     XStat statbuf;
-    const XError err = xvfs_stat(vfs, path, &statbuf);
+    XError err = xvfs_stat(vfs, path, &statbuf);
     *exists = (err == X_ERR_NONE);
+
+    /* 存在チェックの時のNO_ENTRYは文脈的にエラーではない*/
+    if (err == X_ERR_NO_ENTRY)
+        err = X_ERR_NONE;
     return err;
 }
 
