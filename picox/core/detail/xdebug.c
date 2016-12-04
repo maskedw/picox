@@ -157,7 +157,7 @@ void x_err_printlog(const char* tag, const char* fmt, ...)
 }
 
 
-void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_verb_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
@@ -167,7 +167,7 @@ void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, c
 }
 
 
-void x_info_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_info_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
@@ -177,7 +177,7 @@ void x_info_hexdump(const char* tag, const void* src, size_t len, size_t cols, c
 }
 
 
-void x_noti_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_noti_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
@@ -187,7 +187,7 @@ void x_noti_hexdump(const char* tag, const void* src, size_t len, size_t cols, c
 }
 
 
-void x_warn_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_warn_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
@@ -197,7 +197,7 @@ void x_warn_hexdump(const char* tag, const void* src, size_t len, size_t cols, c
 }
 
 
-void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
@@ -247,6 +247,46 @@ void x_hexdump(const void* src, size_t len, size_t cols)
     }
 }
 
+void x_err_hexdump(const void* src, size_t len, size_t cols)
+{
+    size_t i, j;
+    const unsigned char* p = src;
+
+    for (i = 0; i < len + ((len % cols) ? (cols - len % cols) : 0); i++)
+    {
+        /* print offset */
+        if(i % cols == 0)
+        {
+            x_err_printf("0x%06x: ", i);
+        }
+
+        /* print hex data */
+        if(i < len)
+        {
+            x_err_printf("%02x ", p[i]);
+        }
+        else /* end of block, just aligning for ASCII dump */
+        {
+            x_err_printf("   ");
+        }
+
+        /* print ASCII dump */
+        if(i % cols == (cols - 1))
+        {
+            for(j = i - (cols - 1); j <= i; j++)
+            {
+                if(j >= len) /* end of block, not really printing */
+                    x_err_putc(' ');
+                else if (isprint((int)p[j])) /* printable char */
+                    x_err_putc(p[j]);
+                else /* other char */
+                    x_err_putc('.');
+            }
+            x_err_putc('\n');
+        }
+    }
+}
+
 
 static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
 {
@@ -263,17 +303,17 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
 
     x_pre_assertion_failed(expr, msg, func, file, line);
 
-    x_printf("Assertion failed\n");
-    x_printf("[MSG ] %s\n", msg ? msg : none);
-    x_printf("[EXPR] %s\n", expr ? expr : none);
-    x_printf("[FUNC] %s\n", func ? func : none);
-    x_printf("[FILE] %s\n", file ? file : none);
-    x_printf("[LINE] %d\n", line);
+    x_err_printf("Assertion failed\n");
+    x_err_printf("[MSG ] %s\n", msg ? msg : none);
+    x_err_printf("[EXPR] %s\n", expr ? expr : none);
+    x_err_printf("[FUNC] %s\n", func ? func : none);
+    x_err_printf("[FILE] %s\n", file ? file : none);
+    x_err_printf("[LINE] %d\n", line);
 #if X_CONF_HAS_ERRNO_AND_STRERROR != 0
-    x_printf("[ERR ] %s\n", strerror(errno));
+    x_err_printf("[ERR ] %s\n", strerror(errno));
 #endif
 
-    x_printf("************************\n");
+    x_err_printf("************************\n");
 
     x_post_assertion_failed(expr, msg, func, file, line);
 }
@@ -283,15 +323,30 @@ static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list ar
 {
     if (level <= priv->level)
     {
+        if (level == X_LOG_LEVEL_ERR)
+        {
 #if X_CONF_USE_LOG_TIMESTAMP != 0
-        char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
-        x_port_stimestamp(buf, sizeof(tstamp));
-        x_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);
+            char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
+            x_port_stimestamp(buf, sizeof(tstamp));
+            x_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);
 #else
-        x_printf("%s[%s] ", X__GetHeader(level), tag);
+            x_printf("%s[%s] ", X__GetHeader(level), tag);
 #endif
-        x_vprintf(fmt, args);
-        x_putc('\n');
+            x_vprintf(fmt, args);
+            x_putc('\n');
+        }
+        else
+        {
+#if X_CONF_USE_LOG_TIMESTAMP != 0
+            char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
+            x_port_stimestamp(buf, sizeof(tstamp));
+            x_err_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);
+#else
+            x_err_printf("%s[%s] ", X__GetHeader(level), tag);
+#endif
+            x_err_vprintf(fmt, args);
+            x_err_putc('\n');
+        }
     }
 }
 
@@ -301,7 +356,10 @@ static void X__VHexdump(int level, const char* tag, const char* src, size_t len,
     if (level <= priv->level)
     {
         X__VPrintLog(level, tag, fmt, args);
-        x_hexdump(src, len, cols);
+        if (level == X_LOG_LEVEL_ERR)
+            x_err_hexdump(src, len, cols);
+        else
+            x_hexdump(src, len, cols);
     }
 }
 

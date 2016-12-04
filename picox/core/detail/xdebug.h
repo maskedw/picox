@@ -189,7 +189,7 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 
 #if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_INFO)
     #define X_LOG_INFO(args)         x_info_printlog args
-    #define X_LOG_HEXDUMP_INFO(args) x_info_hexdump  args
+    #define X_LOG_HEXDUMP_INFO(args) x_info_hexdumplog  args
 #else
     #define X_LOG_INFO(args)         (void)0
     #define X_LOG_HEXDUMP_INFO(args) (void)0
@@ -198,7 +198,7 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 
 #if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_NOTI)
     #define X_LOG_NOTI(args)         x_noti_printlog args
-    #define X_LOG_HEXDUMP_NOTI(args) x_noti_hexdump  args
+    #define X_LOG_HEXDUMP_NOTI(args) x_noti_hexdumplog  args
 #else
     #define X_LOG_NOTI(args)         (void)0
     #define X_LOG_HEXDUMP_NOTI(args) (void)0
@@ -207,7 +207,7 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 
 #if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_WARN)
     #define X_LOG_WARN(args)         x_warn_printlog args
-    #define X_LOG_HEXDUMP_WARN(args) x_warn_hexdump  args
+    #define X_LOG_HEXDUMP_WARN(args) x_warn_hexdumplog  args
 #else
     #define X_LOG_WARN(args)         (void)0
     #define X_LOG_HEXDUMP_WARN(args) (void)0
@@ -216,7 +216,7 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 
 #if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_ERR)
     #define X_LOG_ERR(args)          x_err_printlog args
-    #define X_LOG_HEXDUMP_ERR(args)  x_err_hexdump  args
+    #define X_LOG_HEXDUMP_ERR(args)  x_err_hexdumplog  args
 #else
     #define X_LOG_ERR(args)          (void)0
     #define X_LOG_HEXDUMP_ERR(args)  (void)0
@@ -356,6 +356,7 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 
 int x_set_log_level(int level);
 void x_hexdump(const void* src, size_t len, size_t cols);
+void x_err_hexdump(const void* src, size_t len, size_t cols);
 
 
 /** @name  log_functions
@@ -370,11 +371,11 @@ void x_info_printlog(const char* tag, const char* fmt, ...);
 void x_noti_printlog(const char* tag, const char* fmt, ...);
 void x_warn_printlog(const char* tag, const char* fmt, ...);
 void x_err_printlog(const char* tag, const char* fmt, ...);
-void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_info_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_noti_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_warn_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_err_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_verb_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_info_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_noti_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_warn_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
 
 
 /** @} end of name log_functions

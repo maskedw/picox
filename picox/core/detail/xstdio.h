@@ -145,6 +145,15 @@ typedef int (*XCharPutFunc)(int c);
 extern XCharPutFunc x_putc_stdout;
 
 
+/** @brief 1文字エラー出力関数ポインタです
+ *
+ *  X_ASSERT()や、X_LOG_ERR()等のエラー出力にはこちらを使用します。割込みを使用
+ *  しない関数を設定しておくと、割込みハンドラ内でエラー出力ができるので便利です
+ *  。
+ */
+extern XCharPutFunc x_putc_stderr;
+
+
 /** @brief cをuint8_tにキャストして出力先に書き込みます
  *
  *  @return エラー発生時はEOFを、それ以外の時はcを返します
@@ -220,6 +229,14 @@ int x_printf_to_stream(XStream* stream, const char* fmt, ...);
 /** @brief fmtに従ってstreamに書き込みます
  */
 int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args);
+
+
+// x_putc_stderrへの出力バージョン
+int x_err_putc(int c);
+int x_err_puts(const char* str);
+int x_err_puts2(const char* str);
+int x_err_printf(const char* fmt, ...);
+int x_err_vprintf(const char* fmt, va_list args);
 
 
 /** @} end of name printf

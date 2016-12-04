@@ -76,6 +76,7 @@ static int X__StreamPutc(void* ptr, int c);
 static int X__SomewherePutc(void* ptr, int c);
 static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list args);
 XCharPutFunc x_putc_stdout;
+XCharPutFunc x_putc_stderr;
 
 
 int x_putc(int c)
@@ -215,6 +216,65 @@ int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args)
 int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args)
 {
     return X__VPrintf(X__StreamPutc, stream, fmt, args);
+}
+
+
+int x_err_putc(int c)
+{
+    if (!x_putc_stderr)
+        return x_putc(c);
+    return x_putc_stderr(c);
+}
+
+
+int x_err_puts(const char* str)
+{
+    if (!x_putc_stderr)
+        return x_puts(str);
+
+    while (*str)
+    {
+        if (x_putc_stderr(*str++) < 0)
+            return -1;
+    }
+    return x_putc_stderr('\n');
+}
+
+
+int x_err_puts2(const char* str)
+{
+    if (!x_putc_stderr)
+        return x_puts2(str);
+
+    while (*str)
+    {
+        if (x_putc_stderr(*str++) < 0)
+            return -1;
+    }
+    return 0;
+}
+
+
+int x_err_printf(const char* fmt, ...)
+{
+    int len;
+    va_list args;
+#ifdef __CA78K0R__
+    va_starttop(args, fmt);
+#else
+    va_start(args, fmt);
+#endif
+    len = x_err_vprintf(fmt, args);
+    va_end(args);
+    return len;
+}
+
+
+int x_err_vprintf(const char* fmt, va_list args)
+{
+    X__CharPutcContext ctx;
+    ctx.char_put_func = (XCharPutFunc)x_err_putc;
+    return X__VPrintf(X__SomewherePutc, &ctx, fmt, args);
 }
 
 
