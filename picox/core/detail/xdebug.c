@@ -157,7 +157,7 @@ void x_err_printlog(const char* tag, const char* fmt, ...)
 }
 
 
-void x_verb_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 
@@ -323,7 +323,7 @@ static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list ar
 {
     if (level <= priv->level)
     {
-        if (level == X_LOG_LEVEL_ERR)
+        if (level != X_LOG_LEVEL_ERR)
         {
 #if X_CONF_USE_LOG_TIMESTAMP != 0
             char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
