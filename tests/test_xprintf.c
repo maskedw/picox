@@ -160,7 +160,7 @@ TEST(xprintf, print_floating_point)
 
 TEST(xprintf, overflow)
 {
-    char buf[4];
+    char buf[4] = {0};
     int ret;
 
     /* sizeを超える場合は、途中で書き込みを止めるが、返り値はすべての文字列が書
@@ -174,12 +174,12 @@ TEST(xprintf, overflow)
 
 TEST_GROUP_RUNNER(xprintf)
 {
-    // RUN_TEST_CASE(xprintf, print_string);
-    // RUN_TEST_CASE(xprintf, print_signed);
-    // RUN_TEST_CASE(xprintf, print_binary);
-    // RUN_TEST_CASE(xprintf, print_hex);
-    // RUN_TEST_CASE(xprintf, print_oct);
+    RUN_TEST_CASE(xprintf, print_string);
+    RUN_TEST_CASE(xprintf, print_signed);
+    RUN_TEST_CASE(xprintf, print_binary);
+    RUN_TEST_CASE(xprintf, print_hex);
+    RUN_TEST_CASE(xprintf, print_oct);
     RUN_TEST_CASE(xprintf, print_pointer);
-    // RUN_TEST_CASE(xprintf, print_floating_point);
-    // RUN_TEST_CASE(xprintf, overflow);
+    RUN_TEST_CASE(xprintf, print_floating_point);
+    RUN_TEST_CASE(xprintf, overflow);
 }
