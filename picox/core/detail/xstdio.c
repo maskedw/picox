@@ -43,12 +43,19 @@
 #endif
 
 
+#define X__TYPE_INT_OR_UNSINED  (0)
+#define X__TYPE_LONG            (1)
+#define X__TYPE_SIZE            (2)
+#define X__TYPE_DOUBLE          (3)
+#define X__TYPE_PTRDIFF         (4)
+#define X__TYPE_CHAR            (5)
+#define X__TYPE_SHORT           (6)
+#define X__TYPE_POINTER         (7)
 #define X__FLAG_ZERO_PADDING    (X_BIT(0))
 #define X__FLAG_LEFT_ALIGN      (X_BIT(1))
-#define X__FLAG_LONG            (X_BIT(2))
-#define X__FLAG_SIZE_T          (X_BIT(3))
-#define X__FLAG_DOUBLE          (X_BIT(4))
-#define X__FLAG_NEGATIVE        (X_BIT(5))
+#define X__FLAG_NEGATIVE        (X_BIT(2))
+
+
 #define X__PUTC(c)                              \
         do                                      \
         {                                       \
@@ -311,7 +318,7 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
     char* p;
     int len = 0;
 
-    unsigned char flags, base, minimum_width;
+    unsigned char type, flags, base, minimum_width;
     char c, digit;
 #if ULONG_MAX == 0xFFFFFFFF
     char s[32];
@@ -346,6 +353,7 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
         }
 
         flags = 0;
+        type = X__TYPE_INT_OR_UNSINED;
         c = *fmt++;
         if (c == '0')
         {
@@ -387,12 +395,28 @@ static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list
         switch (c)
         {
             case 'l':
-                flags |= X__FLAG_LONG;
+                type = X__TYPE_LONG;
                 c = *fmt++;
                 break;
             case 'z':
-                flags |= X__FLAG_SIZE_T;
+                type = X__TYPE_SIZE;
                 c = *fmt++;
+                break;
+            case 't':
+                type = X__TYPE_PTRDIFF;
+                c = *fmt++;
+                break;
+            case 'h':
+                c = *fmt++;
+                if (c == 'h')
+                {
+                    type = X__TYPE_CHAR;
+                    c = *fmt++;
+                }
+                else
+                {
+                    type = X__TYPE_SHORT;
+                }
                 break;
             default:
                 break;
@@ -435,9 +459,11 @@ X__PRINT_STRING:
                 base = 16;
                 break;
             case 'p':
+                type = X__TYPE_POINTER;
                 base = 16;
                 break;
             case 'f':
+                type = X__TYPE_DOUBLE;
                 base = 10;
                 break;
             default:
@@ -445,54 +471,71 @@ X__PRINT_STRING:
                 continue;
         }
 
+        switch (type)
+        {
 #if X_CONF_USE_FLOATING_POINT_PRINTF
-        if (c == 'f')
-        {
-            f = va_arg(args, double);
+            case X__TYPE_DOUBLE:
+                f = va_arg(args, double);
 #if X_CONF_HAS_C99_MATH
-            if (isnan(f))
-            {
-                p = "(nan)";
-                goto X__PRINT_STRING;
-            }
-            else if (isinf(f))
-            {
-                p = "(inf)";
-                goto X__PRINT_STRING;
-            }
+                if (isnan(f))
+                {
+                    p = "(nan)";
+                    goto X__PRINT_STRING;
+                }
+                else if (isinf(f))
+                {
+                    p = "(inf)";
+                    goto X__PRINT_STRING;
+                }
 #endif
-
-            if (f < 0)
-            {
-                flags |= X__FLAG_NEGATIVE;
-                f = -f;
-            }
-
-            v = f;
-            f -= v;
-            if (precision == 0xFF)
-                precision = 6;
-        }
-        else
+                if (f < 0)
+                {
+                    flags |= X__FLAG_NEGATIVE;
+                    f = -f;
+                }
+                v = f;
+                f -= v;
+                if (precision == 0xFF)
+                    precision = 6;
+                break;
 #endif
-        if (c == 'p')
-        {
-            p = va_arg(args, void*);
-            if (p == NULL)
-            {
-                p = "(nil)";
-                goto X__PRINT_STRING;
-            }
-            v = (uintptr_t)p;
+            case X__TYPE_POINTER:
+                p = va_arg(args, void*);
+                if (p == NULL)
+                {
+                    p = "(nil)";
+                    goto X__PRINT_STRING;
+                }
+                v = (uintptr_t)p;
+                break;
+            case X__TYPE_INT_OR_UNSINED:
+                if ((c == 'd') || (c == 'i'))
+                    v = va_arg(args, int);
+                else
+                    v = va_arg(args, unsigned int);
+                break;
+            case X__TYPE_CHAR:
+                if ((c == 'd') || (c == 'i'))
+                    v = (signed char)va_arg(args, int);
+                else
+                    v = (unsigned char)va_arg(args, unsigned int);
+                break;
+            case X__TYPE_SHORT:
+                if ((c == 'd') || (c == 'i'))
+                    v = (short)va_arg(args, int);
+                else
+                    v = (unsigned short)va_arg(args, unsigned int);
+                break;
+            case X__TYPE_LONG:
+                v = va_arg(args, long);
+                break;
+            case X__TYPE_SIZE:
+                v = va_arg(args, size_t);
+                break;
+            case X__TYPE_PTRDIFF:
+                v = va_arg(args, ptrdiff_t);
+                break;
         }
-        else if(flags & X__FLAG_LONG)
-            v = va_arg(args, long);
-        else if (flags & X__FLAG_SIZE_T)
-            v = va_arg(args, size_t);
-        else if ((c == 'd') || (c == 'i'))
-            v = va_arg(args, int);
-        else
-            v = va_arg(args, unsigned int);
 
         if (((c == 'd') || (c == 'i')) && (v & X_MSBOF_LONG))
         {

@@ -48,7 +48,6 @@ TEST(xprintf, print_signed)
 {
     char buf[128];
     int ret;
-
     ret = x_snprintf(buf, sizeof(buf), "%d", 1234);
     TEST_ASSERT_EQUAL_STRING("1234", buf);
     TEST_ASSERT_EQUAL(strlen("1234"), ret);
@@ -72,7 +71,67 @@ TEST(xprintf, print_signed)
     ret = x_snprintf(buf, sizeof(buf), "%-4d", -10);
     TEST_ASSERT_EQUAL_STRING("-10 ", buf);
     TEST_ASSERT_EQUAL(strlen("-10 "), ret);
+
+    ret = x_snprintf(buf, sizeof(buf), "%ld", LONG_MAX);
+    TEST_ASSERT_EQUAL(atol(buf), LONG_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%zd", SSIZE_MAX);
+    TEST_ASSERT_EQUAL(atol(buf), SSIZE_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%td", PTRDIFF_MAX);
+    TEST_ASSERT_EQUAL(atol(buf), PTRDIFF_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hhd", 0xFFF);
+    TEST_ASSERT_EQUAL_STRING("-1", buf);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hhd", CHAR_MAX);
+    TEST_ASSERT_EQUAL(atoi(buf), CHAR_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hd", 0xFFFFF);
+    TEST_ASSERT_EQUAL_STRING("-1", buf);
+    ret = x_snprintf(buf, sizeof(buf), "%hd", SHRT_MAX);
+    TEST_ASSERT_EQUAL(atoi(buf), SHRT_MAX);
 }
+
+
+TEST(xprintf, print_unsigned)
+{
+    char buf[128];
+    int ret;
+
+    ret = x_snprintf(buf, sizeof(buf), "%u", 1234);
+    TEST_ASSERT_EQUAL_STRING("1234", buf);
+
+    ret = x_snprintf(buf, sizeof(buf), "%04u", 10);
+    TEST_ASSERT_EQUAL_STRING("0010", buf);
+    TEST_ASSERT_EQUAL(strlen("0010"), ret);
+
+    ret = x_snprintf(buf, sizeof(buf), "%-4u", 10);
+    TEST_ASSERT_EQUAL_STRING("10  ", buf);
+    TEST_ASSERT_EQUAL(strlen("10  "), ret);
+
+    ret = x_snprintf(buf, sizeof(buf), "%lu", ULONG_MAX);
+    TEST_ASSERT_EQUAL(strtoul(buf, NULL, 10), ULONG_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%zu", SIZE_MAX);
+    TEST_ASSERT_EQUAL(strtoul(buf, NULL, 10), SIZE_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%tu", PTRDIFF_MAX);
+    TEST_ASSERT_EQUAL(strtoul(buf, NULL, 10), PTRDIFF_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hhu", 0xFFF);
+    TEST_ASSERT_EQUAL(strtoul(buf, NULL, 10), UCHAR_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hhu", UCHAR_MAX);
+    TEST_ASSERT_EQUAL(atoi(buf), UCHAR_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hu", 0xFFFFF);
+    TEST_ASSERT_EQUAL(atoi(buf), USHRT_MAX);
+
+    ret = x_snprintf(buf, sizeof(buf), "%hu", USHRT_MAX);
+    TEST_ASSERT_EQUAL(atoi(buf), USHRT_MAX);
+}
+
 
 
 TEST(xprintf, print_binary)
@@ -176,6 +235,7 @@ TEST_GROUP_RUNNER(xprintf)
 {
     RUN_TEST_CASE(xprintf, print_string);
     RUN_TEST_CASE(xprintf, print_signed);
+    RUN_TEST_CASE(xprintf, print_unsigned);
     RUN_TEST_CASE(xprintf, print_binary);
     RUN_TEST_CASE(xprintf, print_hex);
     RUN_TEST_CASE(xprintf, print_oct);
