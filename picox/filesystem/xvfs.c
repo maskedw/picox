@@ -111,8 +111,8 @@ void xvfs_init(XVirtualFs* vfs)
 
 XStream* xvfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NULL(stream);
-    X_ASSERT_NULL(fp);
+    X_ASSERT_NOT_NULL(stream);
+    X_ASSERT_NOT_NULL(fp);
 
     xstream_init(stream);
     stream->driver = fp;
@@ -299,7 +299,7 @@ XError xvfs_utime(XVirtualFs* vfs, const char* path, XTime time)
 
 XError xvfs_exists(XVirtualFs* vfs, const char* path, bool* exists)
 {
-    X_ASSERT_NULL(exists);
+    X_ASSERT_NOT_NULL(exists);
     XStat statbuf;
     XError err = xvfs_stat(vfs, path, &statbuf);
     *exists = (err == X_ERR_NONE);
@@ -313,7 +313,7 @@ XError xvfs_exists(XVirtualFs* vfs, const char* path, bool* exists)
 
 XError xvfs_is_directory(XVirtualFs* vfs, const char* path, bool* isdir)
 {
-    X_ASSERT_NULL(isdir);
+    X_ASSERT_NOT_NULL(isdir);
     XStat statbuf;
     const XError err = xvfs_stat(vfs, path, &statbuf);
     *isdir = ((err == X_ERR_NONE) && (XSTAT_IS_DIRECTORY(statbuf.mode)));
@@ -323,7 +323,7 @@ XError xvfs_is_directory(XVirtualFs* vfs, const char* path, bool* isdir)
 
 XError xvfs_is_regular(XVirtualFs* vfs, const char* path, bool* isreg)
 {
-    X_ASSERT_NULL(isreg);
+    X_ASSERT_NOT_NULL(isreg);
     XStat statbuf;
     const XError err = xvfs_stat(vfs, path, &statbuf);
     *isreg = ((err == X_ERR_NONE) && (XSTAT_IS_REGULAR(statbuf.mode)));
@@ -407,8 +407,8 @@ x__exit:
 
 XError xvfs_copyfile2(XFile* src, XFile* dst)
 {
-    X_ASSERT_NULL(dst);
-    X_ASSERT_NULL(src);
+    X_ASSERT_NOT_NULL(dst);
+    X_ASSERT_NOT_NULL(src);
 
     const size_t X__BLOCK_SIZE = 512;
 
@@ -608,7 +608,7 @@ static XError X__DefaultOpen(XVirtualFs* vfs, const char* path, XOpenMode mode, 
     X_UNUSED(path);
     X_UNUSED(mode);
 
-    X_ASSERT_NULL(o_fp);
+    X_ASSERT_NOT_NULL(o_fp);
     *o_fp = NULL;
     return X_ERR_NOT_SUPPORTED;
 }
@@ -618,7 +618,7 @@ static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
     X_UNUSED(vfs);
     X_UNUSED(path);
 
-    X_ASSERT_NULL(o_dir);
+    X_ASSERT_NOT_NULL(o_dir);
     *o_dir = NULL;
     return X_ERR_NOT_SUPPORTED;
 }

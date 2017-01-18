@@ -87,7 +87,7 @@ static const uint8_t X__FFARRAY[128] = {
 void xspiffs_init(XSpiFFs* fs, spiffs* src)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(src);
+    X_ASSERT_NOT_NULL(src);
 
     fs->m_tag = X_SPIFFS_TAG;
     fs->m_spiffs = src;
@@ -124,8 +124,8 @@ void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs)
 
 XStream* xspiffs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NULL(stream);
-    X_ASSERT_NULL(fp);
+    X_ASSERT_NOT_NULL(stream);
+    X_ASSERT_NOT_NULL(fp);
 
     xstream_init(stream);
     stream->driver = fp;
@@ -142,8 +142,8 @@ XStream* xspiffs_init_stream(XStream* stream, XFile* fp)
 XError xspiffs_open(XSpiFFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(path);
-    X_ASSERT_NULL(o_fp);
+    X_ASSERT_NOT_NULL(path);
+    X_ASSERT_NOT_NULL(o_fp);
     X__ASSERT_TAG(fs);
 
     *o_fp = NULL;
@@ -238,7 +238,7 @@ XError xspiffs_close(XFile* fp)
 XError xspiffs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
 {
     X_ASSERT_SELF(fp);
-    X_ASSERT_NULL(src);
+    X_ASSERT_NOT_NULL(src);
     X__ASSERT_TAG(fp->m_fs);
 
     X_ASSIGN_NOT_NULL(nwritten, 0);
@@ -295,7 +295,7 @@ x__exit:
 XError xspiffs_read(XFile* fp, void* dst, size_t size, size_t* nread)
 {
     X_ASSERT_SELF(fp);
-    X_ASSERT_NULL(dst);
+    X_ASSERT_NOT_NULL(dst);
     X__ASSERT_TAG(fp->m_fs);
 
     X_ASSIGN_NOT_NULL(nread, 0);
@@ -388,7 +388,7 @@ x__exit:
 XError xspiffs_tell(XFile* fp, XSize* pos)
 {
     X_ASSERT_SELF(fp);
-    X_ASSERT_NULL(pos);
+    X_ASSERT_NOT_NULL(pos);
 
     *pos = 0;
     XError err = X_ERR_NONE;
@@ -432,8 +432,8 @@ XError xspiffs_flush(XFile* fp)
 XError xspiffs_opendir(XSpiFFs* fs, const char* path, XDir** o_dir)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(path);
-    X_ASSERT_NULL(o_dir);
+    X_ASSERT_NOT_NULL(path);
+    X_ASSERT_NOT_NULL(o_dir);
     X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
@@ -468,8 +468,8 @@ x__exit:
 XError xspiffs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
     X_ASSERT_SELF(dir);
-    X_ASSERT_NULL(dirent);
-    X_ASSERT_NULL(result);
+    X_ASSERT_NOT_NULL(dirent);
+    X_ASSERT_NOT_NULL(result);
     X__ASSERT_TAG(dir->m_fs);
 
     *result = NULL;
@@ -515,7 +515,7 @@ XError xspiffs_closedir(XDir* dir)
 XError xspiffs_getcwd(XSpiFFs* fs, char* buf, size_t size)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(buf);
+    X_ASSERT_NOT_NULL(buf);
     X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
@@ -530,7 +530,7 @@ XError xspiffs_getcwd(XSpiFFs* fs, char* buf, size_t size)
 XError xspiffs_remove(XSpiFFs* fs, const char* path)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(path);
+    X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;
@@ -544,8 +544,8 @@ XError xspiffs_remove(XSpiFFs* fs, const char* path)
 XError xspiffs_rename(XSpiFFs* fs, const char* oldpath, const char* newpath)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(oldpath);
-    X_ASSERT_NULL(newpath);
+    X_ASSERT_NOT_NULL(oldpath);
+    X_ASSERT_NOT_NULL(newpath);
     X__ASSERT_TAG(fs);
 
     XError err = X_ERR_NONE;

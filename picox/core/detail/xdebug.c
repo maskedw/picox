@@ -52,9 +52,9 @@ typedef struct X__Debug
 static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list args);
 static void X__VHexdump(int level, const char* tag, const char* src, size_t len, size_t cols, const char* fmt, va_list args);
 static const char* X__GetHeader(int level);
-static void X__PreAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
-static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
-static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line);
+static void X__PreAssertionFailed(void);
+static void X__PostAssertionFailed(void);
+static void X__AssertionFailed(const char* expr, const char* fmt, const char* func, const char* file, int line, ...);
 
 
 #if X_CONF_USE_LOG_TIMESTAMP != 0
@@ -66,30 +66,19 @@ void x_port_stimestamp(char* dst, size_t size);
 
 X__Debug    g_picox_debug = {X_LOG_LEVEL};
 static X__Debug* const priv = &g_picox_debug;
-XAssertionFailedFunc x_pre_assertion_failed = X__PreAssertionFailed;
-XAssertionFailedFunc x_post_assertion_failed = X__PostAssertionFailed;
+void (*x_pre_assertion_failed)(void) = X__PreAssertionFailed;
+void (*x_post_assertion_failed)(void) = X__PostAssertionFailed;
 XAssertionFailedFunc x_assertion_failed = X__AssertionFailed;
 
 
-static void X__PreAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
+static void X__PreAssertionFailed(void)
 {
-    X_UNUSED(expr);
-    X_UNUSED(msg);
-    X_UNUSED(func);
-    X_UNUSED(file);
-    X_UNUSED(line);
 }
 
 
-static void X__PostAssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
+static void X__PostAssertionFailed(void)
 {
     volatile int i = 0;
-    X_UNUSED(expr);
-    X_UNUSED(msg);
-    X_UNUSED(func);
-    X_UNUSED(file);
-    X_UNUSED(line);
-
     for (;;)
     {
         i++;
@@ -288,7 +277,7 @@ void x_err_hexdump(const void* src, size_t len, size_t cols)
 }
 
 
-static void X__AssertionFailed(const char* expr, const char* msg, const char* func, const char* file, int line)
+static void X__AssertionFailed(const char* expr, const char* fmt, const char* func, const char* file, int line, ...)
 {
     /*
      * fileがフルパスで出力されると環境によってコンパイル環境によって出力が変
@@ -299,12 +288,15 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
     const char* unix_style = strrchr(file, '/');
     const char* p = win_style ? win_style : unix_style;
     const char* none = "none";
+    va_list args;
+    va_start(args, line);
     file = p ? p + 1 : file;
 
-    x_pre_assertion_failed(expr, msg, func, file, line);
-
+    x_pre_assertion_failed();
     x_err_printf("Assertion failed\n");
-    x_err_printf("[MSG ] %s\n", msg ? msg : none);
+    x_err_printf("[MSG ] ");
+    x_err_vprintf(fmt, args);
+    x_err_printf("\n");
     x_err_printf("[EXPR] %s\n", expr ? expr : none);
     x_err_printf("[FUNC] %s\n", func ? func : none);
     x_err_printf("[FILE] %s\n", file ? file : none);
@@ -314,8 +306,7 @@ static void X__AssertionFailed(const char* expr, const char* msg, const char* fu
 #endif
 
     x_err_printf("************************\n");
-
-    x_post_assertion_failed(expr, msg, func, file, line);
+    x_post_assertion_failed();
 }
 
 

@@ -118,8 +118,8 @@ void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs)
 
 XStream* xfatfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NULL(stream);
-    X_ASSERT_NULL(fp);
+    X_ASSERT_NOT_NULL(stream);
+    X_ASSERT_NOT_NULL(fp);
 
     xstream_init(stream);
     stream->driver = fp;

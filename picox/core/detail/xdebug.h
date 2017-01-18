@@ -55,12 +55,13 @@ extern "C" {
 /** @brief アサーションに失敗した時に呼び出される関数のポインタ型です
  *
  *  @param expr アサーションの式(expression)
- *  @param msg  追加メッセージ
+ *  @param fmt  追加メッセージのprintf形式format
  *  @param func アサーションを行った関数名
  *  @param file アサーションを行ったソースファイル名
  *  @param line アサーションを行ったソースファイルの行番号
+ *  @param ...  fmtの可変長引数
  */
-typedef void(*XAssertionFailedFunc)(const char* expr, const char* msg, const char* func, const char* file, int line);
+typedef void(*XAssertionFailedFunc)(const char* expr, const char* fmt, const char* func, const char* file, int line, ...);
 
 
 /** @brief x_assertion_failedの呼び出し前に呼びされる関数のポインタです
@@ -68,7 +69,7 @@ typedef void(*XAssertionFailedFunc)(const char* expr, const char* msg, const cha
  *  アサーション失敗時にx_assertion_failedの呼び出し前に何か処理を行いたいときに
  *  使用します。
  */
-extern XAssertionFailedFunc x_pre_assertion_failed;
+extern void (*x_pre_assertion_failed)(void);
 
 
 /** @brief アサーション失敗時に呼びされる関数のポインタです
@@ -87,7 +88,7 @@ extern XAssertionFailedFunc x_assertion_failed;
  *  + ログファイルに記録する
  *  + CPUリセットを行い、プログラムを再起動させる
  */
-extern XAssertionFailedFunc x_post_assertion_failed;
+extern void (*x_post_assertion_failed)(void);
 
 
 /** @name  log_levels
@@ -235,12 +236,18 @@ extern XAssertionFailedFunc x_post_assertion_failed;
 
 /** @brief picoxデフォルトのアサートです
  */
-#define X_DEFAULT_ASSERT(expr)              X_DEFAULT_ASSERT_MSG(expr, NULL)
+#define X_DEFAULT_ASSERT(expr)              X_DEFAULT_ASSERT_MSG(expr, "")
 
 
 /** @brief 追加メッセージを指定可能なアサートです
  */
-#define X_DEFAULT_ASSERT_MSG(expr, msg)     ((expr) ? (void)0 : x_assertion_failed(#expr, msg, X_FUNC, __FILE__, __LINE__))
+// #define X_DEFAULT_ASSERT_MSG(expr, msg)     ((expr) ? (void)0 : x_assertion_failed(#expr, msg, X_FUNC, __FILE__, __LINE__))
+#define X_DEFAULT_ASSERT_MSG(expr, msg)             ((expr) ? (void)0 : x_assertion_failed(#expr, "%s", X_FUNC, __FILE__, __LINE__, msg))
+
+#define X_ASSERTION_FAILED(strexpr, msg)                  x_assertion_failed(strexpr, "", X_FUNC, __FILE__, __LINE__)
+#define X_ASSERTION_FAILED_MSG(strexpr, msg)              x_assertion_failed(strexpr, "%s", X_FUNC, __FILE__, __LINE__, msg)
+#define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a)        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a)
+#define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a, b)     x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a, b)
 
 
 #if (X_CONF_NDEBUG == 0)
@@ -269,16 +276,6 @@ extern XAssertionFailedFunc x_post_assertion_failed;
     #define X_ASSERT_ARG(expr)          X_ASSERT(expr)
 #else
     #define X_ASSERT_ARG(expr)          (void)0
-#endif
-
-
-/** @def   X_ASSERT_NULL
- *  @brief 引数のNULLチェック用のアサートです
- */
-#if X_CONF_USE_ASSERT_NULL != 0
-    #define X_ASSERT_NULL(expr)         X_ASSERT(expr)
-#else
-    #define X_ASSERT_NULL(expr)         (void)0
 #endif
 
 
@@ -379,6 +376,138 @@ void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols,
 
 
 /** @} end of name log_functions
+ */
+
+
+/** @name  assertions_ex
+ *  @brief 拡張版assertマクロのグループです
+ *  @details
+ *
+ *  デバッガに接続しているときはアサーション失敗時にスタックトレースから変数の
+ *  値を確認することは容易ですが、未接続時には失敗したことしかわからず不便なこと
+ *  があります。(オンラインコンパイラのmbedや、Arduino等での開発も含む)
+ *  このグループのアサーションを使用すると失敗時に変数の値も出力します。
+ *  @{
+ */
+
+#define X_SIZE_MODIFIER   "z"
+#define X_CHAR_MODIFIER   "hh"
+#define X_SHORT_MODIFIER  "h"
+
+#define X_ASSERT_TRUE(expr) \
+    do { \
+        if (!X_LIKELY(expr)) { \
+            X_ASSERTION_FAILED(#expr, "is not true"); \
+      } \
+    } while (0)
+#define X_ASSERT_FALSE(expr) \
+    do { \
+        if (!X_LIKELY(!(expr))) { \
+        X_ASSERTION_FAILED(#expr, "is not false"); \
+        } \
+    } while (0)
+#define X_ASSERT_TYPE_FULL(prefix, suffix, T, fmt, a, op, b)   \
+    do { \
+        T tmp_a_ = (a); \
+        T tmp_b_ = (b); \
+        if (!(tmp_a_ op tmp_b_)) {                               \
+            X_ASSERTION_FAILED_FMT_A2(#a " " #op " " #b "", "(" prefix "%" fmt suffix " " #op " " prefix "%" fmt suffix ")", \
+                     tmp_a_, tmp_b_); \
+        } \
+    } while (0)
+#define X_ASSERT_TYPE(T, fmt, a, op, b) \
+  X_ASSERT_TYPE_FULL("", "", T, fmt, a, op, b)
+#define X_ASSERT_CHAR(a, op, b) \
+  X_ASSERT_TYPE_FULL("'\\x", "'", char, "02" X_CHAR_MODIFIER "x", a, op, b)
+#define X_ASSERT_UCHAR(a, op, b) \
+  X_ASSERT_TYPE_FULL("'\\x", "'", unsigned char, "02" X_CHAR_MODIFIER "x", a, op, b)
+#define X_ASSERT_SHORT(a, op, b) \
+  X_ASSERT_TYPE(short, X_SHORT_MODIFIER "d", a, op, b)
+#define X_ASSERT_USHORT(a, op, b) \
+  X_ASSERT_TYPE(unsigned short, X_SHORT_MODIFIER "u", a, op, b)
+#define X_ASSERT_INT(a, op, b) \
+  X_ASSERT_TYPE(int, "d", a, op, b)
+#define X_ASSERT_UINT(a, op, b) \
+  X_ASSERT_TYPE(unsigned int, "u", a, op, b)
+#define X_ASSERT_LONG(a, op, b) \
+  X_ASSERT_TYPE(long int, "ld", a, op, b)
+#define X_ASSERT_ULONG(a, op, b) \
+  X_ASSERT_TYPE(unsigned long int, "lu", a, op, b)
+#define X_ASSERT_SIZE(a, op, b) \
+  X_ASSERT_TYPE(size_t, X_SIZE_MODIFIER "u", a, op, b)
+#define X_ASSERT_float(a, op, b) \
+  X_ASSERT_TYPE(float, "f", a, op, b)
+#define X_ASSERT_PTR(a, op, b) \
+  X_ASSERT_TYPE(const void*, "p", a, op, b)
+#define X_ASSERT_INT8(a, op, b) \
+  X_ASSERT_TYPE(int8_t, PRIi8, a, op, b)
+#define X_ASSERT_UINT8(a, op, b) \
+  X_ASSERT_TYPE(uint8_t, PRIu8, a, op, b)
+#define X_ASSERT_INT16(a, op, b) \
+  X_ASSERT_TYPE(int16_t, PRIi16, a, op, b)
+#define X_ASSERT_UINT16(a, op, b) \
+  X_ASSERT_TYPE(uint16_t, PRIu16, a, op, b)
+#define X_ASSERT_INT32(a, op, b) \
+  X_ASSERT_TYPE(int32_t, PRIi32, a, op, b)
+#define X_ASSERT_UINT32(a, op, b) \
+  X_ASSERT_TYPE(uint32_t, PRIu32, a, op, b)
+#define X_ASSERT_PTR_EQUAL(a, b) \
+    X_ASSERT_PTR(a, ==, b)
+#define X_ASSERT_PTR_NOT_EQUAL(a, b) \
+    X_ASSERT_PTR(a, !=, b)
+#define X_ASSERT_NULL(ptr) \
+    X_ASSERT_PTR(ptr, ==, NULL)
+#define X_ASSERT_NOT_NULL(ptr) \
+    X_ASSERT_PTR(ptr, !=, NULL)
+#define X_ASSERT_PTR_NULL(ptr) \
+    X_ASSERT_PTR(ptr, ==, NULL)
+#define X_ASSERT_PTR_NOT_NULL(ptr) \
+    X_ASSERT_PTR(ptr, !=, NULL)
+#define X_ASSERT_STRING_EQUAL(a, b) \
+    do { \
+        const char* tmp_a_ = a; \
+        const char* tmp_b_ = b; \
+        if (X_UNLIKELY(strcmp(tmp_a_, tmp_b_) != 0)) { \
+            X_ASSERTION_FAILED_FMT_A2(#a " == " #b, "(\"%s\" == \"%s\")", \
+                       tmp_a_, tmp_b_); \
+        } \
+    } while (0)
+#define X_ASSERT_STRING_NOT_EQUAL(a, b) \
+    do { \
+        const char* tmp_a_ = a; \
+        const char* tmp_b_ = b; \
+        if (X_UNLIKELY(strcmp(tmp_a_, tmp_b_) == 0)) { \
+            X_ASSERTION_FAILED_FMT_A2(#a " != " #b, "(\"%s\" == \"%s\")", \
+                     tmp_a_, tmp_b_); \
+      } \
+    } while (0)
+#define X_ASSERT_MEMORY_EQUAL(size, a, b) \
+    do { \
+        const unsigned char* tmp_a_ = (const unsigned char*) (a); \
+        const unsigned char* tmp_b_ = (const unsigned char*) (b); \
+        const size_t tmp_size_ = (size); \
+        if (X_UNLIKELY(memcmp(tmp_a_, tmp_b_, tmp_size_)) != 0) { \
+            size_t tmp_pos_; \
+            for (tmp_pos_ = 0 ; tmp_pos_ < tmp_size_ ; tmp_pos_++) { \
+                if (tmp_a_[tmp_pos_] != tmp_b_[tmp_pos_]) { \
+                    X_ASSERTION_FAILED_FMT_A1(#a " == " #b, "memory not equal. at offset %" X_SIZE_MODIFIER "u", tmp_pos_); \
+                    break; \
+                } \
+            } \
+        } \
+    } while (0)
+#define X_ASSERT_MEMORY_NOT_EQUAL(size, a, b) \
+    do { \
+        const unsigned char* tmp_a_ = (const unsigned char*) (a); \
+        const unsigned char* tmp_b_ = (const unsigned char*) (b); \
+        const size_t tmp_size_ = (size); \
+        if (X_UNLIKELY(memcmp(tmp_a_, tmp_b_, tmp_size_)) == 0) { \
+            X_ASSERTION_FAILED_FMT_A1(#a " != " #b, "memory equal %zu bytes", tmp_size_); \
+        } \
+    } while (0)
+
+
+/** @} end of name assertions_ex
  */
 
 

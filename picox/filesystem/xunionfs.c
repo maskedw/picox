@@ -706,7 +706,7 @@ x__exit:
 
 XError xunionfs_exists(const char* path, bool* exists)
 {
-    X_ASSERT_NULL(exists);
+    X_ASSERT_NOT_NULL(exists);
     XStat statbuf;
     const XError err = xunionfs_stat(path, &statbuf);
     *exists = (err == X_ERR_NONE);
@@ -716,7 +716,7 @@ XError xunionfs_exists(const char* path, bool* exists)
 
 XError xunionfs_is_directory(const char* path, bool* isdir)
 {
-    X_ASSERT_NULL(isdir);
+    X_ASSERT_NOT_NULL(isdir);
     XStat statbuf;
     const XError err = xunionfs_stat(path, &statbuf);
     *isdir = ((err == X_ERR_NONE) && (XSTAT_IS_DIRECTORY(statbuf.mode)));
@@ -726,7 +726,7 @@ XError xunionfs_is_directory(const char* path, bool* isdir)
 
 XError xunionfs_is_regular(const char* path, bool* isreg)
 {
-    X_ASSERT_NULL(isreg);
+    X_ASSERT_NOT_NULL(isreg);
     XStat statbuf;
     const XError err = xunionfs_stat(path, &statbuf);
     *isreg = ((err == X_ERR_NONE) && (XSTAT_IS_REGULAR(statbuf.mode)));

@@ -195,8 +195,8 @@ void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs)
 
 XStream* xramfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NULL(stream);
-    X_ASSERT_NULL(fp);
+    X_ASSERT_NOT_NULL(stream);
+    X_ASSERT_NOT_NULL(fp);
 
     xstream_init(stream);
     stream->driver = fp;
@@ -213,8 +213,8 @@ XStream* xramfs_init_stream(XStream* stream, XFile* fp)
 XError xramfs_open(XRamFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(o_fp);
-    X_ASSERT_NULL(path);
+    X_ASSERT_NOT_NULL(o_fp);
+    X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
     X__Entry* ent;
@@ -370,7 +370,7 @@ XError xramfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
 
 XError xramfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 {
-    X_ASSERT_NULL(fp);
+    X_ASSERT_NOT_NULL(fp);
     X__ASSERT_TAG(fp->m_fs);
 
     X__File* const infp = X__GET_FILE_HANDLE(fp);
@@ -406,7 +406,7 @@ XError xramfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 XError xramfs_tell(XFile* fp, XSize* pos)
 {
     X_ASSERT_SELF(fp);
-    X_ASSERT_NULL(pos);
+    X_ASSERT_NOT_NULL(pos);
     X__ASSERT_TAG(fp->m_fs);
 
     X__File* const infp = X__GET_FILE_HANDLE(fp);
@@ -431,7 +431,7 @@ XError xramfs_flush(XFile* fp)
 XError xramfs_mkdir(XRamFs* fs, const char* path)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(path);
+    X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
     XError err;
@@ -458,8 +458,8 @@ XError xramfs_mkdir(XRamFs* fs, const char* path)
 XError xramfs_opendir(XRamFs* fs, const char* path, XDir** o_dir)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(o_dir);
-    X_ASSERT_NULL(path);
+    X_ASSERT_NOT_NULL(o_dir);
+    X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
     XError err;
@@ -490,8 +490,8 @@ XError xramfs_opendir(XRamFs* fs, const char* path, XDir** o_dir)
 XError xramfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
     X_ASSERT_SELF(dir);
-    X_ASSERT_NULL(dirent);
-    X_ASSERT_NULL(result);
+    X_ASSERT_NOT_NULL(dirent);
+    X_ASSERT_NOT_NULL(result);
     X__ASSERT_TAG(dir->m_fs);
 
     X__Dir* const indirp = X__GET_DIR_HANDLE(dir);
@@ -532,7 +532,7 @@ XError xramfs_closedir(XDir* dir)
 XError xramfs_chdir(XRamFs* fs, const char* path)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(path);
+    X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
     X__Entry* ent;
@@ -554,7 +554,7 @@ XError xramfs_chdir(XRamFs* fs, const char* path)
 XError xramfs_getcwd(XRamFs* fs, char* buf, size_t size)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(buf);
+    X_ASSERT_NOT_NULL(buf);
     X__ASSERT_TAG(fs);
     if (size == 0)
         return X_ERR_INVALID;
@@ -595,7 +595,7 @@ XError xramfs_getcwd(XRamFs* fs, char* buf, size_t size)
 XError xramfs_remove(XRamFs* fs, const char* path)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(path);
+    X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
     X__Entry* ent;
@@ -626,8 +626,8 @@ XError xramfs_remove(XRamFs* fs, const char* path)
 XError xramfs_rename(XRamFs* fs, const char* oldpath, const char* newpath)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(oldpath);
-    X_ASSERT_NULL(newpath);
+    X_ASSERT_NOT_NULL(oldpath);
+    X_ASSERT_NOT_NULL(newpath);
     X__ASSERT_TAG(fs);
 
     X__Entry* ent;
@@ -663,7 +663,7 @@ XError xramfs_rename(XRamFs* fs, const char* oldpath, const char* newpath)
 XError xramfs_stat(XRamFs* fs, const char* path, XStat* statbuf)
 {
     X_ASSERT_SELF(fs);
-    X_ASSERT_NULL(statbuf);
+    X_ASSERT_NOT_NULL(statbuf);
     X__ASSERT_TAG(fs);
 
     X__Entry* ent;
