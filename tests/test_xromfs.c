@@ -53,7 +53,7 @@ TEST(xromfs, read)
     TEST_ASSERT_TRUE(nread < sizeof(buf));
     buf[nread] = '\0';
 
-    TEST_ASSERT_EQUAL_STRING("Hello Foo\n", buf);
+    TEST_ASSERT_EQUAL_STRING("Hello Foo", x_strstrip(buf, NULL));
     xromfs_close(fp);
 }
 
@@ -138,14 +138,14 @@ TEST(xromfs, seek)
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_TRUE(nread < sizeof(buf));
     buf[nread] = '\0';
-    TEST_ASSERT_EQUAL_STRING("Foo\n", buf);
+    TEST_ASSERT_EQUAL_STRING("Foo", x_strstrip(buf, NULL));
 
     err = xromfs_seek(fp, -6, X_SEEK_END);
     err = xromfs_read(fp, buf, sizeof(buf), &nread);
     TEST_ASSERT_EQUAL(X_ERR_NONE, err);
     TEST_ASSERT_TRUE(nread < sizeof(buf));
     buf[nread] = '\0';
-    TEST_ASSERT_EQUAL_STRING("o Foo\n", buf);
+    TEST_ASSERT_EQUAL_STRING("Foo", x_strstrip(buf, NULL));
 
     xromfs_close(fp);
 }
