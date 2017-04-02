@@ -104,8 +104,8 @@ extern void (*x_post_assertion_failed)(void);
  *  + WARN 問題だが復帰可能な状態
  *  + ERR  復帰不可能な致命的状態
  *
- *  これで、デバッグ時のログ出力レベルはINFO, リリース時はNOTIとしておくと、丁度
- *  いい塩梅だと思います。
+ *  デバッグ時のログ出力レベルはINFO, リリース時はNOTIにしておくと、丁度いいくら
+ *  いだと思います。
  *  @{
  */
 #define X_LOG_LEVEL_ERR    (1)  /* error      */
@@ -230,29 +230,29 @@ extern void (*x_post_assertion_failed)(void);
 
 /** @name  assertions
  *  @brief assertマクロのグループです
+ *
+ *  標準のstd::assert()では組込みプログラムでは機能不足な面が多いため、picoxでは
+ *  多用なアサートマクロを提供しています。
  *  @{
  */
 
+#if ((X_CONF_NDEBUG == 0) || defined(__DOXYGEN__))
 
-/** @brief picoxデフォルトのアサートです
- */
-#define X_DEFAULT_ASSERT(expr)              X_DEFAULT_ASSERT_MSG(expr, "")
+    /** @brief プログラム実行時診断を行います
+     *
+     *  式exprが0(偽)であれば、プログラムの実行を停止し、診断情報を出力します。
+     *  偽になったときの動作は下記の関数ポインタを差し替えることで、カスタムする
+     *  ことができます。
+     *
+     *  + x_pre_assertion_failed
+     *  + x_assertion_failed
+     *  + x_post_assertion_failed
+     */
+    #define X_ASSERT(expr)              X_ASSERT_MSG(expr, "")
 
-
-/** @brief 追加メッセージを指定可能なアサートです
- */
-// #define X_DEFAULT_ASSERT_MSG(expr, msg)     ((expr) ? (void)0 : x_assertion_failed(#expr, msg, X_FUNC, __FILE__, __LINE__))
-#define X_DEFAULT_ASSERT_MSG(expr, msg)             ((expr) ? (void)0 : x_assertion_failed(#expr, "%s", X_FUNC, __FILE__, __LINE__, msg))
-
-#define X_ASSERTION_FAILED(strexpr, msg)                  x_assertion_failed(strexpr, "", X_FUNC, __FILE__, __LINE__)
-#define X_ASSERTION_FAILED_MSG(strexpr, msg)              x_assertion_failed(strexpr, "%s", X_FUNC, __FILE__, __LINE__, msg)
-#define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a)        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a)
-#define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a, b)     x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a, b)
-
-
-#if (X_CONF_NDEBUG == 0)
-    #define X_ASSERT(expr)              X_DEFAULT_ASSERT(expr)
-    #define X_ASSERT_MSG(expr, msg)     X_DEFAULT_ASSERT_MSG(expr, msg)
+    /** @brief 追加の文字列メッセージを指定可能なアサートです
+     */
+    #define X_ASSERT_MSG(expr, msg)     ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_MSG(#expr, msg))
 #else
     #define X_ASSERT(expr)              (void)0
     #define X_ASSERT_MSG(expr, msg)     (void)0
@@ -261,6 +261,9 @@ extern void (*x_post_assertion_failed)(void);
 
 /** @def   X_ASSERT_MALLOC_NULL
  *  @brief 動的メモリ確保のNULL検査用アサートです
+ *
+ *  組込みプログラムでは動的メモリ確保はあまり好まれず、使用する場合も、失敗した
+ *  場合は即座に強制終了を行いたい場合が多々あります。
  */
 #if X_CONF_USE_DETECT_MALLOC_NULL != 0
     #define X_ASSERT_MALLOC_NULL(expr)       X_ASSERT(expr)
@@ -311,8 +314,36 @@ extern void (*x_post_assertion_failed)(void);
  */
 
 
+/** @brief  ログレベルをセットします
+ *
+ *  X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0の場合のみ有効です。指定のレベルの範囲外
+ *  のログは出力されません。
+ */
 int x_set_log_level(int level);
+
+
+/** @brief UNIXのhexdumpコマンドと似た形式でバイナリを16進数出力します
+ *
+ *  @details
+ *  デバッグ時に非常に重宝します。
+ *
+ *  @param src  HEXダンプするアドレス
+ *  @param len  srcから何バイトダンプするか
+ *  @param cols HEXダンプ表示を何バイトごとに改行するか
+ *
+ *  @code {.c}
+ *  const char hello[] = "HelloWorld";
+ *  x_hexdump(hello, strlen(hello), 6);
+ *
+ *  << 0x000000: 48 65 6c 6c 6f 57 HelloW
+ *  << 0x000006: 6f 72 6c 64       orld
+ *  @endcode
+ */
 void x_hexdump(const void* src, size_t len, size_t cols);
+
+
+/** @brief 出力先がx_putc_stderrのx_hexdumpです
+ */
 void x_err_hexdump(const void* src, size_t len, size_t cols);
 
 
@@ -343,29 +374,105 @@ void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols,
  *  @brief 拡張版assertマクロのグループです
  *  @details
  *
- *  デバッガに接続しているときはアサーション失敗時にスタックトレースから変数の
- *  値を確認することは容易ですが、未接続時には失敗したことしかわからず不便なこと
- *  があります。(オンラインコンパイラのmbedや、Arduino等での開発も含む)
- *  このグループのアサーションを使用すると失敗時に変数の値も出力します。
+ *  アサートはとても便利ですが、失敗時に式で使用された変数の値がバックトレースか
+ *  らしか確認できないので、不便なことがあります。
+ *  このグループのアサートでは変数の中身も出力されます。ただし、より多くのコード
+ *  サイズが必要になります。
+ *
+ *  @code {.c}
+ *
+ *  int value = 9;
+ *  X_ASSERT(value == 10);
+ *
+ *  // 通常のX_ASSERTの場合、式が偽であったことしかわかりません。
+ *  << AssertionFailed (value == 10)
+ *
+ *  X_ASSERT_INT(value, ==, 10);
+ *  << AssertionFailed (value == 10)  (9 == 10)
+ *
+ *  @endcode
+ *
+ *  デバッガが使用できない、オンラインコンパイラのmbedやArduinoでの開発時に、特
+ *  に有用です。
  *  @{
  */
+
+#if ((X_CONF_NDEBUG == 0) || defined(__DOXYGEN__))
+    #define X_ASSERT_TRUE(expr)       ((X_LIKELY(expr))    ? (void)0 : X_ASSERTION_FAILED_MSG(#expr, "is not true"))
+    #define X_ASSERT_FALSE(expr)      ((X_LIKELY(!(expr))) ? (void)0 : X_ASSERTION_FAILED_MSG(#expr, "is not false"))
+    #define X_ASSERT_CHAR(a, op, b)   X_ASSERT_TYPE_FULL("'\\x", "'", char, "02" X_CHAR_MODIFIER "x", a, op, b)
+    #define X_ASSERT_UCHAR(a, op, b)  X_ASSERT_TYPE_FULL("'\\x", "'", unsigned char, "02" X_CHAR_MODIFIER "x", a, op, b)
+    #define X_ASSERT_SHORT(a, op, b)  X_ASSERT_TYPE(short, X_SHORT_MODIFIER "d", a, op, b)
+    #define X_ASSERT_USHORT(a, op, b) X_ASSERT_TYPE(unsigned short, X_SHORT_MODIFIER "u", a, op, b)
+    #define X_ASSERT_INT(a, op, b)    X_ASSERT_TYPE(int, "d", a, op, b)
+    #define X_ASSERT_UINT(a, op, b)   X_ASSERT_TYPE(unsigned int, "u", a, op, b)
+    #define X_ASSERT_LONG(a, op, b)   X_ASSERT_TYPE(long int, "ld", a, op, b)
+    #define X_ASSERT_ULONG(a, op, b)  X_ASSERT_TYPE(unsigned long int, "lu", a, op, b)
+    #define X_ASSERT_SIZE(a, op, b)   X_ASSERT_TYPE(size_t, X_SIZE_MODIFIER "u", a, op, b)
+    #define X_ASSERT_float(a, op, b)  X_ASSERT_TYPE(float, "f", a, op, b)
+    #define X_ASSERT_PTR(a, op, b)    X_ASSERT_TYPE(const void*, "p", a, op, b)
+    #define X_ASSERT_INT8(a, op, b)   X_ASSERT_TYPE(int8_t, PRIi8, a, op, b)
+    #define X_ASSERT_UINT8(a, op, b)  X_ASSERT_TYPE(uint8_t, PRIu8, a, op, b)
+    #define X_ASSERT_INT16(a, op, b)  X_ASSERT_TYPE(int16_t, PRIi16, a, op, b)
+    #define X_ASSERT_UINT16(a, op, b) X_ASSERT_TYPE(uint16_t, PRIu16, a, op, b)
+    #define X_ASSERT_INT32(a, op, b)  X_ASSERT_TYPE(int32_t, PRIi32, a, op, b)
+    #define X_ASSERT_UINT32(a, op, b) X_ASSERT_TYPE(uint32_t, PRIu32, a, op, b)
+    #define X_ASSERT_NULL(ptr)        X_ASSERT_PTR(ptr, ==, NULL)
+    #define X_ASSERT_NOT_NULL(ptr)    X_ASSERT_PTR(ptr, !=, NULL)
+    #define X_ASSERT_STRING_EQUAL(a, b)             X_ASSERT_STRING_EQUAL_IMPL(a, b)
+    #define X_ASSERT_STRING_NOT_EQUAL(a, b)         X_ASSERT_STRING_NOT_EQUAL_IMPL(a, b)
+    #define X_ASSERT_MEMORY_EQUAL(size, a, b)       X_ASSERT_MEMORY_EQUAL_IMPL(size, a, b)
+    #define X_ASSERT_MEMORY_NOT_EQUAL(size, a, b)   X_ASSERT_MEMORY_NOT_EQUAL_IMPL(size, a, b)
+#else
+    #define X_ASSERT_TRUE(expr)                   (void)0
+    #define X_ASSERT_FALSE(expr)                  (void)0
+    #define X_ASSERT_CHAR(a, op, b)               (void)0
+    #define X_ASSERT_UCHAR(a, op, b)              (void)0
+    #define X_ASSERT_SHORT(a, op, b)              (void)0
+    #define X_ASSERT_USHORT(a, op, b)             (void)0
+    #define X_ASSERT_INT(a, op, b)                (void)0
+    #define X_ASSERT_UINT(a, op, b)               (void)0
+    #define X_ASSERT_LONG(a, op, b)               (void)0
+    #define X_ASSERT_ULONG(a, op, b)              (void)0
+    #define X_ASSERT_SIZE(a, op, b)               (void)0
+    #define X_ASSERT_float(a, op, b)              (void)0
+    #define X_ASSERT_PTR(a, op, b)                (void)0
+    #define X_ASSERT_INT8(a, op, b)               (void)0
+    #define X_ASSERT_UINT8(a, op, b)              (void)0
+    #define X_ASSERT_INT16(a, op, b)              (void)0
+    #define X_ASSERT_UINT16(a, op, b)             (void)0
+    #define X_ASSERT_INT32(a, op, b)              (void)0
+    #define X_ASSERT_UINT32(a, op, b)             (void)0
+    #define X_ASSERT_NULL(ptr)                    (void)0
+    #define X_ASSERT_NOT_NULL(ptr)                (void)0
+    #define X_ASSERT_STRING_EQUAL(a, b)           (void)0
+    #define X_ASSERT_STRING_NOT_EQUAL(a, b)       (void)0
+    #define X_ASSERT_MEMORY_EQUAL(size, a, b)     (void)0
+    #define X_ASSERT_MEMORY_NOT_EQUAL(size, a, b) (void)0
+#endif
+
+/** @} end of name assertions_ex
+ */
+
+/** @addtogroup internal-use-only
+ *  @{
+ */
+
+#if (X_CONF_NO_STRINGIZE_ASSERT == 0)
+    #define X_ASSERTION_FAILED(strexpr)                       x_assertion_failed(strexpr, "", X_FUNC, __FILE__, __LINE__)
+    #define X_ASSERTION_FAILED_MSG(strexpr, msg)              x_assertion_failed(strexpr, "%s", X_FUNC, __FILE__, __LINE__, msg)
+    #define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a)        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a)
+    #define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a, b)     x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a, b)
+#else
+    #define X_ASSERTION_FAILED(strexpr)                       x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_MSG(strexpr, msg)              x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a)        x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a, b)     x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+#endif
 
 #define X_SIZE_MODIFIER   "z"
 #define X_CHAR_MODIFIER   "hh"
 #define X_SHORT_MODIFIER  "h"
-
-#define X_ASSERT_TRUE(expr) \
-    do { \
-        if (!X_LIKELY(expr)) { \
-            X_ASSERTION_FAILED(#expr, "is not true"); \
-      } \
-    } while (0)
-#define X_ASSERT_FALSE(expr) \
-    do { \
-        if (!X_LIKELY(!(expr))) { \
-        X_ASSERTION_FAILED(#expr, "is not false"); \
-        } \
-    } while (0)
 #define X_ASSERT_TYPE_FULL(prefix, suffix, T, fmt, a, op, b)   \
     do { \
         T tmp_a_ = (a); \
@@ -375,73 +482,26 @@ void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols,
                      tmp_a_, tmp_b_); \
         } \
     } while (0)
-#define X_ASSERT_TYPE(T, fmt, a, op, b) \
-  X_ASSERT_TYPE_FULL("", "", T, fmt, a, op, b)
-#define X_ASSERT_CHAR(a, op, b) \
-  X_ASSERT_TYPE_FULL("'\\x", "'", char, "02" X_CHAR_MODIFIER "x", a, op, b)
-#define X_ASSERT_UCHAR(a, op, b) \
-  X_ASSERT_TYPE_FULL("'\\x", "'", unsigned char, "02" X_CHAR_MODIFIER "x", a, op, b)
-#define X_ASSERT_SHORT(a, op, b) \
-  X_ASSERT_TYPE(short, X_SHORT_MODIFIER "d", a, op, b)
-#define X_ASSERT_USHORT(a, op, b) \
-  X_ASSERT_TYPE(unsigned short, X_SHORT_MODIFIER "u", a, op, b)
-#define X_ASSERT_INT(a, op, b) \
-  X_ASSERT_TYPE(int, "d", a, op, b)
-#define X_ASSERT_UINT(a, op, b) \
-  X_ASSERT_TYPE(unsigned int, "u", a, op, b)
-#define X_ASSERT_LONG(a, op, b) \
-  X_ASSERT_TYPE(long int, "ld", a, op, b)
-#define X_ASSERT_ULONG(a, op, b) \
-  X_ASSERT_TYPE(unsigned long int, "lu", a, op, b)
-#define X_ASSERT_SIZE(a, op, b) \
-  X_ASSERT_TYPE(size_t, X_SIZE_MODIFIER "u", a, op, b)
-#define X_ASSERT_float(a, op, b) \
-  X_ASSERT_TYPE(float, "f", a, op, b)
-#define X_ASSERT_PTR(a, op, b) \
-  X_ASSERT_TYPE(const void*, "p", a, op, b)
-#define X_ASSERT_INT8(a, op, b) \
-  X_ASSERT_TYPE(int8_t, PRIi8, a, op, b)
-#define X_ASSERT_UINT8(a, op, b) \
-  X_ASSERT_TYPE(uint8_t, PRIu8, a, op, b)
-#define X_ASSERT_INT16(a, op, b) \
-  X_ASSERT_TYPE(int16_t, PRIi16, a, op, b)
-#define X_ASSERT_UINT16(a, op, b) \
-  X_ASSERT_TYPE(uint16_t, PRIu16, a, op, b)
-#define X_ASSERT_INT32(a, op, b) \
-  X_ASSERT_TYPE(int32_t, PRIi32, a, op, b)
-#define X_ASSERT_UINT32(a, op, b) \
-  X_ASSERT_TYPE(uint32_t, PRIu32, a, op, b)
-#define X_ASSERT_PTR_EQUAL(a, b) \
-    X_ASSERT_PTR(a, ==, b)
-#define X_ASSERT_PTR_NOT_EQUAL(a, b) \
-    X_ASSERT_PTR(a, !=, b)
-#define X_ASSERT_NULL(ptr) \
-    X_ASSERT_PTR(ptr, ==, NULL)
-#define X_ASSERT_NOT_NULL(ptr) \
-    X_ASSERT_PTR(ptr, !=, NULL)
-#define X_ASSERT_PTR_NULL(ptr) \
-    X_ASSERT_PTR(ptr, ==, NULL)
-#define X_ASSERT_PTR_NOT_NULL(ptr) \
-    X_ASSERT_PTR(ptr, !=, NULL)
-#define X_ASSERT_STRING_EQUAL(a, b) \
+#define X_ASSERT_TYPE(T, fmt, a, op, b)     X_ASSERT_TYPE_FULL("", "", T, fmt, a, op, b)
+#define X_ASSERT_STRING_EQUAL_IMPL(a, b) \
     do { \
         const char* tmp_a_ = a; \
         const char* tmp_b_ = b; \
         if (X_UNLIKELY(strcmp(tmp_a_, tmp_b_) != 0)) { \
             X_ASSERTION_FAILED_FMT_A2(#a " == " #b, "(\"%s\" == \"%s\")", \
-                       tmp_a_, tmp_b_); \
+                        tmp_a_, tmp_b_); \
         } \
     } while (0)
-#define X_ASSERT_STRING_NOT_EQUAL(a, b) \
+#define X_ASSERT_STRING_NOT_EQUAL_IMPL(a, b) \
     do { \
         const char* tmp_a_ = a; \
         const char* tmp_b_ = b; \
         if (X_UNLIKELY(strcmp(tmp_a_, tmp_b_) == 0)) { \
             X_ASSERTION_FAILED_FMT_A2(#a " != " #b, "(\"%s\" == \"%s\")", \
-                     tmp_a_, tmp_b_); \
-      } \
+                        tmp_a_, tmp_b_); \
+        } \
     } while (0)
-#define X_ASSERT_MEMORY_EQUAL(size, a, b) \
+#define X_ASSERT_MEMORY_EQUAL_IMPL(size, a, b) \
     do { \
         const unsigned char* tmp_a_ = (const unsigned char*) (a); \
         const unsigned char* tmp_b_ = (const unsigned char*) (b); \
@@ -456,7 +516,7 @@ void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols,
             } \
         } \
     } while (0)
-#define X_ASSERT_MEMORY_NOT_EQUAL(size, a, b) \
+#define X_ASSERT_MEMORY_NOT_EQUAL_IMPL(size, a, b) \
     do { \
         const unsigned char* tmp_a_ = (const unsigned char*) (a); \
         const unsigned char* tmp_b_ = (const unsigned char*) (b); \
@@ -466,8 +526,7 @@ void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols,
         } \
     } while (0)
 
-
-/** @} end of name assertions_ex
+/** @} end of addtogroup internal-use-only
  */
 
 

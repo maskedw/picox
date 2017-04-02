@@ -284,18 +284,32 @@ static void X__AssertionFailed(const char* expr, const char* fmt, const char* fu
      * わってしまい、面倒なのでファイル名だけを取り出す。Windows形式のパスとUnix
      * 形式のパスを想定。
      */
-    const char* win_style = strrchr(file, '\\');
-    const char* unix_style = strrchr(file, '/');
-    const char* p = win_style ? win_style : unix_style;
+    const char* win_style;
+    const char* unix_style;
+    const char* p;
     const char* none = "none";
     va_list args;
-    va_start(args, line);
-    file = p ? p + 1 : file;
 
+    if (file)
+    {
+        win_style = strrchr(file, '\\');
+        unix_style = strrchr(file, '/');
+        p = win_style ? win_style : unix_style;
+        file = p ? p + 1 : file;
+    }
+
+    va_start(args, line);
     x_pre_assertion_failed();
     x_err_printf("Assertion failed\n");
-    x_err_printf("[MSG ] ");
-    x_err_vprintf(fmt, args);
+    if (fmt)
+    {
+        x_err_printf("[MSG ] ");
+        x_err_vprintf(fmt, args);
+    }
+    else
+    {
+        x_err_printf("[MSG ] none");
+    }
     x_err_printf("\n");
     x_err_printf("[EXPR] %s\n", expr ? expr : none);
     x_err_printf("[FUNC] %s\n", func ? func : none);

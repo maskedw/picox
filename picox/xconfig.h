@@ -80,19 +80,15 @@ extern "C" {
 #endif
 
 
-/** @def   X_CONF_ASSERT
- *  @brief X_ASSERT()を置き換えるルーチンを設定します。
+/** @def    X_CONF_NO_STRINGIZE_ASSERT
+ *  @brief  アサートマクロによるファイル名、式、等の文字列化を抑止します
+ *
+ *  省メモリ環境では、大量のアサートの文字列化によるROM使用量が許容できないこと
+ *  があります。そういった場合は、利便性が犠牲になりますが、文字列化を抑止して
+ *  ROM使用量を削減できます。
  */
-#ifndef X_CONF_ASSERT
-#define X_CONF_ASSERT(expr)     X_DEFAULT_ASSERT(expr)
-#endif
-
-
-/** @def   X_CONF_ASSERT_MSG
- *  @brief X_ASSERT_MSG()を置き換えるルーチンを設定します。
- */
-#ifndef X_CONF_ASSERT_MSG
-#define X_CONF_ASSERT_MSG(expr, msg)    X_DEFAULT_ASSERT_MSG(expr, msg)
+#ifndef X_CONF_NO_STRINGIZE_ASSERT
+#define X_CONF_NO_STRINGIZE_ASSERT  (0)
 #endif
 
 
