@@ -5,7 +5,3 @@
 [submodule "docs/wiki"]
 	path = docs/wiki
 	url = https://github.com/maskedw/picox.wiki.git
-[submodule "docs/apidoc"]
-	path = docs/apidoc
-	url = https://github.com/maskedw/picox_apidoc.git
-	ignore = dirty
