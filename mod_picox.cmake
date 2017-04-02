@@ -12,7 +12,7 @@ file(TO_CMAKE_PATH ${external_dir}/fatfs/port_picox         fatfs_dir)
 file(TO_CMAKE_PATH ${external_dir}/spiffs/port_picox        spiffs_dir)
 file(TO_CMAKE_PATH ${external_dir}/sds/port_picox           sds_dir)
 file(TO_CMAKE_PATH ${external_dir}/uthash/port_picox        uthash_dir)
-file(TO_CMAKE_PATH ${external_dir}/minIni/port_picox        minIni_dir)
+file(TO_CMAKE_PATH ${external_dir}/minIni                   minIni_dir)
 file(TO_CMAKE_PATH ${external_dir}/libfixmath/port_picox    libfixmath_dir)
 
 include_directories(${root_dir})
