@@ -11,7 +11,7 @@ file(TO_CMAKE_PATH ${external_dir}/Unity                    unity_dir)
 file(TO_CMAKE_PATH ${external_dir}/fatfs                    fatfs_dir)
 file(TO_CMAKE_PATH ${external_dir}/spiffs                   spiffs_dir)
 file(TO_CMAKE_PATH ${external_dir}/sds                      sds_dir)
-file(TO_CMAKE_PATH ${external_dir}/uthash/port_picox        uthash_dir)
+file(TO_CMAKE_PATH ${external_dir}/uthash                   uthash_dir)
 file(TO_CMAKE_PATH ${external_dir}/minIni                   minIni_dir)
 file(TO_CMAKE_PATH ${external_dir}/libfixmath/port_picox    libfixmath_dir)
 
@@ -64,7 +64,6 @@ set(picox_sources
     ${spiffs_dir}/spiffs_hydrogen.c
     ${spiffs_dir}/spiffs_nucleus.c
     ${uthash_dir}/libut.c
-    ${uthash_dir}/ringbuf.c
     ${uthash_dir}/utmm.c
     ${uthash_dir}/utvector.c
     ${minIni_dir}/minIni.c
