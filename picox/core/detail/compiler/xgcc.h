@@ -55,8 +55,8 @@
 
 #define X_HAS_VARIADIC_MACROS       (1)
 #define X_ALWAYS_INLINE             static inline __attribute__((__always_inline__))
-#define X_LIKELY(x)                 __builtin_expect(!!(x), 1)
-#define X_UNLIKELY(x)               __builtin_expect(!!(x), 0)
+#define X_LIKELY(expr)              __builtin_expect(!!(expr), 1)
+#define X_UNLIKELY(expr)            __builtin_expect(!!(expr), 0)
 #define X_MEMORY_BARRIER            asm volatile ("" : : : "memory")
 
 

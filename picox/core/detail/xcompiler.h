@@ -145,21 +145,39 @@
 /** @def    X_LIKELY
  *  @brief  条件分岐に使用するコンパイラ最適化ディレクティブです
  *
+ *  X_LIKELYは式の結果が、ほとんどの場合"真"と仮定してよい、とコンパイラに指示を
+ *  出します。
+ *  例えば、関数内で引数の整合性チェックを行う場合、不正な引数が渡される可能性は
+ *  低いと仮定してよいはずです。そういった場合にこのディレクティブを使用しておく
+ *  と、コンパイラはより最適化されたコードを生成できる可能性があります。
+ *
+ *  @code {.c}
+ *  bool functon(char* str)
+ *  {
+ *      // strがNULLなのは例外パターンなので、ほとんどのケースで真だと仮定してよい
+ *      if (!X_LIKELY(str))
+ *          return false;
+ *      ...
+ *  }
+ *  @endcode
+ *
  *  参考サイト<br>
  *  http://d.hatena.ne.jp/tkuro/20110114/1294956535
  */
 #ifndef X_LIKELY
-    #define X_LIKELY(x)         x
+    #define X_LIKELY(expr)         expr
 #endif
 
 
 /** @def    X_UNLIKELY
  *  @brief  条件分岐に使用するコンパイラ最適化ディレクティブです
  *
+ *  X_LIKELYとは逆で、exprはほとんどの場合"偽"であると、コンパイラに指示します。
+ *
  *  @see X_LIKELY
  */
 #ifndef X_UNLIKELY
-    #define X_UNLIKELY(x)         x
+    #define X_UNLIKELY(expr)         expr
 #endif
 
 
