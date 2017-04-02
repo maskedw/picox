@@ -310,20 +310,29 @@ static int X__SomewherePutc(void* ptr, int c)
     return putc_func(c);
 }
 
+#if SIZE_MAX >= ULONG_MAX
+    typedef size_t              X__PrintUInt;
+    #define X__PRINT_UINT_MAX   SIZE_MAX
+    #define X__MSBOF_PRINT_UINT X_MSBOF_SIZE
+#else
+    typedef unsigned long       X__PrintUInt;
+    #define X__PRINT_UINT_MAX   ULONG_MAX
+    #define X__MSBOF_PRINT_UINT X_MSBOF_LONG
+#endif
 
 static int X__VPrintf(X__Putc putc_func, void* context, const char* fmt, va_list args)
 {
     unsigned int i, j;
-    unsigned long v;
+    X__PrintUInt v;
     char* p;
     int len = 0;
 
     unsigned char type, flags, base, minimum_width;
     char c, digit;
-#if ULONG_MAX == 0xFFFFFFFF
+#if X__PRINT_UINT_MAX == 0xFFFFFFFF
     char s[32];
 #elif !defined(X_COMPILER_NO_64BIT_INT)
-    #if ULONG_MAX == 0xFFFFFFFFFFFFFFFF
+    #if X__PRINT_UINT_MAX == 0xFFFFFFFFFFFFFFFF
     char s[64];
     #endif
 #else
@@ -527,17 +536,27 @@ X__PRINT_STRING:
                     v = (unsigned short)va_arg(args, unsigned int);
                 break;
             case X__TYPE_LONG:
-                v = va_arg(args, long);
+                if ((c == 'd') || (c == 'i'))
+                    v = va_arg(args, long);
+                else
+                    v = va_arg(args, unsigned long);
                 break;
             case X__TYPE_SIZE:
-                v = va_arg(args, size_t);
+                if ((c == 'd') || (c == 'i'))
+#ifdef SSIZE_MAX
+                    v = va_arg(args, ssize_t);
+#else
+                    v = va_arg(args, long);
+#endif
+                else
+                    v = va_arg(args, size_t);
                 break;
             case X__TYPE_PTRDIFF:
                 v = va_arg(args, ptrdiff_t);
                 break;
         }
 
-        if (((c == 'd') || (c == 'i')) && (v & X_MSBOF_LONG))
+        if (((c == 'd') || (c == 'i')) && (v & X__MSBOF_PRINT_UINT))
         {
             v = 0 - v;
             flags |= X__FLAG_NEGATIVE;
