@@ -227,5 +227,11 @@ picoxと同等のライセンス(MIT, BSD, Apache License 2.0, etc)で、有用�
 + 細かな機能追加
 + HAL(Hardware Abstraction Layer)モジュールの追加
 
-### Roadmap
-+ v0.6 v1.0に向けた調整
+### v0.6 2017/04/22
++ バグ修正
++ X_ASSERTのバリエーションの追加
++ バッファリングなし出力を意図した、err_printf系関数の追加
++ テスト環境
+    + MSYS2 MinGW 32 GCC 6.3.0
+    + MSYS2 MinGW 64 GCC 6.3.0
+    + Ubuntu 16.04 GCC 5.4.0
