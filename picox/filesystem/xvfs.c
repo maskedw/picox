@@ -128,7 +128,7 @@ XStream* xvfs_init_stream(XStream* stream, XFile* fp)
 
 XError xvfs_open(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_open_func(vfs->m_realfs, path, mode, o_fp);
     if (*o_fp)
         (*o_fp)->m_vfs = vfs;
@@ -141,7 +141,7 @@ XError xvfs_close(XFile* fp)
     if (!fp)
         return X_ERR_NONE;
 
-    X_ASSERT_SELF(fp->m_vfs);
+    X_ASSERT(fp->m_vfs);
     XVirtualFs* const vfs = fp->m_vfs;
     const XError err = vfs->m_close_func(fp);
     return err;
@@ -150,8 +150,8 @@ XError xvfs_close(XFile* fp)
 
 XError xvfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
 {
-    X_ASSERT_SELF(fp);
-    X_ASSERT_SELF(fp->m_vfs);
+    X_ASSERT(fp);
+    X_ASSERT(fp->m_vfs);
 
     XVirtualFs* const vfs = fp->m_vfs;
     const XError err = vfs->m_read_func(fp, dst, size, nread);
@@ -161,8 +161,8 @@ XError xvfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
 
 XError xvfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
 {
-    X_ASSERT_SELF(fp);
-    X_ASSERT_SELF(fp->m_vfs);
+    X_ASSERT(fp);
+    X_ASSERT(fp->m_vfs);
 
     XVirtualFs* const vfs = fp->m_vfs;
     const XError err = vfs->m_write_func(fp, src, size, nwritten);
@@ -172,8 +172,8 @@ XError xvfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
 
 XError xvfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 {
-    X_ASSERT_SELF(fp);
-    X_ASSERT_SELF(fp->m_vfs);
+    X_ASSERT(fp);
+    X_ASSERT(fp->m_vfs);
 
     XVirtualFs* const vfs = fp->m_vfs;
     const XError err = vfs->m_seek_func(fp, pos, whence);
@@ -183,8 +183,8 @@ XError xvfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 
 XError xvfs_tell(XFile* fp, XSize* pos)
 {
-    X_ASSERT_SELF(fp);
-    X_ASSERT_SELF(fp->m_vfs);
+    X_ASSERT(fp);
+    X_ASSERT(fp->m_vfs);
 
     XVirtualFs* const vfs = fp->m_vfs;
     const XError err = vfs->m_tell_func(fp, pos);
@@ -194,8 +194,8 @@ XError xvfs_tell(XFile* fp, XSize* pos)
 
 XError xvfs_flush(XFile* fp)
 {
-    X_ASSERT_SELF(fp);
-    X_ASSERT_SELF(fp->m_vfs);
+    X_ASSERT(fp);
+    X_ASSERT(fp->m_vfs);
 
     XVirtualFs* const vfs = fp->m_vfs;
     const XError err = vfs->m_flush_func(fp);
@@ -205,7 +205,7 @@ XError xvfs_flush(XFile* fp)
 
 XError xvfs_mkdir(XVirtualFs* vfs, const char* path)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
 
     const XError err = vfs->m_mkdir_func(vfs->m_realfs, path);
     return err;
@@ -214,7 +214,7 @@ XError xvfs_mkdir(XVirtualFs* vfs, const char* path)
 
 XError xvfs_opendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
 
     const XError err = vfs->m_opendir_func(vfs->m_realfs, path, o_dir);
     if (*o_dir)
@@ -226,8 +226,8 @@ XError xvfs_opendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
 
 XError xvfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
-    X_ASSERT_SELF(dir);
-    X_ASSERT_SELF(dir->m_vfs);
+    X_ASSERT(dir);
+    X_ASSERT(dir->m_vfs);
 
     XVirtualFs* const vfs = dir->m_vfs;
     const XError err = vfs->m_readdir_func(dir, dirent, result);
@@ -240,8 +240,8 @@ XError xvfs_closedir(XDir* dir)
     if (!dir)
         return X_ERR_NONE;
 
-    X_ASSERT_SELF(dir);
-    X_ASSERT_SELF(dir->m_vfs);
+    X_ASSERT(dir);
+    X_ASSERT(dir->m_vfs);
 
     XVirtualFs* const vfs = dir->m_vfs;
     const XError err = vfs->m_closedir_func(dir);
@@ -251,7 +251,7 @@ XError xvfs_closedir(XDir* dir)
 
 XError xvfs_chdir(XVirtualFs* vfs, const char* path)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_chdir_func(vfs->m_realfs, path);
     return err;
 }
@@ -259,7 +259,7 @@ XError xvfs_chdir(XVirtualFs* vfs, const char* path)
 
 XError xvfs_getcwd(XVirtualFs* vfs, char* buf, size_t size)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_getcwd_func(vfs->m_realfs, buf, size);
     return err;
 }
@@ -267,7 +267,7 @@ XError xvfs_getcwd(XVirtualFs* vfs, char* buf, size_t size)
 
 XError xvfs_remove(XVirtualFs* vfs, const char* path)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_remove_func(vfs->m_realfs, path);
     return err;
 }
@@ -275,7 +275,7 @@ XError xvfs_remove(XVirtualFs* vfs, const char* path)
 
 XError xvfs_rename(XVirtualFs* vfs, const char* oldpath, const char* newpath)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_rename_func(vfs->m_realfs, oldpath, newpath);
     return err;
 }
@@ -283,7 +283,7 @@ XError xvfs_rename(XVirtualFs* vfs, const char* oldpath, const char* newpath)
 
 XError xvfs_stat(XVirtualFs* vfs, const char* path, XStat* statbuf)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_stat_func(vfs->m_realfs, path, statbuf);
     return err;
 }
@@ -291,7 +291,7 @@ XError xvfs_stat(XVirtualFs* vfs, const char* path, XStat* statbuf)
 
 XError xvfs_utime(XVirtualFs* vfs, const char* path, XTime time)
 {
-    X_ASSERT_SELF(vfs);
+    X_ASSERT(vfs);
     const XError err = vfs->m_utime_func(vfs->m_realfs, path, time);
     return err;
 }
@@ -455,8 +455,8 @@ x__exit:
 
 XError xvfs_copytree(XVirtualFs* vfs, const char* src, const char* dst)
 {
-    X_ASSERT_ARG(dst);
-    X_ASSERT_ARG(src);
+    X_ASSERT(dst);
+    X_ASSERT(src);
 
     X__CopyTreeWorkBuf* work = x_malloc(sizeof(X__CopyTreeWorkBuf));
     if (!work)
@@ -500,7 +500,7 @@ x__exit:
 
 XError xvfs_rmtree(XVirtualFs* vfs, const char* path)
 {
-    X_ASSERT_ARG(path);
+    X_ASSERT(path);
 
     XError err = X_ERR_NONE;
 
@@ -551,8 +551,8 @@ x__exit:
 
 XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, void* userptr)
 {
-    X_ASSERT_ARG(path);
-    X_ASSERT_ARG(walker);
+    X_ASSERT(path);
+    X_ASSERT(walker);
 
     X__WalkTreeWorkBuf* work = x_malloc(sizeof(X__WalkTreeWorkBuf));
     if (!work)

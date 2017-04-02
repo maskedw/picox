@@ -42,7 +42,7 @@
 
 #define X__TYPE_DIR  (0)
 #define X__TYPE_FILE (1)
-#define X__ASSERT_TAG(p)        (X_ASSERT_TAG(((const XRomFs*)p)->m_tag == X_ROMFS_TAG))
+#define X__ASSERT_TAG(p)        (X_ASSERT(((const XRomFs*)p)->m_tag == X_ROMFS_TAG))
 #define X__GET_FILE_HANDLE(fp)  ((X__File*)fp)
 #define X__GET_DIR_HANDLE(dir)  ((X__Dir*)dir)
 #define X__EXIT_IF(cond, v)     X_ASSIGN_AND_GOTO_IF(cond, err, v, x__exit)
@@ -194,7 +194,7 @@ XStream* xromfs_init_stream(XStream* stream, XFile* fp)
 
 XError xromfs_open(XRomFs* fs, const char* path, XOpenMode mode, XFile** o_fp)
 {
-    X_ASSERT_SELF(fs);
+    X_ASSERT(fs);
     X_ASSERT_NOT_NULL(o_fp);
     X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
@@ -321,7 +321,7 @@ XError xromfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 
 XError xromfs_tell(XFile* fp, XSize* pos)
 {
-    X_ASSERT_SELF(fp);
+    X_ASSERT(fp);
     X_ASSERT_NOT_NULL(pos);
     X__ASSERT_TAG(fp->m_fs);
 
@@ -334,7 +334,7 @@ XError xromfs_tell(XFile* fp, XSize* pos)
 
 XError xromfs_flush(XFile* fp)
 {
-    X_ASSERT_SELF(fp);
+    X_ASSERT(fp);
     X__ASSERT_TAG(fp->m_fs);
     X_UNUSED(fp);
 
@@ -344,7 +344,7 @@ XError xromfs_flush(XFile* fp)
 
 XError xromfs_opendir(XRomFs* fs, const char* path, XDir** o_dir)
 {
-    X_ASSERT_SELF(fs);
+    X_ASSERT(fs);
     X_ASSERT_NOT_NULL(o_dir);
     X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
@@ -386,7 +386,7 @@ x__exit:
 
 XError xromfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
-    X_ASSERT_SELF(dir);
+    X_ASSERT(dir);
     X_ASSERT_NOT_NULL(dirent);
     X_ASSERT_NOT_NULL(result);
     X__ASSERT_TAG(dir->m_fs);
@@ -422,7 +422,7 @@ XError xromfs_closedir(XDir* dir)
 
 XError xromfs_chdir(XRomFs* fs, const char* path)
 {
-    X_ASSERT_SELF(fs);
+    X_ASSERT(fs);
     X_ASSERT_NOT_NULL(path);
     X__ASSERT_TAG(fs);
 
@@ -444,7 +444,7 @@ XError xromfs_chdir(XRomFs* fs, const char* path)
 
 XError xromfs_getcwd(XRomFs* fs, char* buf, size_t size)
 {
-    X_ASSERT_SELF(fs);
+    X_ASSERT(fs);
     X_ASSERT_NOT_NULL(buf);
     X__ASSERT_TAG(fs);
     if (size == 0)
@@ -485,7 +485,7 @@ XError xromfs_getcwd(XRomFs* fs, char* buf, size_t size)
 
 XError xromfs_stat(XRomFs* fs, const char* path, XStat* statbuf)
 {
-    X_ASSERT_SELF(fs);
+    X_ASSERT(fs);
     X_ASSERT_NOT_NULL(statbuf);
     X__ASSERT_TAG(fs);
 

@@ -555,8 +555,8 @@ x__exit:
 
 XError xunionfs_copytree(const char* src, const char* dst)
 {
-    X_ASSERT_ARG(dst);
-    X_ASSERT_ARG(src);
+    X_ASSERT(dst);
+    X_ASSERT(src);
 
     X__CopyTreeWorkBuf* work = x_malloc(sizeof(X__CopyTreeWorkBuf));
     if (!work)
@@ -605,7 +605,7 @@ x__exit:
 
 XError xunionfs_rmtree(const char* path)
 {
-    X_ASSERT_ARG(path);
+    X_ASSERT(path);
 
     XError err = X_ERR_NONE;
 
@@ -655,8 +655,8 @@ x__exit:
 
 XError xunionfs_walktree(const char* path, XFsTreeWalker walker, void* userptr)
 {
-    X_ASSERT_ARG(path);
-    X_ASSERT_ARG(walker);
+    X_ASSERT(path);
+    X_ASSERT(walker);
 
     X__WalkTreeWorkBuf* work = x_malloc(sizeof(X__WalkTreeWorkBuf));
     char* tmp;

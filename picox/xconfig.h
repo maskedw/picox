@@ -91,48 +91,8 @@ extern "C" {
 /** @def   X_CONF_ASSERT_MSG
  *  @brief X_ASSERT_MSG()を置き換えるルーチンを設定します。
  */
-#ifndef X_CONF_ASSERT
+#ifndef X_CONF_ASSERT_MSG
 #define X_CONF_ASSERT_MSG(expr, msg)    X_DEFAULT_ASSERT_MSG(expr, msg)
-#endif
-
-
-/** @def   X_CONF_USE_ASSERT_SELF
- *  @brief クラス指向モジュールの第一引数のNULLチェックの有効化
- */
-#ifndef X_CONF_USE_ASSERT_SELF
-#define X_CONF_USE_ASSERT_SELF  (1)
-#endif
-
-
-/** @def   X_CONF_USE_ASSERT_ARG
- *  @brief 引数の範囲チェック等の有効化
- */
-#ifndef X_CONF_USE_ASSERT_ARG
-#define X_CONF_USE_ASSERT_ARG  (1)
-#endif
-
-
-/** @def   X_CONF_USE_ASSERT_NULL
- *  @brief 引数のNULLチェックの有効化
- */
-#ifndef X_CONF_USE_ASSERT_NULL
-#define X_CONF_USE_ASSERT_NULL  (1)
-#endif
-
-
-/** @def   X_CONF_USE_ASSERT_TAG
- *  @brief タグチェックの有効化
- */
-#ifndef X_CONF_USE_ASSERT_TAG
-#define X_CONF_USE_ASSERT_TAG  (1)
-#endif
-
-
-/** @def   X_CONF_USE_ASSERT_ENUM
- *  @brief 列挙値チェックの有効化
- */
-#ifndef X_CONF_USE_ASSERT_ENUM
-#define X_CONF_USE_ASSERT_ENUM  (1)
 #endif
 
 

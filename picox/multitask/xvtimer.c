@@ -90,10 +90,9 @@ void xvtimer_add_request(XVTimer* self,
                          bool once,
                          XDeleter deleter)
 {
-    X_ASSERT_SELF(self);
-    X_ASSERT_NOT_NULL(request);
-    X_ASSERT_NOT_NULL(callback);
-
+    X_ASSERT(self);
+    X_ASSERT(request);
+    X_ASSERT(callback);
     X_ASSERT(!(request->m_holder) || (request->m_holder == self));
 
     request->callback = callback;
@@ -117,7 +116,7 @@ void xvtimer_add_request(XVTimer* self,
 
 void xvtimer_remove_requst(XVTimer* self, XVTimerRequest* request)
 {
-    X_ASSERT_SELF(self);
+    X_ASSERT(self);
     if (!request)
         return;
     if (!request->m_holder)

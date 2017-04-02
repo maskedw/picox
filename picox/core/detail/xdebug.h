@@ -259,46 +259,6 @@ extern void (*x_post_assertion_failed)(void);
 #endif
 
 
-/** @def   X_ASSERT_SELF
- *  @brief クラス指向モジュールの第一引数のNULLチェック用アサートです
- */
-#if X_CONF_USE_ASSERT_SELF != 0
-    #define X_ASSERT_SELF(expr)         X_ASSERT(expr)
-#else
-    #define X_ASSERT_SELF(expr)         (void)0
-#endif
-
-
-/** @def   X_ASSERT_ARG
- *  @brief 引数の範囲チェック等のためのアサートです
- */
-#if X_CONF_USE_ASSERT_ARG != 0
-    #define X_ASSERT_ARG(expr)          X_ASSERT(expr)
-#else
-    #define X_ASSERT_ARG(expr)          (void)0
-#endif
-
-
-/** @def   X_ASSERT_TAG
- *  @brief 規定のタグがセットされているかの検査用アサートです
- */
-#if X_CONF_USE_ASSERT_TAG
-    #define X_ASSERT_TAG(expr)          X_ASSERT(expr)
-#else
-    #define X_ASSERT_TAG(expr)          (void)0
-#endif
-
-
-/** @def   X_ASSERT_ENUM
- *  @brief 不正な列挙値が指定されていないかの検査用アサートです
- */
-#if X_CONF_USE_ASSERT_ENUM
-    #define X_ASSERT_ENUM(expr)         X_ASSERT(expr)
-#else
-    #define X_ASSERT_ENUM(expr)         (void)0
-#endif
-
-
 /** @def   X_ASSERT_MALLOC_NULL
  *  @brief 動的メモリ確保のNULL検査用アサートです
  */
