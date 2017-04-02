@@ -2,10 +2,6 @@
 	path = picox_external/spiffs
 	url = https://github.com/maskedw/spiffs
 	ignore = dirty
-[submodule "picox_external/fatfs"]
-	path = picox_external/fatfs
-	url = https://github.com/maskedw/fatfs.git
-	ignore = dirty
 [submodule "picox_external/uthash"]
 	path = picox_external/uthash
 	url = https://github.com/maskedw/uthash.git
