@@ -13,7 +13,7 @@ file(TO_CMAKE_PATH ${external_dir}/spiffs                   spiffs_dir)
 file(TO_CMAKE_PATH ${external_dir}/sds                      sds_dir)
 file(TO_CMAKE_PATH ${external_dir}/uthash                   uthash_dir)
 file(TO_CMAKE_PATH ${external_dir}/minIni                   minIni_dir)
-file(TO_CMAKE_PATH ${external_dir}/libfixmath/port_picox    libfixmath_dir)
+file(TO_CMAKE_PATH ${external_dir}/libfixmath               libfixmath_dir)
 
 include_directories(${root_dir})
 include_directories(${unity_dir})
