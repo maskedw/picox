@@ -7,7 +7,7 @@ execute_process(COMMAND git rev-parse --show-toplevel
 
 file(TO_CMAKE_PATH ${root_dir}/picox                        picox_dir)
 file(TO_CMAKE_PATH ${root_dir}/picox_external               external_dir)
-file(TO_CMAKE_PATH ${external_dir}/Unity/port_picox         unity_dir)
+file(TO_CMAKE_PATH ${external_dir}/Unity                    unity_dir)
 file(TO_CMAKE_PATH ${external_dir}/fatfs/port_picox         fatfs_dir)
 file(TO_CMAKE_PATH ${external_dir}/spiffs/port_picox        spiffs_dir)
 file(TO_CMAKE_PATH ${external_dir}/sds                      sds_dir)

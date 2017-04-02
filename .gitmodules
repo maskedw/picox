@@ -6,10 +6,6 @@
 	path = picox_external/fatfs
 	url = https://github.com/maskedw/fatfs.git
 	ignore = dirty
-[submodule "picox_external/Unity"]
-	path = picox_external/Unity
-	url = https://github.com/maskedw/Unity.git
-	ignore = dirty
 [submodule "picox_external/uthash"]
 	path = picox_external/uthash
 	url = https://github.com/maskedw/uthash.git
