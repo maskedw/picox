@@ -84,6 +84,17 @@ static const uint8_t X__FFARRAY[128] = {
 };
 
 
+static const XStreamVTable X__spiffs_filestream_vtable = {
+    .m_name = "XSpiFFSFileStream",
+    .m_read_func = (XStreamReadFunc)xspiffs_read,
+    .m_write_func = (XStreamWriteFunc)xspiffs_write,
+    .m_close_func = (XStreamCloseFunc)xspiffs_close,
+    .m_flush_func = (XStreamFlushFunc)xspiffs_flush,
+    .m_seek_func = (XStreamSeekFunc)xspiffs_seek,
+    .m_tell_func = (XStreamTellFunc)xspiffs_tell,
+};
+
+
 void xspiffs_init(XSpiFFs* fs, spiffs* src)
 {
     X_ASSERT(fs);
@@ -124,16 +135,13 @@ void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs)
 
 XStream* xspiffs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NOT_NULL(stream);
-    X_ASSERT_NOT_NULL(fp);
+    X_ASSERT(stream);
+    X_ASSERT(fp);
 
     xstream_init(stream);
-    stream->driver = fp;
-    stream->tag = X_SPIFFS_TAG;
-    stream->write_func = (XStreamWriteFunc)xspiffs_write;
-    stream->read_func = (XStreamReadFunc)xspiffs_read;
-    stream->seek_func = (XStreamSeekFunc)xspiffs_seek;
-    stream->tell_func = (XStreamTellFunc)xspiffs_tell;
+    stream->m_rtti_tag = &XFILE_STREAM_RTTI_TAG;
+    stream->m_driver = fp;
+    stream->m_vtable = &X__spiffs_filestream_vtable;
 
     return stream;
 }

@@ -66,7 +66,6 @@ extern "C" {
  *  @{
  */
 
-
 #define X_FATFS_TAG     (X_MAKE_TAG('X', 'F', 'A', 'F'))
 
 typedef struct

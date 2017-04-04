@@ -40,145 +40,192 @@
 #include <picox/core/xcore.h>
 
 
-static int X__MemStreamWrite(XMemStream* self, const void* src, size_t size, size_t* nwritten);
-static int X__MemStreamRead(XMemStream* self, void* dst, size_t size, size_t* nread);
-static int X__MemStreamSeek(XMemStream* self, XOffset offset, XSeekMode mode);
-static int X__MemStreamTell(XMemStream* self, XSize* pos);
-static int X__GenericRead(void* ptr, void* dst, size_t size, size_t* nread);
-static int X__GenericWrite(void* ptr, const void* src, size_t size, size_t* nwritten);
-static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode);
-static int X__GenericTell(void* ptr, XSize* pos);
-static int X__GenericFlush(void* ptr);
-static int X__GenericClose(void* ptr);
-static const char* X__GenericErrorString(int errcode);
+X_IMPL_RTTI_TAG(XMEMSTREAM_RTTI_TAG);
+static const XStreamVTable X__memstream_vtable = {
+    .m_name = "XMemStream",
+    .m_read_func = (XStreamReadFunc)xmemstream_read,
+    .m_write_func = (XStreamWriteFunc)xmemstream_write,
+    .m_seek_func = (XStreamSeekFunc)xmemstream_seek,
+    .m_tell_func = (XStreamTellFunc)xmemstream_tell
+};
 
 
 void xstream_init(XStream* self)
 {
     X_ASSERT(self);
-    self->driver = self;
-    self->error = 0;
-    self->tag = X_STREAM_TAG;
-    self->read_func = X__GenericRead;
-    self->write_func = X__GenericWrite;
-    self->close_func = X__GenericClose;
-    self->flush_func = X__GenericFlush;
-    self->seek_func = X__GenericSeek;
-    self->tell_func = X__GenericTell;
-    self->error_string_func = X__GenericErrorString;
+
+    X_RESET_RTTI(self);
+    self->m_error = X_ERR_NONE;
 }
 
 
 int xstream_read(XStream* self, void* dst, size_t size, size_t* nread)
 {
-    int ret;
     X_ASSERT(self);
     X_ASSERT(dst);
-    X_ASSERT(nread);
-    ret = self->read_func(self->driver, dst, size, nread);
-    self->error = ret;
-    return ret;
+
+    if (!self->m_vtable->m_read_func)
+    {
+        self->m_error = X_ERR_NOT_SUPPORTED;
+        goto finish;
+    }
+
+    self->m_error = self->m_vtable->m_read_func(self->m_driver, dst, size, nread);
+finish:
+
+    return self->m_error;
 }
 
 
 int xstream_write(XStream* self, const void* src, size_t size, size_t* nwritten)
 {
-    int ret;
     X_ASSERT(self);
     X_ASSERT(src);
-    X_ASSERT(nwritten);
-    ret = self->write_func(self->driver, src, size, nwritten);
-    self->error = ret;
-    return ret;
+
+    if (!self->m_vtable->m_write_func)
+    {
+        self->m_error = X_ERR_NOT_SUPPORTED;
+        goto finish;
+    }
+
+    self->m_error = self->m_vtable->m_write_func(self->m_driver, src, size, nwritten);
+finish:
+
+    return self->m_error;
 }
 
 
 int xstream_close(XStream* self)
 {
-    int ret;
     X_ASSERT(self);
-    ret = self->close_func(self->driver);
-    self->error = ret;
-    return ret;
+
+    self->m_error = xstream_flush(self);
+    if (self->m_error != X_ERR_NONE)
+        goto finish;
+
+    if (!self->m_vtable->m_close_func)
+    {
+        self->m_error = X_ERR_NONE;
+        goto finish;
+    }
+
+    self->m_error = self->m_vtable->m_close_func(self->m_driver);
+finish:
+
+    return self->m_error;
 }
 
 
 int xstream_flush(XStream* self)
 {
-    int ret;
     X_ASSERT(self);
-    ret = self->flush_func(self->driver);
-    self->error = ret;
-    return ret;
+
+    if (!self->m_vtable->m_flush_func)
+    {
+        self->m_error = X_ERR_NONE;
+        goto finish;
+    }
+
+    self->m_error = self->m_vtable->m_flush_func(self->m_driver);
+finish:
+
+    return self->m_error;
 }
 
 
 int xstream_seek(XStream* self, XOffset offset, XSeekMode mode)
 {
-    int ret;
     X_ASSERT(self);
-    X_ASSERT(x_is_within(mode, X_SEEK_SET, X_SEEK_END + 1));
-    ret = self->seek_func(self->driver, offset, mode);
-    self->error = ret;
-    return ret;
+
+    if (!x_is_within(mode, X_SEEK_SET, X_SEEK_END + 1))
+    {
+        self->m_error = X_ERR_INVALID;
+        goto finish;
+    }
+
+    if (!self->m_vtable->m_seek_func)
+    {
+        self->m_error = X_ERR_NOT_SUPPORTED;
+        goto finish;
+    }
+
+    self->m_error = self->m_vtable->m_seek_func(self->m_driver, offset, mode);
+finish:
+
+    return self->m_error;
 }
 
 
 int xstream_tell(XStream* self, XSize* pos)
 {
-    int ret;
     X_ASSERT(self);
     X_ASSERT(pos);
-    ret = self->tell_func(self->driver, pos);
-    self->error = ret;
-    return ret;
+
+    if (!self->m_vtable->m_tell_func)
+    {
+        self->m_error = X_ERR_NOT_SUPPORTED;
+        goto finish;
+    }
+
+    self->m_error = self->m_vtable->m_tell_func(self->m_driver, pos);
+finish:
+
+    return self->m_error;
 }
 
 
 int xstream_error(const XStream* self)
 {
     X_ASSERT(self);
-    return self->error;
+    return self->m_error;
 }
 
 
 const char* xstream_error_string(const XStream* self, int errcode)
 {
     X_ASSERT(self);
-    return self->error_string_func(errcode);
+    if (!self->m_vtable->m_error_string_func)
+        return x_strerror(errcode);
+
+    return self->m_vtable->m_error_string_func(errcode);
 }
 
 
 int xstream_putc(XStream* self, int c)
 {
-    bool ok;
-    size_t nwritten;
     uint8_t byte = (uint8_t)c;
+    size_t nwritten = 0;
+    XStreamWriteFunc write_func = self->m_vtable->m_write_func;
 
-    do
+    if (!write_func)
     {
-        ok = (self->write_func(self->driver, &byte, sizeof(byte), &nwritten) == 0);
-        X_BREAK_IF(! ok);
-        ok = (nwritten == sizeof(byte));
-    } while (0);
+        self->m_error = X_ERR_NOT_SUPPORTED;
+        goto finish;
+    }
 
-    return ok ? c : EOF;
+    self->m_error = write_func(self->m_driver, &byte, sizeof(byte), &nwritten);
+finish:
+
+    return nwritten == 1 ? c : EOF;
 }
 
 
 int xstream_getc(XStream* self)
 {
-    bool ok;
-    size_t nread;
     uint8_t byte;
-    do
-    {
-        ok = (self->read_func(self->driver, &byte, sizeof(byte), &nread) == 0);
-        X_BREAK_IF(! ok);
-        ok = (nread == sizeof(byte));
-    } while (0);
+    size_t nread = 0;
+    XStreamReadFunc read_func = self->m_vtable->m_read_func;
 
-    return ok ? byte : EOF;
+    if (!read_func)
+    {
+        self->m_error = X_ERR_NOT_SUPPORTED;
+        goto finish;
+    }
+
+    self->m_error = read_func(self->m_driver, &byte, sizeof(byte), &nread);
+finish:
+
+    return nread == 1 ? byte : EOF;
 }
 
 
@@ -206,7 +253,7 @@ int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* ove
     X_ASSIGN_NOT_NULL(result, (dst[0] != '\0') ? dst : NULL);
     X_ASSIGN_NOT_NULL(overflow, (c != '\n') && (c != EOF));
 
-    return self->error;
+    return self->m_error;
 }
 
 
@@ -217,59 +264,76 @@ int xstream_printf(XStream* self, const char* fmt, ...)
     va_start(args, fmt);
     len = x_vprintf_to_stream(self, fmt, args);
     va_end(args);
-    return (self->error == 0) ? len : -1;
+    return (self->m_error == 0) ? len : -1;
 }
 
 
 int xstream_vprintf(XStream* self, const char* fmt, va_list args)
 {
     const int len = x_vprintf_to_stream(self, fmt, args);
-    return (self->error == 0) ? len : -1;
+    return (self->m_error == 0) ? len : -1;
 }
 
 
-void xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity)
+XStream* xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity)
 {
-    xstream_init(&self->stream);
-    self->stream.driver = self;
-    self->stream.tag = X_MEMSTREAM_TAG;
-    self->stream.write_func = (XStreamWriteFunc)X__MemStreamWrite;
-    self->stream.read_func = (XStreamReadFunc)X__MemStreamRead;
-    self->stream.seek_func = (XStreamSeekFunc)X__MemStreamSeek;
-    self->stream.tell_func = (XStreamTellFunc)X__MemStreamTell;
+    X_ASSERT(self);
+    X_ASSERT(mem);
+
+    xstream_init(&self->m_super);
+    self->m_super.m_rtti_tag = &XMEMSTREAM_RTTI_TAG;
+    self->m_super.m_driver = self;
+    self->m_super.m_vtable = &X__memstream_vtable;
+
     self->mem = mem;
     self->pos = 0;
     self->size = size;
     self->capacity = capacity;
+
+    return &self->m_super;
 }
 
 
-static int X__MemStreamWrite(XMemStream* self, const void* src, size_t size, size_t* nwritten)
+int xmemstream_write(XMemStream* self, const void* src, size_t size, size_t* nwritten)
 {
     const size_t to_write = ((self->pos + size) <= self->capacity)
                             ? size : (size_t)(self->capacity - self->pos);
-    memcpy(self->mem + self->pos, src, to_write);
+
+    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
+
+    if (to_write)
+        memcpy(self->mem + self->pos, src, to_write);
+
     self->pos += to_write;
     *nwritten = to_write;
     if (self->pos > self->size)
         self->size = self->pos;
-    return 0;
+
+    return X_ERR_NONE;
 }
 
 
-static int X__MemStreamRead(XMemStream* self, void* dst, size_t size, size_t* nread)
+int xmemstream_read(XMemStream* self, void* dst, size_t size, size_t* nread)
 {
     const size_t to_read = ((self->pos + size) <= self->size)
                             ? size : (size_t)(self->size - self->pos);
-    memcpy(dst, self->mem + self->pos, to_read);
+
+    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
+
+    if (to_read)
+        memcpy(dst, self->mem + self->pos, to_read);
+
     self->pos += to_read;
     *nread = to_read;
-    return 0;
+
+    return X_ERR_NONE;
 }
 
 
-static int X__MemStreamSeek(XMemStream* self, XOffset pos, XSeekMode mode)
+int xmemstream_seek(XMemStream* self, XOffset pos, XSeekMode mode)
 {
+    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
+
     XOffset seekpos = 0;
     switch (mode)
     {
@@ -288,79 +352,20 @@ static int X__MemStreamSeek(XMemStream* self, XOffset pos, XSeekMode mode)
             break;
     }
 
-    X_ASSERT(seekpos >= 0);
+    if (seekpos < 0)
+        return X_ERR_RANGE;
+    if (seekpos > (XOffset)self->capacity)
+        return X_ERR_RANGE;
+
     self->pos = seekpos;
-    return 0;
+    return X_ERR_NONE;
 }
 
 
-static int X__MemStreamTell(XMemStream* self, XSize* pos)
+int xmemstream_tell(XMemStream* self, XSize* pos)
 {
+    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
+
     *pos = self->pos;
-    return 0;
-}
-
-
-static int X__GenericRead(void* ptr, void* dst, size_t size, size_t* nread)
-{
-    X_UNUSED(ptr);
-    X_UNUSED(dst);
-    X_UNUSED(size);
-    *nread = 0;
-    return true;
-}
-
-
-static int X__GenericWrite(void* ptr, const void* src, size_t size, size_t* nwritten)
-{
-    X_UNUSED(ptr);
-    X_UNUSED(src);
-    X_UNUSED(size);
-    *nwritten = 0;
-    return true;
-}
-
-
-static int X__GenericSeek(void* ptr, XOffset offset, XSeekMode mode)
-{
-    X_UNUSED(ptr);
-    X_UNUSED(offset);
-    X_UNUSED(mode);
-    return true;
-}
-
-
-static int X__GenericTell(void* ptr, XSize* pos)
-{
-    X_UNUSED(ptr);
-    *pos = 0;
-    return true;
-}
-
-
-static int X__GenericFlush(void* ptr)
-{
-    X_UNUSED(ptr);
-    return true;
-}
-
-
-static int X__GenericClose(void* ptr)
-{
-    XStream* stream = (XStream*)ptr;
-    stream->flush_func(stream->driver);
-    return true;
-}
-
-
-static const char* X__GenericErrorString(int errcode)
-{
-    switch (errcode)
-    {
-        case 0:
-            return "X_STREAM_ERR_NONE";
-        default:
-            break;
-    }
-    return "X_STREAM_ERR_UNKNOWN";
+    return X_ERR_NONE;
 }

@@ -213,6 +213,9 @@ struct XVirtualFs
 void xvfs_init(XVirtualFs* vfs);
 
 
+X_DECLEAR_RTTI_TAG(XFILE_STREAM_RTTI_TAG);
+
+
 /** @} end of name virtual filesystem interface
  */
 

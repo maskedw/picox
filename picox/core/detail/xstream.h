@@ -138,63 +138,39 @@ typedef const char* (*XStreamErrorStringFunc)(int errcode);
  */
 
 
-/** @brief ストリームを表す抽象型です
+/** @brief XStreamインターフェースのvtableです
  *
- *  独自ストリームを定義する場合は、必ず先頭メンバにこの型を配置してください(ス
- *  トリーム型から独自型へのキャストのため)。
+ *  XStreamVTableの各関数(仮想関数)インターフェースの規約に沿った関数でvtableを
+ *  初期化することで、XStreamを引数に受け取る関数の入出力先をカスタマイズするこ
+ *  とができます。
+ *  仮想関数の規約や、XStreamの初期化方法は、各関数ポインタのtypedef定義のコメン
+ *  トと、XMemStream等のpicoxのコードをサンプルにしてください。
  *
- *  独自ストリームの初期化は、はじめにxstream_init()で初期化を行ったあとに必要な
- *  変数セットしてください。
- *  すべての関数ポインタをセットする必要はありません。例えばバッファリングをおこ
- *  わないストリームなら、flush_funcの設定は不要です。
- *  未設定の関数ポインタは初期化時に何も行わず、常に成功を返すデフォルト関数がセ
- *  ットされています。
+ *  すべての関数ポインタをセットする必要はありません。例えば入力専用のストリーム
+ *  であれば、XStreamWriteFuncの設定は不要です。
+ */
+typedef struct XStreamVTable
+{
+    const char*             m_name;
+    XStreamReadFunc         m_read_func;
+    XStreamWriteFunc        m_write_func;
+    XStreamCloseFunc        m_close_func;
+    XStreamFlushFunc        m_flush_func;
+    XStreamSeekFunc         m_seek_func;
+    XStreamTellFunc         m_tell_func;
+    XStreamErrorStringFunc  m_error_string_func;
+} XStreamVTable;
+
+
+/** @brief 入出力ストリームを表すインターフェース型です
  */
 typedef struct XStream
 {
-    /** @brief ストリームの識別ID
-     *
-     *  独自ストリームを定義するときに、このタグをストリームを識別できるようにセ
-     *  ットしておくと、ストリームの実際の型に応じた処理の振り分けができて、便利
-     *  な場合があります。
-     */
-    XTag                    tag;
-
-    /** 関数ポインタの引数に使用する任意の引数 */
-    void*                   driver;
+    X_DECLEAR_RTTI(XStreamVTable);
 
     /** 最後のエラーステータスの格納先 */
-    int                     error;
-    XStreamReadFunc         read_func;
-    XStreamWriteFunc        write_func;
-    XStreamCloseFunc        close_func;
-    XStreamFlushFunc        flush_func;
-    XStreamSeekFunc         seek_func;
-    XStreamTellFunc         tell_func;
-    XStreamErrorStringFunc  error_string_func;
+    int                     m_error;
 } XStream;
-
-
-/** @brief ストリームタグの初期値です
- */
-#define X_STREAM_TAG        (X_MAKE_TAG('X', 'S', 'T', 'R'))
-
-
-/** @brief メモリに対して入出力を行うストリーム型です
- */
-typedef struct XMemStream
-{
-    XStream         stream;
-    uint8_t*        mem;
-    XSize           pos;
-    XSize           size;
-    XSize           capacity;
-} XMemStream;
-
-
-/** @brief XMemStreamのタグです
- */
-#define X_MEMSTREAM_TAG     (X_MAKE_TAG('X', 'M', 'M', 'S'))
 
 
 /** @brief ストリームの初期化を行います
@@ -338,6 +314,19 @@ int xstream_printf(XStream* self, const char* fmt, ...);
 int xstream_vprintf(XStream* self, const char* fmt, va_list args);
 
 
+/** @brief メモリに対して入出力を行うストリーム型です
+ */
+typedef struct XMemStream
+{
+    XStream         m_super;
+    uint8_t*        mem;
+    XSize           pos;
+    XSize           size;
+    XSize           capacity;
+} XMemStream;
+X_DECLEAR_RTTI_TAG(XMEMSTREAM_RTTI_TAG);
+
+
 /** @brief メモリストリームを初期化します
  *
  *  @param mem      ストリーム対象のメモリ先頭アドレス
@@ -349,12 +338,11 @@ int xstream_vprintf(XStream* self, const char* fmt, va_list args);
  *  ります。さらに6バイトを追記しようとすると、capacityは20なので、最後の1バイト
  *  は捨てられ、sizeは20となり、capacity以上の拡張を行うことはできません。
  */
-void xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity);
-
-
-/** @brief tagがXMemStreamと一致していなければNULLを返します
- */
-#define x_memstream_cast(stream)    ((stream->tag == X_MEMSTREAM_TAG) ? (XMemStream*)stream : NULL)
+XStream* xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity);
+int xmemstream_write(XMemStream* self, const void* src, size_t size, size_t* nwritten);
+int xmemstream_read(XMemStream* self, void* dst, size_t size, size_t* nread);
+int xmemstream_seek(XMemStream* self, XOffset pos, XSeekMode mode);
+int xmemstream_tell(XMemStream* self, XSize* pos);
 
 
 #ifdef __cplusplus

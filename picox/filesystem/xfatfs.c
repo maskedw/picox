@@ -78,6 +78,17 @@ static XError X__ToXError(FRESULT fres);
 #endif
 
 
+static const XStreamVTable X__fatfs_filestream_vtable = {
+    .m_name = "XFatFsFileStream",
+    .m_read_func = (XStreamReadFunc)xfatfs_read,
+    .m_write_func = (XStreamWriteFunc)xfatfs_write,
+    .m_close_func = (XStreamCloseFunc)xfatfs_close,
+    .m_flush_func = (XStreamFlushFunc)xfatfs_flush,
+    .m_seek_func = (XStreamSeekFunc)xfatfs_seek,
+    .m_tell_func = (XStreamTellFunc)xfatfs_tell,
+};
+
+
 void xfatfs_init(XFatFs* fs)
 {
     X_ASSERT(fs);
@@ -118,16 +129,13 @@ void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs)
 
 XStream* xfatfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NOT_NULL(stream);
-    X_ASSERT_NOT_NULL(fp);
+    X_ASSERT(stream);
+    X_ASSERT(fp);
 
     xstream_init(stream);
-    stream->driver = fp;
-    stream->tag = X_FATFS_TAG;
-    stream->write_func = (XStreamWriteFunc)xfatfs_write;
-    stream->read_func = (XStreamReadFunc)xfatfs_read;
-    stream->seek_func = (XStreamSeekFunc)xfatfs_seek;
-    stream->tell_func = (XStreamTellFunc)xfatfs_tell;
+    stream->m_rtti_tag = &XFILE_STREAM_RTTI_TAG;
+    stream->m_driver = fp;
+    stream->m_vtable = &X__fatfs_filestream_vtable;
 
     return stream;
 }

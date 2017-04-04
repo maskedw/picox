@@ -111,6 +111,14 @@ typedef struct
 static XError X__FindEntry(const XRomFs* fs, const char* path, char const** o_ent);
 
 
+static const XStreamVTable X__romfs_filestream_vtable = {
+    .m_name = "XRomFsFileStream",
+    .m_read_func = (XStreamReadFunc)xromfs_read,
+    .m_close_func = (XStreamCloseFunc)xromfs_close,
+    .m_seek_func = (XStreamSeekFunc)xromfs_seek,
+    .m_tell_func = (XStreamTellFunc)xromfs_tell,
+};
+
 
 XError xromfs_init(XRomFs* fs, const void* romimage)
 {
@@ -179,14 +187,13 @@ void xromfs_init_vfs(XRomFs* fs, XVirtualFs* vfs)
 
 XStream* xromfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NOT_NULL(stream);
-    X_ASSERT_NOT_NULL(fp);
+    X_ASSERT(stream);
+    X_ASSERT(fp);
 
     xstream_init(stream);
-    stream->driver = fp;
-    stream->tag = X_ROMFS_TAG;
-    stream->read_func = (XStreamReadFunc)xromfs_read;
-    stream->seek_func = (XStreamSeekFunc)xromfs_seek;
+    stream->m_rtti_tag = &XFILE_STREAM_RTTI_TAG;
+    stream->m_driver = fp;
+    stream->m_vtable = &X__romfs_filestream_vtable;
 
     return stream;
 }

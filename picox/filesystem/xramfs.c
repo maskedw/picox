@@ -112,23 +112,16 @@ static XError X__FindEntry(const XRamFs* fs, const char* path, char* name,
                            X__Entry** o_ent, X__DirEntry** o_parent);
 
 
-#if 0
-typedef void*(XAllocatorMallocFunc)(void* user, size_t size);
-typedef void (XAllocatorFreeFunc)(void* user, void* ptr);
-
-struct XAllocator
-{
-    void*                   user;
-    XAllocatorMallocFunc    malloc_func;
-    XAllocatorFreeFunc      free_func;
+static const XStreamVTable X__ramfs_filestream_vtable = {
+    .m_name = "XRamFsFileStream",
+    .m_read_func = (XStreamReadFunc)xramfs_read,
+    .m_write_func = (XStreamWriteFunc)xramfs_write,
+    .m_close_func = (XStreamCloseFunc)xramfs_close,
+    .m_flush_func = (XStreamFlushFunc)xramfs_flush,
+    .m_seek_func = (XStreamSeekFunc)xramfs_seek,
+    .m_tell_func = (XStreamTellFunc)xramfs_tell,
 };
 
-
-void* xalloc_allocate(XAllocator* self, size_t size)
-{
-    return self->malloc_func(self->user, size);
-}
-#endif
 
 
 XError xramfs_init(XRamFs* fs, void* mem, size_t size)
@@ -195,16 +188,13 @@ void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs)
 
 XStream* xramfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NOT_NULL(stream);
-    X_ASSERT_NOT_NULL(fp);
+    X_ASSERT(stream);
+    X_ASSERT(fp);
 
     xstream_init(stream);
-    stream->driver = fp;
-    stream->tag = X_RAMFS_TAG;
-    stream->write_func = (XStreamWriteFunc)xramfs_write;
-    stream->read_func = (XStreamReadFunc)xramfs_read;
-    stream->seek_func = (XStreamSeekFunc)xramfs_seek;
-    stream->tell_func = (XStreamTellFunc)xramfs_tell;
+    stream->m_rtti_tag = &XFILE_STREAM_RTTI_TAG;
+    stream->m_driver = fp;
+    stream->m_vtable = &X__ramfs_filestream_vtable;
 
     return stream;
 }

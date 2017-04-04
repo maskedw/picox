@@ -86,6 +86,19 @@ static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
 static XError X__DefaultFunc();
 static XError X__DefaultFlush();
 
+
+static const XStreamVTable X__vfs_filestream_vtable = {
+    .m_name = "XVirualFsFileStream",
+    .m_read_func = (XStreamReadFunc)xvfs_read,
+    .m_write_func = (XStreamWriteFunc)xvfs_write,
+    .m_close_func = (XStreamCloseFunc)xvfs_close,
+    .m_flush_func = (XStreamFlushFunc)xvfs_flush,
+    .m_seek_func = (XStreamSeekFunc)xvfs_seek,
+    .m_tell_func = (XStreamTellFunc)xvfs_tell,
+};
+
+
+
 void xvfs_init(XVirtualFs* vfs)
 {
     memset(vfs, 0, sizeof(*vfs));
@@ -111,16 +124,13 @@ void xvfs_init(XVirtualFs* vfs)
 
 XStream* xvfs_init_stream(XStream* stream, XFile* fp)
 {
-    X_ASSERT_NOT_NULL(stream);
-    X_ASSERT_NOT_NULL(fp);
+    X_ASSERT(stream);
+    X_ASSERT(fp);
 
     xstream_init(stream);
-    stream->driver = fp;
-    stream->tag = X_VFS_TAG;
-    stream->write_func = (XStreamWriteFunc)xvfs_write;
-    stream->read_func = (XStreamReadFunc)xvfs_read;
-    stream->seek_func = (XStreamSeekFunc)xvfs_seek;
-    stream->tell_func = (XStreamTellFunc)xvfs_tell;
+    stream->m_rtti_tag = &XFILE_STREAM_RTTI_TAG;
+    stream->m_driver = fp;
+    stream->m_vtable = &X__vfs_filestream_vtable;
 
     return stream;
 }

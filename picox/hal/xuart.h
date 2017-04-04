@@ -168,6 +168,7 @@ typedef struct XUart
     XUartFlushFunc      flush_func;
     XUartClearFunc      clear_func;
 } XUart;
+X_DECLEAR_RTTI_TAG(XUART_STREAM_RTTI_TAG);
 
 
 /** @brief 仮想UARTインターフェースを初期値に設定します
@@ -182,7 +183,7 @@ void xuart_config_init(XUartConfig* config);
 
 /** @brief UARTインターフェースを元にストリームを初期化します
  */
-void xuart_stream_init(XUart* uart, XStream* stream);
+XStream* xuart_stream_init(XUart* uart, XStream* stream);
 
 
 /** @brief UARTの設定を変更します

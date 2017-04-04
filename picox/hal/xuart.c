@@ -40,9 +40,16 @@
 #include <picox/hal/xuart.h>
 
 
-static int X__FlashDrain(void* driver);
+static int X__FlushStream(void* driver);
 static void X__NullFunc(void);
 static XError X__NotSupportedFunc(void);
+static const XStreamVTable X__uart_stream_vtable = {
+    .m_name = "XUartStream",
+    .m_read_func = (XStreamReadFunc)xmemstream_read,
+    .m_write_func = (XStreamWriteFunc)xmemstream_write,
+    .m_flush_func = (XStreamFlushFunc)X__FlushStream,
+};
+X_IMPL_RTTI_TAG(XUART_STREAM_RTTI_TAG);
 
 
 void xuart_init(XUart* uart)
@@ -65,13 +72,17 @@ void xuart_config_init(XUartConfig* config)
 }
 
 
-void xuart_stream_init(XUart* uart, XStream* st)
+XStream* xuart_stream_init(XUart* uart, XStream* stream)
 {
-    xstream_init(st);
-    st->driver = uart->driver;
-    st->write_func = (XStreamWriteFunc)uart->write_func;
-    st->read_func = (XStreamReadFunc)xuart_read_poll;
-    st->flush_func = (XStreamFlushFunc)X__FlashDrain;
+    X_ASSERT(uart);
+    X_ASSERT(stream);
+
+    xstream_init(stream);
+    stream->m_rtti_tag = &XUART_STREAM_RTTI_TAG;
+    stream->m_driver = uart;
+    stream->m_vtable = &X__uart_stream_vtable;
+
+    return stream;
 }
 
 
@@ -113,19 +124,20 @@ void xuart_clear(XUart* uart, XUartDirection direction)
 
 int xuart_putc(XUart* uart, int c)
 {
-    XStream st;
-    st.driver = uart->driver;
-    st.write_func = (XStreamWriteFunc)uart->write_func;
-    return xstream_putc(&st, c);
+    uint8_t b = c;
+    const XError err = xuart_write(uart, &b, sizeof(b));
+
+    return err == X_ERR_NONE ? c : EOF;
 }
 
 
 int xuart_getc(XUart* uart)
 {
-    XStream st;
-    st.driver = uart->driver;
-    st.read_func = (XStreamReadFunc)xuart_read_poll;
-    return xstream_getc(&st);
+    uint8_t b;
+    size_t nread;
+    const XError err = xuart_read_poll(uart, &b, sizeof(b), &nread);
+
+    return ((err == X_ERR_NONE) && (nread == 1)) ? b : EOF;
 }
 
 
@@ -141,14 +153,14 @@ int xuart_printf(XUart* uart, const char* fmt, ...)
 
 int xuart_vprintf(XUart* uart, const char* fmt, va_list args)
 {
-    XStream st;
-    st.driver = uart->driver;
-    st.write_func = (XStreamWriteFunc)uart->write_func;
-    return x_vprintf_to_stream(&st, fmt, args);
+    XStream stream;
+    xuart_stream_init(uart, &stream);
+
+    return x_vprintf_to_stream(&stream, fmt, args);
 }
 
 
-static int X__FlashDrain(void* driver)
+static int X__FlushStream(void* driver)
 {
     XUart* const uart = X_CONTAINER_OF(driver, XUart, driver);
     uart->flush_func(driver, true);

@@ -38,6 +38,7 @@ SOURCES += $$picox_dir/core/detail/xtime.c
 SOURCES += $$picox_dir/core/detail/xutils.c
 SOURCES += $$picox_dir/container/xintrusive_list.c
 SOURCES += $$picox_dir/container/xfifo_buffer.c
+SOURCES += $$picox_dir/filesystem/xfscore.c
 SOURCES += $$picox_dir/filesystem/xposixfs.c
 SOURCES += $$picox_dir/filesystem/xfatfs.c
 SOURCES += $$picox_dir/filesystem/xramfs.c
