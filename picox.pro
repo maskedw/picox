@@ -36,6 +36,7 @@ SOURCES += $$picox_dir/core/detail/xstring.c
 SOURCES += $$picox_dir/core/detail/xrandom.c
 SOURCES += $$picox_dir/core/detail/xtime.c
 SOURCES += $$picox_dir/core/detail/xutils.c
+SOURCES += $$picox_dir/core/xmemstream.c
 SOURCES += $$picox_dir/container/xintrusive_list.c
 SOURCES += $$picox_dir/container/xfifo_buffer.c
 SOURCES += $$picox_dir/filesystem/xfscore.c

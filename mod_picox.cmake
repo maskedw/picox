@@ -32,6 +32,7 @@ set(picox_sources
     ${picox_dir}/core/detail/xrandom.c
     ${picox_dir}/core/detail/xtime.c
     ${picox_dir}/core/detail/xutils.c
+    ${picox_dir}/core/xmemstream.c
     ${picox_dir}/container/xintrusive_list.c
     ${picox_dir}/container/xfifo_buffer.c
     ${picox_dir}/filesystem/xfscore.c

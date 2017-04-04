@@ -1,4 +1,5 @@
 #include <picox/core/xcore.h>
+#include <picox/core/xmemstream.h>
 #include "testutils.h"
 
 

@@ -40,16 +40,6 @@
 #include <picox/core/xcore.h>
 
 
-X_IMPL_RTTI_TAG(XMEMSTREAM_RTTI_TAG);
-static const XStreamVTable X__memstream_vtable = {
-    .m_name = "XMemStream",
-    .m_read_func = (XStreamReadFunc)xmemstream_read,
-    .m_write_func = (XStreamWriteFunc)xmemstream_write,
-    .m_seek_func = (XStreamSeekFunc)xmemstream_seek,
-    .m_tell_func = (XStreamTellFunc)xmemstream_tell
-};
-
-
 void xstream_init(XStream* self)
 {
     X_ASSERT(self);
@@ -272,100 +262,4 @@ int xstream_vprintf(XStream* self, const char* fmt, va_list args)
 {
     const int len = x_vprintf_to_stream(self, fmt, args);
     return (self->m_error == 0) ? len : -1;
-}
-
-
-XStream* xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity)
-{
-    X_ASSERT(self);
-    X_ASSERT(mem);
-
-    xstream_init(&self->m_super);
-    self->m_super.m_rtti_tag = &XMEMSTREAM_RTTI_TAG;
-    self->m_super.m_driver = self;
-    self->m_super.m_vtable = &X__memstream_vtable;
-
-    self->mem = mem;
-    self->pos = 0;
-    self->size = size;
-    self->capacity = capacity;
-
-    return &self->m_super;
-}
-
-
-int xmemstream_write(XMemStream* self, const void* src, size_t size, size_t* nwritten)
-{
-    const size_t to_write = ((self->pos + size) <= self->capacity)
-                            ? size : (size_t)(self->capacity - self->pos);
-
-    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
-
-    if (to_write)
-        memcpy(self->mem + self->pos, src, to_write);
-
-    self->pos += to_write;
-    *nwritten = to_write;
-    if (self->pos > self->size)
-        self->size = self->pos;
-
-    return X_ERR_NONE;
-}
-
-
-int xmemstream_read(XMemStream* self, void* dst, size_t size, size_t* nread)
-{
-    const size_t to_read = ((self->pos + size) <= self->size)
-                            ? size : (size_t)(self->size - self->pos);
-
-    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
-
-    if (to_read)
-        memcpy(dst, self->mem + self->pos, to_read);
-
-    self->pos += to_read;
-    *nread = to_read;
-
-    return X_ERR_NONE;
-}
-
-
-int xmemstream_seek(XMemStream* self, XOffset pos, XSeekMode mode)
-{
-    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
-
-    XOffset seekpos = 0;
-    switch (mode)
-    {
-        case X_SEEK_SET:
-            seekpos = pos;
-            break;
-
-        case X_SEEK_CUR:
-            seekpos = self->pos + pos;
-            break;
-
-        case X_SEEK_END:
-            seekpos = self->size + pos;
-            break;
-        default:
-            break;
-    }
-
-    if (seekpos < 0)
-        return X_ERR_RANGE;
-    if (seekpos > (XOffset)self->capacity)
-        return X_ERR_RANGE;
-
-    self->pos = seekpos;
-    return X_ERR_NONE;
-}
-
-
-int xmemstream_tell(XMemStream* self, XSize* pos)
-{
-    X_ASSERT(x_rtti_equal(&(self->m_super), XMEMSTREAM_RTTI_TAG));
-
-    *pos = self->pos;
-    return X_ERR_NONE;
 }

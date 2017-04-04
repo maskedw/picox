@@ -314,37 +314,6 @@ int xstream_printf(XStream* self, const char* fmt, ...);
 int xstream_vprintf(XStream* self, const char* fmt, va_list args);
 
 
-/** @brief メモリに対して入出力を行うストリーム型です
- */
-typedef struct XMemStream
-{
-    XStream         m_super;
-    uint8_t*        mem;
-    XSize           pos;
-    XSize           size;
-    XSize           capacity;
-} XMemStream;
-X_DECLEAR_RTTI_TAG(XMEMSTREAM_RTTI_TAG);
-
-
-/** @brief メモリストリームを初期化します
- *
- *  @param mem      ストリーム対象のメモリ先頭アドレス
- *  @param size     初期有効バイト数
- *  @param capacity writeやseekで拡張可能なバイト数
- *
- *  例えば、sizeが10でcapacityが20の時、readは10バイトまでしか行えませんが、
- *  writeで5バイト追記した場合は、sizeが拡張され、15バイトまでreadできるようにな
- *  ります。さらに6バイトを追記しようとすると、capacityは20なので、最後の1バイト
- *  は捨てられ、sizeは20となり、capacity以上の拡張を行うことはできません。
- */
-XStream* xmemstream_init(XMemStream* self, void* mem, size_t size, size_t capacity);
-int xmemstream_write(XMemStream* self, const void* src, size_t size, size_t* nwritten);
-int xmemstream_read(XMemStream* self, void* dst, size_t size, size_t* nread);
-int xmemstream_seek(XMemStream* self, XOffset pos, XSeekMode mode);
-int xmemstream_tell(XMemStream* self, XSize* pos);
-
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
