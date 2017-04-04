@@ -444,11 +444,6 @@ const char* x_btos(bool cond);
 const char* x_strerror(XError err);
 
 
-/** @brief エラーコードに対応する文字列を返します
- */
-const char* x_strerror(XError err);
-
-
 #ifdef __cplusplus
 }
 #endif
