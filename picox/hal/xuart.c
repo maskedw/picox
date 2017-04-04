@@ -45,8 +45,8 @@ static void X__NullFunc(void);
 static XError X__NotSupportedFunc(void);
 static const XStreamVTable X__uart_stream_vtable = {
     .m_name = "XUartStream",
-    .m_read_func = (XStreamReadFunc)xmemstream_read,
-    .m_write_func = (XStreamWriteFunc)xmemstream_write,
+    .m_read_func = (XStreamReadFunc)xuart_read,
+    .m_write_func = (XStreamWriteFunc)xuart_write,
     .m_flush_func = (XStreamFlushFunc)X__FlushStream,
 };
 X_IMPL_RTTI_TAG(XUART_STREAM_RTTI_TAG);
