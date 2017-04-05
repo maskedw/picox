@@ -28,10 +28,10 @@
 #define SPIFFS_FH_UNOFFS(fs, fh) (fh)
 #endif
 
-#define X__ASSERT_TAG(p)        (X_ASSERT(((const XSpiFFs*)p)->m_tag == X_SPIFFS_TAG))
+#define X__ASSERT_TAG(p)        (X_ASSERT(((const XSpiFFs*)p)->m_fstype_tag == &XSPIFFS_RTTI_TAG))
 #define X__GET_FILE_HANDLE(fp)  ((((X__File*)fp)->m_filehandle))
 #define X__GET_DIR_HANDLE(dir)  (&(((X__Dir*)dir)->m_dirhandle))
-#define X__VPOS_INVALID         (0xFFFFFFFF)
+#define X__VPOS_INVALID         (0xFFFFFFFFUL)
 #define X__GET_ERR()            X__ToXError(SPIFFS_errno(fs->m_spiffs))
 
 typedef spiffs_file     X__FileHandle;
@@ -95,12 +95,32 @@ static const XStreamVTable X__spiffs_filestream_vtable = {
 };
 
 
+static const XVirtualFsVTable X__spiffs_vfs_vtable = {
+    .m_name = "XSpiFFs",
+    .m_open_func        = (XVirtualFsOpenFunc)xspiffs_open,
+    .m_close_func       = (XVirtualFsCloseFunc)xspiffs_close,
+    .m_read_func        = (XVirtualFsReadFunc)xspiffs_read,
+    .m_write_func       = (XVirtualFsWriteFunc)xspiffs_write,
+    .m_seek_func        = (XVirtualFsSeekFunc)xspiffs_seek,
+    .m_tell_func        = (XVirtualFsTellFunc)xspiffs_tell,
+    .m_flush_func       = (XVirtualFsFlushFunc)xspiffs_flush,
+    .m_opendir_func     = (XVirtualFsOpendirFunc)xspiffs_opendir,
+    .m_readdir_func     = (XVirtualFsReaddirFunc)xspiffs_readdir,
+    .m_closedir_func    = (XVirtualFsClosedirFunc)xspiffs_closedir,
+    .m_getcwd_func      = (XVirtualFsGetcwdFunc)xspiffs_getcwd,
+    .m_remove_func      = (XVirtualFsRemoveFunc)xspiffs_remove,
+    .m_rename_func      = (XVirtualFsRenameFunc)xspiffs_rename,
+    .m_stat_func        = (XVirtualFsStatFunc)xspiffs_stat,
+};
+X_IMPL_RTTI_TAG(XSPIFFS_RTTI_TAG);
+
+
 void xspiffs_init(XSpiFFs* fs, spiffs* src)
 {
     X_ASSERT(fs);
     X_ASSERT_NOT_NULL(src);
 
-    fs->m_tag = X_SPIFFS_TAG;
+    fs->m_fstype_tag = &XSPIFFS_RTTI_TAG;
     fs->m_spiffs = src;
 }
 
@@ -112,24 +132,17 @@ void xspiffs_deinit(XSpiFFs* fs)
 }
 
 
-void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs)
+XVirtualFs* xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs)
 {
+    X_ASSERT(fs);
+    X_ASSERT(vfs);
+
     xvfs_init(vfs);
-    vfs->m_realfs           = fs;
-    vfs->m_open_func        = (XVirtualFsOpenFunc)xspiffs_open;
-    vfs->m_close_func       = (XVirtualFsCloseFunc)xspiffs_close;
-    vfs->m_read_func        = (XVirtualFsReadFunc)xspiffs_read;
-    vfs->m_write_func       = (XVirtualFsWriteFunc)xspiffs_write;
-    vfs->m_seek_func        = (XVirtualFsSeekFunc)xspiffs_seek;
-    vfs->m_tell_func        = (XVirtualFsTellFunc)xspiffs_tell;
-    vfs->m_flush_func       = (XVirtualFsFlushFunc)xspiffs_flush;
-    vfs->m_opendir_func     = (XVirtualFsOpendirFunc)xspiffs_opendir;
-    vfs->m_readdir_func     = (XVirtualFsReaddirFunc)xspiffs_readdir;
-    vfs->m_closedir_func    = (XVirtualFsClosedirFunc)xspiffs_closedir;
-    vfs->m_getcwd_func      = (XVirtualFsGetcwdFunc)xspiffs_getcwd;
-    vfs->m_remove_func      = (XVirtualFsRemoveFunc)xspiffs_remove;
-    vfs->m_rename_func      = (XVirtualFsRenameFunc)xspiffs_rename;
-    vfs->m_stat_func        = (XVirtualFsStatFunc)xspiffs_stat;
+    vfs->m_rtti_tag = &XSPIFFS_RTTI_TAG;
+    vfs->m_driver = fs;
+    vfs->m_vtable = &X__spiffs_vfs_vtable;
+
+    return vfs;
 }
 
 

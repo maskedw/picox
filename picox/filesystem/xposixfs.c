@@ -50,7 +50,7 @@ static XError X__GetError(void);
 static bool X__DoRmTree(char* path, int size, int tail, struct stat* statbuf);
 
 
-#define X__ASSERT_TAG(p)      (X_ASSERT(((const XPosixFs*)p)->m_tag == X_POSIXFS_TAG))
+#define X__ASSERT_TAG(p)      (X_ASSERT(((const XPosixFs*)p)->m_fstype_tag == &XPOSIXFS_RTTI_TAG))
 #define X__GET_REAL_FP(fp)    (((X__FileStorage*)(fp))->realfp)
 #define X__GET_REAL_DIR(dir)  (((X__DirStorage*)dir)->realdir)
 
@@ -69,10 +69,32 @@ typedef struct
 } X__DirStorage;
 
 
+static const XVirtualFsVTable X__posixfs_vfs_vtable = {
+    .m_open_func        = (XVirtualFsOpenFunc)xposixfs_open,
+    .m_close_func       = (XVirtualFsCloseFunc)xposixfs_close,
+    .m_read_func        = (XVirtualFsReadFunc)xposixfs_read,
+    .m_write_func       = (XVirtualFsWriteFunc)xposixfs_write,
+    .m_seek_func        = (XVirtualFsSeekFunc)xposixfs_seek,
+    .m_tell_func        = (XVirtualFsTellFunc)xposixfs_tell,
+    .m_flush_func       = (XVirtualFsFlushFunc)xposixfs_flush,
+    .m_mkdir_func       = (XVirtualFsMkdirFunc)xposixfs_mkdir,
+    .m_opendir_func     = (XVirtualFsOpendirFunc)xposixfs_opendir,
+    .m_readdir_func     = (XVirtualFsReaddirFunc)xposixfs_readdir,
+    .m_closedir_func    = (XVirtualFsClosedirFunc)xposixfs_closedir,
+    .m_chdir_func       = (XVirtualFsChdirFunc)xposixfs_chdir,
+    .m_getcwd_func      = (XVirtualFsGetcwdFunc)xposixfs_getcwd,
+    .m_remove_func      = (XVirtualFsRemoveFunc)xposixfs_remove,
+    .m_rename_func      = (XVirtualFsRenameFunc)xposixfs_rename,
+    .m_stat_func        = (XVirtualFsStatFunc)xposixfs_stat,
+    .m_utime_func       = (XVirtualFsUtimeFunc)xposixfs_utime,
+};
+X_IMPL_RTTI_TAG(XPOSIXFS_RTTI_TAG);
+
+
 void xposixfs_init(XPosixFs* fs)
 {
     X_ASSERT(fs);
-    fs->m_tag = X_POSIXFS_TAG;
+    fs->m_fstype_tag = &XPOSIXFS_RTTI_TAG;
 }
 
 
@@ -82,27 +104,17 @@ void xposixfs_deinit(XPosixFs* fs)
 }
 
 
-void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs)
+XVirtualFs* xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs)
 {
+    X_ASSERT(fs);
+    X_ASSERT(vfs);
+
     xvfs_init(vfs);
-    vfs->m_realfs           = fs;
-    vfs->m_open_func        = (XVirtualFsOpenFunc)xposixfs_open;
-    vfs->m_close_func       = (XVirtualFsCloseFunc)xposixfs_close;
-    vfs->m_read_func        = (XVirtualFsReadFunc)xposixfs_read;
-    vfs->m_write_func       = (XVirtualFsWriteFunc)xposixfs_write;
-    vfs->m_seek_func        = (XVirtualFsSeekFunc)xposixfs_seek;
-    vfs->m_tell_func        = (XVirtualFsTellFunc)xposixfs_tell;
-    vfs->m_flush_func       = (XVirtualFsFlushFunc)xposixfs_flush;
-    vfs->m_mkdir_func       = (XVirtualFsMkdirFunc)xposixfs_mkdir;
-    vfs->m_opendir_func     = (XVirtualFsOpendirFunc)xposixfs_opendir;
-    vfs->m_readdir_func     = (XVirtualFsReaddirFunc)xposixfs_readdir;
-    vfs->m_closedir_func    = (XVirtualFsClosedirFunc)xposixfs_closedir;
-    vfs->m_chdir_func       = (XVirtualFsChdirFunc)xposixfs_chdir;
-    vfs->m_getcwd_func      = (XVirtualFsGetcwdFunc)xposixfs_getcwd;
-    vfs->m_remove_func      = (XVirtualFsRemoveFunc)xposixfs_remove;
-    vfs->m_rename_func      = (XVirtualFsRenameFunc)xposixfs_rename;
-    vfs->m_stat_func        = (XVirtualFsStatFunc)xposixfs_stat;
-    vfs->m_utime_func       = (XVirtualFsUtimeFunc)xposixfs_utime;
+    vfs->m_rtti_tag = &XPOSIXFS_RTTI_TAG;
+    vfs->m_driver = fs;
+    vfs->m_vtable = &X__posixfs_vfs_vtable;
+
+    return vfs;
 }
 
 

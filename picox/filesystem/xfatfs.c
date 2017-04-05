@@ -41,7 +41,7 @@
 #include <ff.h> /* fatfs */
 
 
-#define X__ASSERT_TAG(p)        (X_ASSERT(((const XFatFs*)p)->m_tag == X_FATFS_TAG))
+#define X__ASSERT_TAG(p)        (X_ASSERT(((const XFatFs*)p)->m_fstype_tag == &XFATFS_RTTI_TAG))
 #define X__GET_FILE_HANDLE(fp)  (&(((X__File*)fp)->m_filehandle))
 #define X__GET_DIR_HANDLE(dir)  (&(((X__Dir*)dir)->m_dirhandle))
 #define X__EXIT_IF(cond, v)     X_ASSIGN_AND_GOTO_IF(cond, err, v, x__exit)
@@ -89,10 +89,33 @@ static const XStreamVTable X__fatfs_filestream_vtable = {
 };
 
 
+static const XVirtualFsVTable X__fatfs_vfs_vtable = {
+    .m_name = "XFatFs",
+    .m_open_func        = (XVirtualFsOpenFunc)xfatfs_open,
+    .m_close_func       = (XVirtualFsCloseFunc)xfatfs_close,
+    .m_read_func        = (XVirtualFsReadFunc)xfatfs_read,
+    .m_write_func       = (XVirtualFsWriteFunc)xfatfs_write,
+    .m_seek_func        = (XVirtualFsSeekFunc)xfatfs_seek,
+    .m_tell_func        = (XVirtualFsTellFunc)xfatfs_tell,
+    .m_flush_func       = (XVirtualFsFlushFunc)xfatfs_flush,
+    .m_mkdir_func       = (XVirtualFsMkdirFunc)xfatfs_mkdir,
+    .m_opendir_func     = (XVirtualFsOpendirFunc)xfatfs_opendir,
+    .m_readdir_func     = (XVirtualFsReaddirFunc)xfatfs_readdir,
+    .m_closedir_func    = (XVirtualFsClosedirFunc)xfatfs_closedir,
+    .m_chdir_func       = (XVirtualFsChdirFunc)xfatfs_chdir,
+    .m_getcwd_func      = (XVirtualFsGetcwdFunc)xfatfs_getcwd,
+    .m_remove_func      = (XVirtualFsRemoveFunc)xfatfs_remove,
+    .m_rename_func      = (XVirtualFsRenameFunc)xfatfs_rename,
+    .m_stat_func        = (XVirtualFsStatFunc)xfatfs_stat,
+    .m_utime_func       = (XVirtualFsUtimeFunc)xfatfs_utime,
+};
+X_IMPL_RTTI_TAG(XFATFS_RTTI_TAG);
+
+
 void xfatfs_init(XFatFs* fs)
 {
     X_ASSERT(fs);
-    fs->m_tag = X_FATFS_TAG;
+    fs->m_fstype_tag = &XFATFS_RTTI_TAG;
 }
 
 
@@ -103,27 +126,17 @@ void xfatfs_deinit(XFatFs* fs)
 }
 
 
-void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs)
+XVirtualFs* xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs)
 {
+    X_ASSERT(fs);
+    X_ASSERT(vfs);
+
     xvfs_init(vfs);
-    vfs->m_realfs           = fs;
-    vfs->m_open_func        = (XVirtualFsOpenFunc)xfatfs_open;
-    vfs->m_close_func       = (XVirtualFsCloseFunc)xfatfs_close;
-    vfs->m_read_func        = (XVirtualFsReadFunc)xfatfs_read;
-    vfs->m_write_func       = (XVirtualFsWriteFunc)xfatfs_write;
-    vfs->m_seek_func        = (XVirtualFsSeekFunc)xfatfs_seek;
-    vfs->m_tell_func        = (XVirtualFsTellFunc)xfatfs_tell;
-    vfs->m_flush_func       = (XVirtualFsFlushFunc)xfatfs_flush;
-    vfs->m_mkdir_func       = (XVirtualFsMkdirFunc)xfatfs_mkdir;
-    vfs->m_opendir_func     = (XVirtualFsOpendirFunc)xfatfs_opendir;
-    vfs->m_readdir_func     = (XVirtualFsReaddirFunc)xfatfs_readdir;
-    vfs->m_closedir_func    = (XVirtualFsClosedirFunc)xfatfs_closedir;
-    vfs->m_chdir_func       = (XVirtualFsChdirFunc)xfatfs_chdir;
-    vfs->m_getcwd_func      = (XVirtualFsGetcwdFunc)xfatfs_getcwd;
-    vfs->m_remove_func      = (XVirtualFsRemoveFunc)xfatfs_remove;
-    vfs->m_rename_func      = (XVirtualFsRenameFunc)xfatfs_rename;
-    vfs->m_stat_func        = (XVirtualFsStatFunc)xfatfs_stat;
-    vfs->m_utime_func       = (XVirtualFsUtimeFunc)xfatfs_utime;
+    vfs->m_rtti_tag = &XFATFS_RTTI_TAG;
+    vfs->m_driver = fs;
+    vfs->m_vtable = &X__fatfs_vfs_vtable;
+
+    return vfs;
 }
 
 

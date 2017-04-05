@@ -39,6 +39,9 @@
 #include <picox/filesystem/xvfs.h>
 
 
+#define X__VFUNC(vfs, func)  (vfs->m_vtable->m_##func##_func)
+
+
 typedef struct
 {
     XVirtualFs*     vfs;
@@ -81,10 +84,6 @@ typedef struct
 static XError X__DoCopyTree(X__CopyTreeWorkBuf* work, int tail);
 static XError X__DoRmTree(X__RmTreeWorkBuf* work, int tail);
 static XError X__DoWalkTree(X__WalkTreeWorkBuf* work, int tail);
-static XError X__DefaultOpen(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp);
-static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir);
-static XError X__DefaultFunc();
-static XError X__DefaultFlush();
 
 
 static const XStreamVTable X__vfs_filestream_vtable = {
@@ -98,27 +97,10 @@ static const XStreamVTable X__vfs_filestream_vtable = {
 };
 
 
-
 void xvfs_init(XVirtualFs* vfs)
 {
-    memset(vfs, 0, sizeof(*vfs));
-    vfs->m_open_func        = (XVirtualFsOpenFunc)X__DefaultOpen;
-    vfs->m_close_func       = (XVirtualFsCloseFunc)X__DefaultFunc;
-    vfs->m_read_func        = (XVirtualFsReadFunc)X__DefaultFunc;
-    vfs->m_write_func       = (XVirtualFsWriteFunc)X__DefaultFunc;
-    vfs->m_seek_func        = (XVirtualFsSeekFunc)X__DefaultFunc;
-    vfs->m_tell_func        = (XVirtualFsTellFunc)X__DefaultFunc;
-    vfs->m_flush_func       = (XVirtualFsFlushFunc)X__DefaultFlush;
-    vfs->m_mkdir_func       = (XVirtualFsMkdirFunc)X__DefaultFunc;
-    vfs->m_opendir_func     = (XVirtualFsOpendirFunc)X__DefaultOpendir;
-    vfs->m_readdir_func     = (XVirtualFsReaddirFunc)X__DefaultFunc;
-    vfs->m_closedir_func    = (XVirtualFsClosedirFunc)X__DefaultFunc;
-    vfs->m_chdir_func       = (XVirtualFsChdirFunc)X__DefaultFunc;
-    vfs->m_getcwd_func      = (XVirtualFsGetcwdFunc)X__DefaultFunc;
-    vfs->m_remove_func      = (XVirtualFsRemoveFunc)X__DefaultFunc;
-    vfs->m_rename_func      = (XVirtualFsRenameFunc)X__DefaultFunc;
-    vfs->m_stat_func        = (XVirtualFsStatFunc)X__DefaultFunc;
-    vfs->m_utime_func       = (XVirtualFsUtimeFunc)X__DefaultFunc;
+    X_ASSERT(vfs);
+    X_RESET_RTTI(vfs);
 }
 
 
@@ -138,95 +120,145 @@ XStream* xvfs_init_stream(XStream* stream, XFile* fp)
 
 XError xvfs_open(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_open_func(vfs->m_realfs, path, mode, o_fp);
+    if (!X__VFUNC(vfs, open))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(vfs, open)(vfs->m_driver, path, mode, o_fp);
     if (*o_fp)
         (*o_fp)->m_vfs = vfs;
+
     return err;
 }
 
 
 XError xvfs_close(XFile* fp)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     if (!fp)
         return X_ERR_NONE;
-
     X_ASSERT(fp->m_vfs);
-    XVirtualFs* const vfs = fp->m_vfs;
-    const XError err = vfs->m_close_func(fp);
+
+    vfs = fp->m_vfs;
+    if (!X__VFUNC(vfs, close))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(vfs, close)(fp);
+
     return err;
 }
 
 
 XError xvfs_read(XFile* fp, void* dst, size_t size, size_t* nread)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     X_ASSERT(fp);
     X_ASSERT(fp->m_vfs);
 
-    XVirtualFs* const vfs = fp->m_vfs;
-    const XError err = vfs->m_read_func(fp, dst, size, nread);
+    vfs = fp->m_vfs;
+    if (!X__VFUNC(vfs, read))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(vfs, read)(fp, dst, size, nread);
     return err;
 }
 
 
 XError xvfs_write(XFile* fp, const void* src, size_t size, size_t* nwritten)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     X_ASSERT(fp);
     X_ASSERT(fp->m_vfs);
 
-    XVirtualFs* const vfs = fp->m_vfs;
-    const XError err = vfs->m_write_func(fp, src, size, nwritten);
+    vfs = fp->m_vfs;
+    if (!(X__VFUNC(vfs, write)))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(vfs, write)(fp, src, size, nwritten);
     return err;
 }
 
 
 XError xvfs_seek(XFile* fp, XOffset pos, XSeekMode whence)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     X_ASSERT(fp);
     X_ASSERT(fp->m_vfs);
 
-    XVirtualFs* const vfs = fp->m_vfs;
-    const XError err = vfs->m_seek_func(fp, pos, whence);
+    vfs = fp->m_vfs;
+    if (!X__VFUNC(vfs, seek))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(vfs, seek)(fp, pos, whence);
     return err;
 }
 
 
 XError xvfs_tell(XFile* fp, XSize* pos)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     X_ASSERT(fp);
     X_ASSERT(fp->m_vfs);
 
-    XVirtualFs* const vfs = fp->m_vfs;
-    const XError err = vfs->m_tell_func(fp, pos);
+    vfs = fp->m_vfs;
+    if (!X__VFUNC(vfs, tell))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(vfs, tell)(fp, pos);
     return err;
 }
 
 
 XError xvfs_flush(XFile* fp)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     X_ASSERT(fp);
     X_ASSERT(fp->m_vfs);
 
-    XVirtualFs* const vfs = fp->m_vfs;
-    const XError err = vfs->m_flush_func(fp);
+    /* flushはVirtualFsの実装によっては不要な関数なので、未登録であれば、正常終
+     * 了として扱う。
+     */
+    vfs = fp->m_vfs;
+    if (!X__VFUNC(vfs, flush))
+        return X_ERR_NONE;
+
+    err = X__VFUNC(vfs, flush)(fp);
     return err;
 }
 
 
 XError xvfs_mkdir(XVirtualFs* vfs, const char* path)
 {
+    XError err;
+
     X_ASSERT(vfs);
 
-    const XError err = vfs->m_mkdir_func(vfs->m_realfs, path);
+    err = X__VFUNC(vfs, mkdir)(vfs->m_driver, path);
     return err;
 }
 
 
 XError xvfs_opendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
 {
+    XError err;
+
     X_ASSERT(vfs);
 
-    const XError err = vfs->m_opendir_func(vfs->m_realfs, path, o_dir);
+    err = X__VFUNC(vfs, opendir)(vfs->m_driver, path, o_dir);
     if (*o_dir)
         (*o_dir)->m_vfs = vfs;
 
@@ -236,107 +268,150 @@ XError xvfs_opendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
 
 XError xvfs_readdir(XDir* dir, XDirEnt* dirent, XDirEnt** result)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     X_ASSERT(dir);
     X_ASSERT(dir->m_vfs);
 
-    XVirtualFs* const vfs = dir->m_vfs;
-    const XError err = vfs->m_readdir_func(dir, dirent, result);
+    vfs = dir->m_vfs;
+    err = X__VFUNC(vfs, readdir)(dir, dirent, result);
+
     return err;
 }
 
 
 XError xvfs_closedir(XDir* dir)
 {
+    XError err;
+    XVirtualFs* vfs;
+
     if (!dir)
         return X_ERR_NONE;
 
     X_ASSERT(dir);
     X_ASSERT(dir->m_vfs);
 
-    XVirtualFs* const vfs = dir->m_vfs;
-    const XError err = vfs->m_closedir_func(dir);
+    vfs = dir->m_vfs;
+    err = X__VFUNC(vfs, closedir)(dir);
+
     return err;
 }
 
 
 XError xvfs_chdir(XVirtualFs* vfs, const char* path)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_chdir_func(vfs->m_realfs, path);
+
+    err = X__VFUNC(vfs, chdir)(vfs->m_driver, path);
+
     return err;
 }
 
 
 XError xvfs_getcwd(XVirtualFs* vfs, char* buf, size_t size)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_getcwd_func(vfs->m_realfs, buf, size);
+
+    err = X__VFUNC(vfs, getcwd)(vfs->m_driver, buf, size);
+
     return err;
 }
 
 
 XError xvfs_remove(XVirtualFs* vfs, const char* path)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_remove_func(vfs->m_realfs, path);
+
+    err = X__VFUNC(vfs, remove)(vfs->m_driver, path);
+
     return err;
 }
 
 
 XError xvfs_rename(XVirtualFs* vfs, const char* oldpath, const char* newpath)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_rename_func(vfs->m_realfs, oldpath, newpath);
+
+    err = X__VFUNC(vfs, rename)(vfs->m_driver, oldpath, newpath);
+
     return err;
 }
 
 
 XError xvfs_stat(XVirtualFs* vfs, const char* path, XStat* statbuf)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_stat_func(vfs->m_realfs, path, statbuf);
+
+    err = X__VFUNC(vfs, stat)(vfs->m_driver, path, statbuf);
+
     return err;
 }
 
 
 XError xvfs_utime(XVirtualFs* vfs, const char* path, XTime time)
 {
+    XError err;
+
     X_ASSERT(vfs);
-    const XError err = vfs->m_utime_func(vfs->m_realfs, path, time);
+
+    err = X__VFUNC(vfs, utime)(vfs->m_driver, path, time);
+
     return err;
 }
 
 
 XError xvfs_exists(XVirtualFs* vfs, const char* path, bool* exists)
 {
-    X_ASSERT_NOT_NULL(exists);
     XStat statbuf;
-    XError err = xvfs_stat(vfs, path, &statbuf);
+    XError err;
+
+    X_ASSERT(exists);
+    err = xvfs_stat(vfs, path, &statbuf);
+
     *exists = (err == X_ERR_NONE);
 
     /* 存在チェックの時のNO_ENTRYは文脈的にエラーではない*/
     if (err == X_ERR_NO_ENTRY)
         err = X_ERR_NONE;
+
     return err;
 }
 
 
 XError xvfs_is_directory(XVirtualFs* vfs, const char* path, bool* isdir)
 {
-    X_ASSERT_NOT_NULL(isdir);
     XStat statbuf;
-    const XError err = xvfs_stat(vfs, path, &statbuf);
+    XError err;
+
+    X_ASSERT(isdir);
+    err = xvfs_stat(vfs, path, &statbuf);
     *isdir = ((err == X_ERR_NONE) && (XSTAT_IS_DIRECTORY(statbuf.mode)));
+
     return err;
 }
 
 
 XError xvfs_is_regular(XVirtualFs* vfs, const char* path, bool* isreg)
 {
-    X_ASSERT_NOT_NULL(isreg);
     XStat statbuf;
-    const XError err = xvfs_stat(vfs, path, &statbuf);
+    XError err;
+
+    X_ASSERT(isreg);
+
+    err = xvfs_stat(vfs, path, &statbuf);
     *isreg = ((err == X_ERR_NONE) && (XSTAT_IS_REGULAR(statbuf.mode)));
+
     return err;
 }
 
@@ -359,8 +434,10 @@ int xvfs_puts(XFile* fp, const char* str)
 int xvfs_printf(XFile* fp, const char* fmt, ...)
 {
     va_list args;
+    int len;
+
     va_start(args, fmt);
-    const int len = xvfs_vprintf(fp, fmt, args);
+    len = xvfs_vprintf(fp, fmt, args);
     va_end(args);
     return len;
 }
@@ -417,13 +494,17 @@ x__exit:
 
 XError xvfs_copyfile2(XFile* src, XFile* dst)
 {
-    X_ASSERT_NOT_NULL(dst);
-    X_ASSERT_NOT_NULL(src);
-
     const size_t X__BLOCK_SIZE = 512;
-
+    uint8_t* buf;
+    size_t nread;
+    size_t nwritten;
     XError err;
-    uint8_t* buf = x_malloc(X__BLOCK_SIZE);
+
+    X_ASSERT(dst);
+    X_ASSERT(src);
+
+
+    buf = x_malloc(X__BLOCK_SIZE);
     if (!buf)
     {
         err = X_ERR_NO_MEMORY;
@@ -433,8 +514,6 @@ XError xvfs_copyfile2(XFile* src, XFile* dst)
 
     for (;;)
     {
-        size_t nread;
-        size_t nwritten;
 
         err = xvfs_read(src, buf, X__BLOCK_SIZE, &nread);
         if (err)
@@ -465,14 +544,17 @@ x__exit:
 
 XError xvfs_copytree(XVirtualFs* vfs, const char* src, const char* dst)
 {
+    X__CopyTreeWorkBuf* work;
+    XError err;
+
     X_ASSERT(dst);
     X_ASSERT(src);
 
-    X__CopyTreeWorkBuf* work = x_malloc(sizeof(X__CopyTreeWorkBuf));
+    work = x_malloc(sizeof(X__CopyTreeWorkBuf));
     if (!work)
         return X_ERR_NO_MEMORY;
 
-    XError err = X_ERR_NONE;
+    err = X_ERR_NONE;
     memset(work, 0, sizeof(*work));
     work->vfs = vfs;
     work->srcdir = src;
@@ -510,11 +592,12 @@ x__exit:
 
 XError xvfs_rmtree(XVirtualFs* vfs, const char* path)
 {
+    XError err = X_ERR_NONE;
+    X__RmTreeWorkBuf* work;
+
     X_ASSERT(path);
 
-    XError err = X_ERR_NONE;
-
-    X__RmTreeWorkBuf* work = x_malloc(sizeof(X__RmTreeWorkBuf));
+    work = x_malloc(sizeof(X__RmTreeWorkBuf));
     if (!work)
     {
         err = X_ERR_NO_MEMORY;
@@ -561,14 +644,18 @@ x__exit:
 
 XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, void* userptr)
 {
+    X__WalkTreeWorkBuf* work;
+    XError err;
+    char tmp[X_PATH_MAX];
+
     X_ASSERT(path);
     X_ASSERT(walker);
 
-    X__WalkTreeWorkBuf* work = x_malloc(sizeof(X__WalkTreeWorkBuf));
+    work = x_malloc(sizeof(X__WalkTreeWorkBuf));
     if (!work)
         return X_ERR_NO_MEMORY;
 
-    XError err = X_ERR_NONE;
+    err = X_ERR_NONE;
     memset(work, 0, sizeof(*work));
     work->vfs = vfs;
     work->walker = walker;
@@ -588,7 +675,6 @@ XError xvfs_walktree(XVirtualFs* vfs, const char* path, XFsTreeWalker walker, vo
     if (err)
         goto x__exit;
 
-    char tmp[X_PATH_MAX];
     xfpath_resolve(tmp, work->path, path, X_PATH_MAX);
     if (xfpath_is_root(tmp))
         strcpy(work->dirent->name, tmp);
@@ -609,42 +695,6 @@ x__exit:
 
     return err;
 
-}
-
-
-static XError X__DefaultOpen(XVirtualFs* vfs, const char* path, XOpenMode mode, XFile** o_fp)
-{
-    X_UNUSED(vfs);
-    X_UNUSED(path);
-    X_UNUSED(mode);
-
-    X_ASSERT_NOT_NULL(o_fp);
-    *o_fp = NULL;
-    return X_ERR_NOT_SUPPORTED;
-}
-
-static XError X__DefaultOpendir(XVirtualFs* vfs, const char* path, XDir** o_dir)
-{
-    X_UNUSED(vfs);
-    X_UNUSED(path);
-
-    X_ASSERT_NOT_NULL(o_dir);
-    *o_dir = NULL;
-    return X_ERR_NOT_SUPPORTED;
-}
-
-static XError X__DefaultFunc()
-{
-    return X_ERR_NOT_SUPPORTED;
-}
-
-
-static XError X__DefaultFlush()
-{
-    /* フラッシュ関数は特にやることがないということも多いので非登録にデフォルト
-     * 関すは常に正常終了を返す
-     */
-    return X_ERR_NONE;
 }
 
 

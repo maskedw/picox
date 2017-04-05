@@ -42,7 +42,7 @@
 
 #define X__TYPE_DIR  (0)
 #define X__TYPE_FILE (1)
-#define X__ASSERT_TAG(p)        (X_ASSERT(((const XRomFs*)p)->m_tag == X_ROMFS_TAG))
+#define X__ASSERT_TAG(p)        (X_ASSERT(((const XRomFs*)p)->m_fstype_tag == &XROMFS_RTTI_TAG))
 #define X__GET_FILE_HANDLE(fp)  ((X__File*)fp)
 #define X__GET_DIR_HANDLE(dir)  ((X__Dir*)dir)
 #define X__EXIT_IF(cond, v)     X_ASSIGN_AND_GOTO_IF(cond, err, v, x__exit)
@@ -119,6 +119,22 @@ static const XStreamVTable X__romfs_filestream_vtable = {
     .m_tell_func = (XStreamTellFunc)xromfs_tell,
 };
 
+static const XVirtualFsVTable X__romfs_vfs_vtable = {
+    .m_name = "XRomFs",
+    .m_open_func        = (XVirtualFsOpenFunc)xromfs_open,
+    .m_close_func       = (XVirtualFsCloseFunc)xromfs_close,
+    .m_read_func        = (XVirtualFsReadFunc)xromfs_read,
+    .m_seek_func        = (XVirtualFsSeekFunc)xromfs_seek,
+    .m_tell_func        = (XVirtualFsTellFunc)xromfs_tell,
+    .m_opendir_func     = (XVirtualFsOpendirFunc)xromfs_opendir,
+    .m_readdir_func     = (XVirtualFsReaddirFunc)xromfs_readdir,
+    .m_closedir_func    = (XVirtualFsClosedirFunc)xromfs_closedir,
+    .m_chdir_func       = (XVirtualFsChdirFunc)xromfs_chdir,
+    .m_getcwd_func      = (XVirtualFsGetcwdFunc)xromfs_getcwd,
+    .m_stat_func        = (XVirtualFsStatFunc)xromfs_stat,
+};
+X_IMPL_RTTI_TAG(XROMFS_RTTI_TAG);
+
 
 XError xromfs_init(XRomFs* fs, const void* romimage)
 {
@@ -151,7 +167,7 @@ XError xromfs_init(XRomFs* fs, const void* romimage)
         goto x__exit;
     }
 
-    fs->m_tag = X_ROMFS_TAG;
+    fs->m_fstype_tag = &XROMFS_RTTI_TAG;
     fs->m_rootdir = fs->m_curdir = rootdir;
 
 x__exit:
@@ -167,21 +183,17 @@ void xromfs_deinit(XRomFs* fs)
 }
 
 
-void xromfs_init_vfs(XRomFs* fs, XVirtualFs* vfs)
+XVirtualFs* xromfs_init_vfs(XRomFs* fs, XVirtualFs* vfs)
 {
+    X_ASSERT(fs);
+    X_ASSERT(vfs);
+
     xvfs_init(vfs);
-    vfs->m_realfs           = fs;
-    vfs->m_open_func        = (XVirtualFsOpenFunc)xromfs_open;
-    vfs->m_close_func       = (XVirtualFsCloseFunc)xromfs_close;
-    vfs->m_read_func        = (XVirtualFsReadFunc)xromfs_read;
-    vfs->m_seek_func        = (XVirtualFsSeekFunc)xromfs_seek;
-    vfs->m_tell_func        = (XVirtualFsTellFunc)xromfs_tell;
-    vfs->m_opendir_func     = (XVirtualFsOpendirFunc)xromfs_opendir;
-    vfs->m_readdir_func     = (XVirtualFsReaddirFunc)xromfs_readdir;
-    vfs->m_closedir_func    = (XVirtualFsClosedirFunc)xromfs_closedir;
-    vfs->m_chdir_func       = (XVirtualFsChdirFunc)xromfs_chdir;
-    vfs->m_getcwd_func      = (XVirtualFsGetcwdFunc)xromfs_getcwd;
-    vfs->m_stat_func        = (XVirtualFsStatFunc)xromfs_stat;
+    vfs->m_rtti_tag = &XROMFS_RTTI_TAG;
+    vfs->m_driver = fs;
+    vfs->m_vtable = &X__romfs_vfs_vtable;
+
+    return vfs;
 }
 
 

@@ -66,13 +66,11 @@ extern "C" {
  *  @{
  */
 
-#define X_FATFS_TAG     (X_MAKE_TAG('X', 'F', 'A', 'F'))
-
 typedef struct
 {
-/** @privatesection */
-    XTag  m_tag;
+    const void* m_fstype_tag;
 } XFatFs;
+X_DECLEAR_RTTI_TAG(XFATFS_RTTI_TAG);
 
 
 /** @brief ファイルシステムを初期化します
@@ -99,7 +97,7 @@ void xfatfs_deinit(XFatFs* fs);
  *  + fs    != NULL
  *  + vfs   != NULL
  */
-void xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs);
+XVirtualFs* xfatfs_init_vfs(XFatFs* fs, XVirtualFs* vfs);
 XStream* xfatfs_init_stream(XStream* stream, XFile* fp);
 XError xfatfs_open(XFatFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xfatfs_close(XFile* fp);

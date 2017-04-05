@@ -72,15 +72,14 @@ extern "C" {
  */
 
 
-#define X_RAMFS_TAG     (X_MAKE_TAG('X', 'R', 'A', 'F'))
 typedef struct
 {
-/** @privatesection */
-    XTag           m_tag;
-    XPicoAllocator m_alloc;
-    void*          m_rootdir;
-    void*          m_curdir;
+    const void*     m_fstype_tag;
+    XPicoAllocator  m_alloc;
+    void*           m_rootdir;
+    void*           m_curdir;
 } XRamFs;
+X_DECLEAR_RTTI_TAG(XRAMFS_RTTI_TAG);
 
 
 /** @brief ファイルシステムを初期化します
@@ -110,7 +109,7 @@ void xramfs_deinit(XRamFs* fs);
  *  + fs    != NULL
  *  + vfs   != NULL
  */
-void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs);
+XVirtualFs* xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs);
 
 XStream* xramfs_init_stream(XStream* stream, XFile* fp);
 XError xramfs_open(XRamFs* fs, const char* path, XOpenMode mode, XFile** o_fp);

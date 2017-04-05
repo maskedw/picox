@@ -44,7 +44,7 @@
 
 #define X__TYPE_DIR  (0)
 #define X__TYPE_FILE (1)
-#define X__ASSERT_TAG(p)        (X_ASSERT(((const XRamFs*)p)->m_tag == X_RAMFS_TAG))
+#define X__ASSERT_TAG(p)        (X_ASSERT(((const XRamFs*)p)->m_fstype_tag == &XRAMFS_RTTI_TAG))
 #define X__GET_FILE_HANDLE(fp)  ((X__File*)fp)
 #define X__GET_DIR_HANDLE(dir)  ((X__Dir*)dir)
 #define X__EXIT_IF(cond, v)     X_ASSIGN_AND_GOTO_IF(cond, err, v, x__exit)
@@ -122,6 +122,28 @@ static const XStreamVTable X__ramfs_filestream_vtable = {
     .m_tell_func = (XStreamTellFunc)xramfs_tell,
 };
 
+static const XVirtualFsVTable X__ramfs_vfs_vtable = {
+    .m_name = "XRamFs",
+    .m_open_func        = (XVirtualFsOpenFunc)xramfs_open,
+    .m_close_func       = (XVirtualFsCloseFunc)xramfs_close,
+    .m_read_func        = (XVirtualFsReadFunc)xramfs_read,
+    .m_write_func       = (XVirtualFsWriteFunc)xramfs_write,
+    .m_seek_func        = (XVirtualFsSeekFunc)xramfs_seek,
+    .m_tell_func        = (XVirtualFsTellFunc)xramfs_tell,
+    .m_flush_func       = (XVirtualFsFlushFunc)xramfs_flush,
+    .m_mkdir_func       = (XVirtualFsMkdirFunc)xramfs_mkdir,
+    .m_opendir_func     = (XVirtualFsOpendirFunc)xramfs_opendir,
+    .m_readdir_func     = (XVirtualFsReaddirFunc)xramfs_readdir,
+    .m_closedir_func    = (XVirtualFsClosedirFunc)xramfs_closedir,
+    .m_chdir_func       = (XVirtualFsChdirFunc)xramfs_chdir,
+    .m_getcwd_func      = (XVirtualFsGetcwdFunc)xramfs_getcwd,
+    .m_remove_func      = (XVirtualFsRemoveFunc)xramfs_remove,
+    .m_rename_func      = (XVirtualFsRenameFunc)xramfs_rename,
+    .m_stat_func        = (XVirtualFsStatFunc)xramfs_stat,
+    .m_utime_func       = (XVirtualFsUtimeFunc)xramfs_utime,
+};
+X_IMPL_RTTI_TAG(XRAMFS_RTTI_TAG);
+
 
 
 XError xramfs_init(XRamFs* fs, void* mem, size_t size)
@@ -129,7 +151,7 @@ XError xramfs_init(XRamFs* fs, void* mem, size_t size)
     XError err = X_ERR_NONE;
     X__DirEntry* root;
 
-    fs->m_tag = X_RAMFS_TAG;
+    fs->m_fstype_tag = &XRAMFS_RTTI_TAG;
 
     /* 具体的に最小何バイト必要というのを決めるのは難しいのだが、とりあえず64バ
      * イトとしておく。
@@ -162,27 +184,17 @@ void xramfs_deinit(XRamFs* fs)
 }
 
 
-void xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs)
+XVirtualFs* xramfs_init_vfs(XRamFs* fs, XVirtualFs* vfs)
 {
+    X_ASSERT(fs);
+    X_ASSERT(vfs);
+
     xvfs_init(vfs);
-    vfs->m_realfs           = fs;
-    vfs->m_open_func        = (XVirtualFsOpenFunc)xramfs_open;
-    vfs->m_close_func       = (XVirtualFsCloseFunc)xramfs_close;
-    vfs->m_read_func        = (XVirtualFsReadFunc)xramfs_read;
-    vfs->m_write_func       = (XVirtualFsWriteFunc)xramfs_write;
-    vfs->m_seek_func        = (XVirtualFsSeekFunc)xramfs_seek;
-    vfs->m_tell_func        = (XVirtualFsTellFunc)xramfs_tell;
-    vfs->m_flush_func       = (XVirtualFsFlushFunc)xramfs_flush;
-    vfs->m_mkdir_func       = (XVirtualFsMkdirFunc)xramfs_mkdir;
-    vfs->m_opendir_func     = (XVirtualFsOpendirFunc)xramfs_opendir;
-    vfs->m_readdir_func     = (XVirtualFsReaddirFunc)xramfs_readdir;
-    vfs->m_closedir_func    = (XVirtualFsClosedirFunc)xramfs_closedir;
-    vfs->m_chdir_func       = (XVirtualFsChdirFunc)xramfs_chdir;
-    vfs->m_getcwd_func      = (XVirtualFsGetcwdFunc)xramfs_getcwd;
-    vfs->m_remove_func      = (XVirtualFsRemoveFunc)xramfs_remove;
-    vfs->m_rename_func      = (XVirtualFsRenameFunc)xramfs_rename;
-    vfs->m_stat_func        = (XVirtualFsStatFunc)xramfs_stat;
-    vfs->m_utime_func       = (XVirtualFsUtimeFunc)xramfs_utime;
+    vfs->m_rtti_tag = &XRAMFS_RTTI_TAG;
+    vfs->m_driver = fs;
+    vfs->m_vtable = &X__ramfs_vfs_vtable;
+
+    return vfs;
 }
 
 

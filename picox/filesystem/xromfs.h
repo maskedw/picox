@@ -75,15 +75,14 @@ extern "C" {
  */
 
 
-#define X_ROMFS_TAG     (X_MAKE_TAG('X', 'R', 'O', 'F'))
 typedef struct
 {
-/** @privatesection */
-    XTag        m_tag;
+    const void* m_fstype_tag;
     const char* m_top;
     const char* m_rootdir;
     const char* m_curdir;
 } XRomFs;
+X_DECLEAR_RTTI_TAG(XROMFS_RTTI_TAG);
 
 
 /** @brief ファイルシステムを初期化します
@@ -110,7 +109,7 @@ void xromfs_deinit(XRomFs* fs);
  *  + fs    != NULL
  *  + vfs   != NULL
  */
-void xromfs_init_vfs(XRomFs* fs, XVirtualFs* vfs);
+XVirtualFs* xromfs_init_vfs(XRomFs* fs, XVirtualFs* vfs);
 
 
 XStream* xromfs_init_stream(XStream* stream, XFile* fp);

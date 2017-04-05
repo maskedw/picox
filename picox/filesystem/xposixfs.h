@@ -69,12 +69,12 @@ extern "C" {
  */
 
 
-#define X_POSIXFS_TAG   (X_MAKE_TAG('X', 'P', 'O', 'F'))
 typedef struct
 {
-/** @privatesection */
+    const void* m_fstype_tag;
     XTag    m_tag;
 } XPosixFs;
+X_DECLEAR_RTTI_TAG(XPOSIXFS_RTTI_TAG);
 
 
 /** @brief ファイルシステムを初期化します
@@ -99,7 +99,7 @@ void xposixfs_deinit(XPosixFs* fs);
  *  + fs    != NULL
  *  + vfs   != NULL
  */
-void xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs);
+XVirtualFs* xposixfs_init_vfs(XPosixFs* fs, XVirtualFs* vfs);
 XError xposixfs_open(XPosixFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xposixfs_close(XFile* fp);
 XError xposixfs_read(XFile* fp, void* dst, size_t size, size_t* nread);

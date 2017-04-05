@@ -178,12 +178,11 @@ typedef XError (*XVirtualFsStatFunc)(void* fs, const char* path, XStat* statbuf)
 typedef XError (*XVirtualFsUtimeFunc)(void* fs, const char* path, XTime time);
 
 
-/** 仮想ファイルシステム関数テーブルです
+/** ファイルシステムインターフェースのvtableです
  */
-struct XVirtualFs
+typedef struct XVirtualFsVTable
 {
-/** @privatesection */
-    void*                       m_realfs;
+    const char*                 m_name;
     XVirtualFsOpenFunc          m_open_func;
     XVirtualFsCloseFunc         m_close_func;
     XVirtualFsReadFunc          m_read_func;
@@ -201,6 +200,14 @@ struct XVirtualFs
     XVirtualFsRenameFunc        m_rename_func;
     XVirtualFsStatFunc          m_stat_func;
     XVirtualFsUtimeFunc         m_utime_func;
+} XVirtualFsVTable;
+
+
+/** 仮想ファイルシステムインターフェースを表すインターフェース型です
+ */
+struct XVirtualFs
+{
+    X_DECLEAR_RTTI(XVirtualFsVTable);
 };
 
 

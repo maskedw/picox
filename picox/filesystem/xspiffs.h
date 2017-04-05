@@ -49,13 +49,12 @@ extern "C" {
  */
 
 
-#define X_SPIFFS_TAG    (X_MAKE_TAG('X', 'S', 'P', 'F'))
 typedef struct
 {
-/** @privatesection */
-    XTag        m_tag;
+    const void* m_fstype_tag;
     spiffs*     m_spiffs;
 } XSpiFFs;
+X_DECLEAR_RTTI_TAG(XSPIFFS_RTTI_TAG);
 
 
 /** @brief ファイルシステムを初期化します
@@ -85,7 +84,7 @@ void xspiffs_deinit(XSpiFFs* fs);
  *  + fs    != NULL
  *  + vfs   != NULL
  */
-void xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs);
+XVirtualFs* xspiffs_init_vfs(XSpiFFs* fs, XVirtualFs* vfs);
 XStream* xspiffs_init_stream(XStream* stream, XFile* fp);
 XError xspiffs_open(XSpiFFs* fs, const char* path, XOpenMode mode, XFile** o_fp);
 XError xspiffs_close(XFile* fp);

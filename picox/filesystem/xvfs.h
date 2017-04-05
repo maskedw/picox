@@ -68,9 +68,6 @@ extern "C" {
  */
 
 
-#define X_VFS_TAG     (X_MAKE_TAG('X', 'V', 'I', 'F'))
-
-
 /** ストリームをファイルストリームとして初期化します
  */
 XStream* xvfs_init_stream(XStream* stream, XFile* fp);
