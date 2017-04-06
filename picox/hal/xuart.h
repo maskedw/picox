@@ -136,11 +136,10 @@ typedef struct XUartConfig
 
 
 /** @brief @see xuart_set_config */
-typedef XError (*XUartConfigureFunc)(void* driver, const XUartConfig* config);
+typedef XError (*XUartSetConfigFunc)(void* driver, const XUartConfig* config);
 
-/** @brief @see xuart_set_config */
+/** @brief @see xuart_get_config */
 typedef void (*XUartGetConfigFunc)(void* driver, XUartConfig* config);
-
 
 /** @brief @see xuart_write */
 typedef XError (*XUartWriteFunc)(void* driver, const void* src, size_t size);
@@ -149,7 +148,10 @@ typedef XError (*XUartWriteFunc)(void* driver, const void* src, size_t size);
 typedef XError (*XUartReadFunc)(void* driver, void* dst, size_t size, size_t* nread, XTicks timeout);
 
 /** @brief @see xuart_flush */
-typedef void (*XUartFlushFunc)(void* driver, bool drain);
+typedef void (*XUartFlushFunc)(void* driver);
+
+/** @brief @see xuart_drain*/
+typedef void (*XUartDrainFunc)(void* driver);
 
 /** @brief @see xuart_clear */
 typedef void (*XUartClearFunc)(void* driver, XUartDirection direction);
@@ -163,10 +165,12 @@ typedef void (*XUartClearFunc)(void* driver, XUartDirection direction);
  */
 typedef struct XUartVTable
 {
-    XUartConfigureFunc  m_configure_func;
+    XUartSetConfigFunc  m_set_config_func;
+    XUartGetConfigFunc  m_get_config_func;
     XUartReadFunc       m_read_func;
     XUartWriteFunc      m_write_func;
     XUartFlushFunc      m_flush_func;
+    XUartDrainFunc      m_drain_func;
     XUartClearFunc      m_clear_func;
 } XUartVTable;
 
@@ -200,6 +204,11 @@ XStream* xuart_init_stream(XUart* self, XStream* stream);
 XError xuart_set_config(XUart* self, const XUartConfig* config);
 
 
+/** @brief UARTの設定を取得します
+ */
+void xuart_get_config(const XUart* self, XUartConfig* config);
+
+
 /** @brief dstに最大でsizeバイトを受信します
  *
  *  `*nread`には受信できたバイト数が返されます。
@@ -220,12 +229,17 @@ XError xuart_write(XUart* self, const void* src, size_t size);
 XError xuart_read_poll(XUart* self, void* dst, size_t size, size_t* nread);
 
 
-/** @brief バッファリングされた送信データの出力を強制します
- *
- *  `drain == true`が指定された場合は、出力を開始し、かつ、全ての送信が出力が完
- *  了するまで待機します。
+/** @brief バッファリングされた送信データの出力開始を強制します
  */
-void xuart_flush(XUart* self, bool drain);
+void xuart_flush(XUart* self);
+
+
+/** @brief バッファリングされた送信データの出力を完了を待ちます
+ *
+ *  xuart_flush()は送信の"開始"を保証しますが、xuart_drain()は送信の"完了"を保証
+ *  します。
+ */
+void xuart_drain(XUart* self);
 
 
 /** @brief 送受信バッファをクリアします
@@ -260,6 +274,25 @@ int xuart_putc(XUart* self, int c);
  */
 int xuart_getc(XUart* self);
 
+
+/** @name  config_properties
+ *  @brief set_config, get_configの簡易版です
+ *  @{
+ */
+XError xuart_set_baudrate(XUart* self, uint32_t baudrate);
+uint32_t xuart_baudrate(const XUart* self);
+
+XError xuart_set_parity(XUart* self, XUartParity parity);
+XUartParity xuart_parity(const XUart* self);
+
+XError xuart_set_stopbits(XUart* self, XUartStopbits stopbits);
+XUartStopbits xuart_stopbits(const XUart* self);
+
+XError xuart_set_flow_control(XUart* self, XUartFlowControl flow_control);
+XUartFlowControl xuart_flow_control(const XUart* self);
+
+/** @} end of name config_properties
+ */
 
 #ifdef __cplusplus
 }

@@ -41,9 +41,8 @@
 
 
 #define X__HAS_VFUNC(uart, func)   (X_LIKELY(uart->m_vtable->m_##func##_func))
-#define X__CALL_VFUNC(uart, func)  (uart->m_vtable->m_##func##_func)
+#define X__VFUNC(uart, func)  (uart->m_vtable->m_##func##_func)
 
-static int X__FlushStream(void* m_driver);
 static XError X__UnsafeWrite(XUart* self, const void* src, size_t size);
 static XError X__UnsafeRead(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout);
 
@@ -52,7 +51,7 @@ static const XStreamVTable X__uart_stream_vtable = {
     .m_name = "XUartStream",
     .m_read_func = (XStreamReadFunc)X__UnsafeRead,
     .m_write_func = (XStreamWriteFunc)X__UnsafeWrite,
-    .m_flush_func = (XStreamFlushFunc)X__FlushStream,
+    .m_flush_func = (XStreamFlushFunc)xuart_flush,
 };
 X_IMPL_RTTI_TAG(XUART_STREAM_RTTI_TAG);
 
@@ -88,17 +87,27 @@ XStream* xuart_init_stream(XUart* self, XStream* stream)
 }
 
 
-XError xuart_configure(XUart* self, const XUartConfig* config)
+XError xuart_set_config(XUart* self, const XUartConfig* config)
 {
     XError err;
     X_ASSERT(self);
     X_ASSERT(config);
 
-    if (!X__HAS_VFUNC(self, configure))
+    if (!X__HAS_VFUNC(self, set_config))
         return X_ERR_NOT_SUPPORTED;
 
-    err = X__CALL_VFUNC(self, configure)(self->m_driver, config);
+    err = X__VFUNC(self, set_config)(self->m_driver, config);
     return err;
+}
+
+
+void xuart_get_config(const XUart* self, XUartConfig* config)
+{
+    X_ASSERT(self);
+    X_ASSERT(config);
+    X_ASSERT(X__VFUNC(self, get_config));
+
+    X__VFUNC(self, get_config)(self->m_driver, config);
 }
 
 
@@ -111,7 +120,7 @@ XError xuart_write(XUart* self, const void* src, size_t size)
     if (!X__HAS_VFUNC(self, write))
         return X_ERR_NOT_SUPPORTED;
 
-    err = X__CALL_VFUNC(self, write)(self->m_driver, src, size);
+    err = X__VFUNC(self, write)(self->m_driver, src, size);
     return err;
 }
 
@@ -126,7 +135,7 @@ XError xuart_read(XUart* self, void* dst, size_t size, size_t* nread, XTicks tim
     if (!X__HAS_VFUNC(self, read))
         return X_ERR_NOT_SUPPORTED;
 
-    err = X__CALL_VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
+    err = X__VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
     return err;
 }
 
@@ -137,14 +146,25 @@ XError xuart_read_poll(XUart* self, void* dst, size_t size, size_t* nread)
 }
 
 
-void xuart_flush(XUart* self, bool drain)
+void xuart_flush(XUart* self)
 {
     X_ASSERT(self);
 
     if (!X__HAS_VFUNC(self, flush))
         return;
 
-    X__CALL_VFUNC(self, flush)(self->m_driver, drain);
+    X__VFUNC(self, flush)(self->m_driver);
+}
+
+
+void xuart_drain(XUart* self)
+{
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, drain))
+        return;
+
+    X__VFUNC(self, drain)(self->m_driver);
 }
 
 
@@ -155,7 +175,7 @@ void xuart_clear(XUart* self, XUartDirection direction)
     if (!X__HAS_VFUNC(self, clear))
         return;
 
-    X__CALL_VFUNC(self, clear)(self->m_driver, direction);
+    X__VFUNC(self, clear)(self->m_driver, direction);
 }
 
 
@@ -199,22 +219,101 @@ int xuart_vprintf(XUart* self, const char* fmt, va_list args)
 }
 
 
+XError xuart_set_baudrate(XUart* self, uint32_t baudrate)
+{
+    XError err;
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    config.baudrate = baudrate;
+
+    err = xuart_set_config(self, &config);
+    return err;
+}
+
+
+uint32_t xuart_baudrate(const XUart* self)
+{
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    return config.baudrate;
+}
+
+
+XError xuart_set_parity(XUart* self, XUartParity parity)
+{
+    XError err;
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    config.parity = parity;
+
+    err = xuart_set_config(self, &config);
+    return err;
+}
+
+
+XUartParity xuart_parity(const XUart* self)
+{
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    return config.parity;
+}
+
+
+XError xuart_set_stopbits(XUart* self, XUartStopbits stopbits)
+{
+    XError err;
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    config.stopbits = stopbits;
+
+    err = xuart_set_config(self, &config);
+    return err;
+}
+
+
+XUartStopbits xuart_stopbits(const XUart* self)
+{
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    return config.stopbits;
+}
+
+
+XError xuart_set_flow_control(XUart* self, XUartFlowControl flow_control)
+{
+    XError err;
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    config.flow_control = flow_control;
+
+    err = xuart_set_config(self, &config);
+    return err;
+}
+
+
+XUartFlowControl xuart_flow_control(const XUart* self)
+{
+    XUartConfig config;
+
+    xuart_get_config(self, &config);
+    return config.flow_control;
+}
+
+
 static XError X__UnsafeWrite(XUart* self, const void* src, size_t size)
 {
-    return X__CALL_VFUNC(self, write)(self->m_driver, src, size);
+    return X__VFUNC(self, write)(self->m_driver, src, size);
 }
 
 
 static XError X__UnsafeRead(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout)
 {
-    return X__CALL_VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
-}
-
-
-static int X__FlushStream(void* driver)
-{
-    XUart* const self = driver;
-    X__CALL_VFUNC(self, flush)(self->m_driver, true);
-
-    return X_ERR_NONE;
+    return X__VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
 }
