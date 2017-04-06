@@ -118,7 +118,7 @@ extern "C" {
 
 /** @brief Interface型がrtti_tagと対応した型かどうかを返します
  */
-#define x_rtti_equal(x, rtti_tag)               ((x)->m_rtti_tag == &rtti_tag)
+#define x_rtti_equal(x, rtti_tag)               ((x) && ((x)->m_rtti_tag == &rtti_tag))
 
 
 /** @brief Interface型xの実体をtypeにキャストします
