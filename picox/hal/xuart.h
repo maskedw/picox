@@ -135,8 +135,12 @@ typedef struct XUartConfig
  */
 
 
-/** @brief @see xuart_configure */
+/** @brief @see xuart_set_config */
 typedef XError (*XUartConfigureFunc)(void* driver, const XUartConfig* config);
+
+/** @brief @see xuart_set_config */
+typedef void (*XUartGetConfigFunc)(void* driver, XUartConfig* config);
+
 
 /** @brief @see xuart_write */
 typedef XError (*XUartWriteFunc)(void* driver, const void* src, size_t size);
@@ -155,52 +159,57 @@ typedef void (*XUartClearFunc)(void* driver, XUartDirection direction);
  */
 
 
-/** @brief 仮想UARTインターフェース構造体です
- *
- *  インターフェースを満たす関数はユーザーが用意し、セットする必要があります。
+/** @brief UARTインターフェースのvtableです
+ */
+typedef struct XUartVTable
+{
+    XUartConfigureFunc  m_configure_func;
+    XUartReadFunc       m_read_func;
+    XUartWriteFunc      m_write_func;
+    XUartFlushFunc      m_flush_func;
+    XUartClearFunc      m_clear_func;
+} XUartVTable;
+
+
+/** @brief 仮想UARTを表すインターフェース型です
  */
 typedef struct XUart
 {
-    void*               driver;
-    XUartConfigureFunc  configure_func;
-    XUartReadFunc       read_func;
-    XUartWriteFunc      write_func;
-    XUartFlushFunc      flush_func;
-    XUartClearFunc      clear_func;
+    X_DECLEAR_RTTI(XUartVTable);
 } XUart;
 X_DECLEAR_RTTI_TAG(XUART_STREAM_RTTI_TAG);
 
 
 /** @brief 仮想UARTインターフェースを初期値に設定します
  */
-void xuart_init(XUart* uart);
+void xuart_init(XUart* self);
 
 
 /** @brief コンフィグオブジェクトを初期値に設定します
  */
-void xuart_config_init(XUartConfig* config);
+void xuart_init_config(XUartConfig* config);
 
 
 /** @brief UARTインターフェースを元にストリームを初期化します
  */
-XStream* xuart_stream_init(XUart* uart, XStream* stream);
+XStream* xuart_init_stream(XUart* self, XStream* stream);
 
 
 /** @brief UARTの設定を変更します
  */
-XError xuart_configure(XUart* uart, const XUartConfig* config);
+XError xuart_set_config(XUart* self, const XUartConfig* config);
 
 
 /** @brief dstに最大でsizeバイトを受信します
  *
  *  `*nread`には受信できたバイト数が返されます。
  */
-XError xuart_read(XUart* uart, void* dst, size_t size, size_t* nread, XTicks timeout);
+XError xuart_read(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout);
 
 
 /** @brief srcからsizeバイトを送信します
  */
-XError xuart_write(XUart* uart, const void* src, size_t size);
+XError xuart_write(XUart* self, const void* src, size_t size);
 
 
 /** @brief dstに最大でsizeバイトを受信します
@@ -208,7 +217,7 @@ XError xuart_write(XUart* uart, const void* src, size_t size);
  *  `xuart_read(uart, dst, size, nread, 0);`と同じです。つまり、受信データがない
  *  場合、ただちに処理を返します。
  */
-XError xuart_read_poll(XUart* uart, void* dst, size_t size, size_t* nread);
+XError xuart_read_poll(XUart* self, void* dst, size_t size, size_t* nread);
 
 
 /** @brief バッファリングされた送信データの出力を強制します
@@ -216,7 +225,7 @@ XError xuart_read_poll(XUart* uart, void* dst, size_t size, size_t* nread);
  *  `drain == true`が指定された場合は、出力を開始し、かつ、全ての送信が出力が完
  *  了するまで待機します。
  */
-void xuart_flush(XUart* uart, bool drain);
+void xuart_flush(XUart* self, bool drain);
 
 
 /** @brief 送受信バッファをクリアします
@@ -227,29 +236,29 @@ void xuart_flush(XUart* uart, bool drain);
  *  + `XUART_DIRECTION_OUT`   送信バッファのクリア
  *  + `XUART_DIRECTION_INOUT` 送受信バッファのクリア
  */
-void xuart_clear(XUart* uart, XUartDirection direction);
+void xuart_clear(XUart* self, XUartDirection direction);
 
 
 /** @brief printf形式の出力を行います
  */
-int xuart_printf(XUart* uart, const char* fmt, ...);
+int xuart_printf(XUart* self, const char* fmt, ...);
 
 
 /** @brief vprintf形式の出力を行います
  */
-int xuart_vprintf(XUart* uart, const char* fmt, va_list args);
+int xuart_vprintf(XUart* self, const char* fmt, va_list args);
 
 
 /** @brief 1バイトを送信します
  */
-int xuart_putc(XUart* uart, int c);
+int xuart_putc(XUart* self, int c);
 
 
 /** @brief 1バイトを受信します
  *
  *  受信データなしの場合は、EOFを返します。
  */
-int xuart_getc(XUart* uart);
+int xuart_getc(XUart* self);
 
 
 #ifdef __cplusplus

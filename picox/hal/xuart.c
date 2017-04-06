@@ -40,31 +40,33 @@
 #include <picox/hal/xuart.h>
 
 
-static int X__FlushStream(void* driver);
-static void X__NullFunc(void);
-static XError X__NotSupportedFunc(void);
+#define X__HAS_VFUNC(uart, func)   (X_LIKELY(uart->m_vtable->m_##func##_func))
+#define X__CALL_VFUNC(uart, func)  (uart->m_vtable->m_##func##_func)
+
+static int X__FlushStream(void* m_driver);
+static XError X__UnsafeWrite(XUart* self, const void* src, size_t size);
+static XError X__UnsafeRead(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout);
+
+
 static const XStreamVTable X__uart_stream_vtable = {
     .m_name = "XUartStream",
-    .m_read_func = (XStreamReadFunc)xuart_read,
-    .m_write_func = (XStreamWriteFunc)xuart_write,
+    .m_read_func = (XStreamReadFunc)X__UnsafeRead,
+    .m_write_func = (XStreamWriteFunc)X__UnsafeWrite,
     .m_flush_func = (XStreamFlushFunc)X__FlushStream,
 };
 X_IMPL_RTTI_TAG(XUART_STREAM_RTTI_TAG);
 
 
-void xuart_init(XUart* uart)
+void xuart_init(XUart* self)
 {
-    uart->driver = NULL;
-    uart->configure_func = (XUartConfigureFunc)X__NotSupportedFunc;
-    uart->read_func = (XUartReadFunc)X__NotSupportedFunc;
-    uart->write_func = (XUartWriteFunc)X__NotSupportedFunc;
-    uart->flush_func = (XUartFlushFunc)X__NullFunc;
-    uart->clear_func = (XUartClearFunc)X__NullFunc;
+    X_ASSERT(self);
+    X_RESET_RTTI(self);
 }
 
 
-void xuart_config_init(XUartConfig* config)
+void xuart_init_config(XUartConfig* config)
 {
+    X_ASSERT(config);
     config->baudrate = 115200;
     config->parity = XUART_PARITY_NONE;
     config->stopbits = XUART_STOPBITS_ONE;
@@ -72,108 +74,147 @@ void xuart_config_init(XUartConfig* config)
 }
 
 
-XStream* xuart_stream_init(XUart* uart, XStream* stream)
+XStream* xuart_init_stream(XUart* self, XStream* stream)
 {
-    X_ASSERT(uart);
+    X_ASSERT(self);
     X_ASSERT(stream);
 
     xstream_init(stream);
     stream->m_rtti_tag = &XUART_STREAM_RTTI_TAG;
-    stream->m_driver = uart;
+    stream->m_driver = self;
     stream->m_vtable = &X__uart_stream_vtable;
 
     return stream;
 }
 
 
-XError xuart_configure(XUart* uart, const XUartConfig* config)
+XError xuart_configure(XUart* self, const XUartConfig* config)
 {
-    return uart->configure_func(uart->driver, config);
+    XError err;
+    X_ASSERT(self);
+    X_ASSERT(config);
+
+    if (!X__HAS_VFUNC(self, configure))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__CALL_VFUNC(self, configure)(self->m_driver, config);
+    return err;
 }
 
 
-XError xuart_write(XUart* uart, const void* src, size_t size)
+XError xuart_write(XUart* self, const void* src, size_t size)
 {
-    return uart->write_func(uart->driver, src, size);
+    XError err;
+    X_ASSERT(self);
+    X_ASSERT(src);
+
+    if (!X__HAS_VFUNC(self, write))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__CALL_VFUNC(self, write)(self->m_driver, src, size);
+    return err;
 }
 
 
-XError xuart_read(XUart* uart, void* dst, size_t size, size_t* nread, XTicks timeout)
+XError xuart_read(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout)
 {
-    return uart->read_func(uart->driver, dst, size, nread, timeout);
+    XError err;
+    X_ASSERT(self);
+    X_ASSERT(dst);
+    X_ASSERT(nread);
+
+    if (!X__HAS_VFUNC(self, read))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__CALL_VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
+    return err;
 }
 
 
-XError xuart_read_poll(XUart* uart, void* dst, size_t size, size_t* nread)
+XError xuart_read_poll(XUart* self, void* dst, size_t size, size_t* nread)
 {
-    return uart->read_func(uart->driver, dst, size, nread, 0);
+    return xuart_read(self, dst, size, nread, 0);
 }
 
 
-void xuart_flush(XUart* uart, bool drain)
+void xuart_flush(XUart* self, bool drain)
 {
-    uart->flush_func(uart->driver, drain);
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, flush))
+        return;
+
+    X__CALL_VFUNC(self, flush)(self->m_driver, drain);
 }
 
 
-void xuart_clear(XUart* uart, XUartDirection direction)
+void xuart_clear(XUart* self, XUartDirection direction)
 {
-    uart->clear_func(uart->driver, direction);
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, clear))
+        return;
+
+    X__CALL_VFUNC(self, clear)(self->m_driver, direction);
 }
 
 
-int xuart_putc(XUart* uart, int c)
+int xuart_putc(XUart* self, int c)
 {
     uint8_t b = c;
-    const XError err = xuart_write(uart, &b, sizeof(b));
+    const XError err = xuart_write(self, &b, sizeof(b));
 
     return err == X_ERR_NONE ? c : EOF;
 }
 
 
-int xuart_getc(XUart* uart)
+int xuart_getc(XUart* self)
 {
     uint8_t b;
     size_t nread;
-    const XError err = xuart_read_poll(uart, &b, sizeof(b), &nread);
+    const XError err = xuart_read_poll(self, &b, sizeof(b), &nread);
 
     return ((err == X_ERR_NONE) && (nread == 1)) ? b : EOF;
 }
 
 
-int xuart_printf(XUart* uart, const char* fmt, ...)
+int xuart_printf(XUart* self, const char* fmt, ...)
 {
     va_list args;
+    int len;
+
     va_start(args, fmt);
-    const int len = xuart_vprintf(uart, fmt, args);
+    len = xuart_vprintf(self, fmt, args);
     va_end(args);
     return len;
 }
 
 
-int xuart_vprintf(XUart* uart, const char* fmt, va_list args)
+int xuart_vprintf(XUart* self, const char* fmt, va_list args)
 {
     XStream stream;
-    xuart_stream_init(uart, &stream);
+    xuart_init_stream(self, &stream);
 
     return x_vprintf_to_stream(&stream, fmt, args);
 }
 
 
+static XError X__UnsafeWrite(XUart* self, const void* src, size_t size)
+{
+    return X__CALL_VFUNC(self, write)(self->m_driver, src, size);
+}
+
+
+static XError X__UnsafeRead(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout)
+{
+    return X__CALL_VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
+}
+
+
 static int X__FlushStream(void* driver)
 {
-    XUart* const uart = X_CONTAINER_OF(driver, XUart, driver);
-    uart->flush_func(driver, true);
-    return 0;
-}
+    XUart* const self = driver;
+    X__CALL_VFUNC(self, flush)(self->m_driver, true);
 
-
-static void X__NullFunc(void)
-{
-}
-
-
-static XError X__NotSupportedFunc(void)
-{
-    return X_ERR_NOT_SUPPORTED;
+    return X_ERR_NONE;
 }
