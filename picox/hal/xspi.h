@@ -198,19 +198,23 @@ typedef XError (*XSpiLockFunc)(struct XSpi* spi, bool lock);
  */
 
 
-/** @brief 仮想SPIインターフェース構造体です
- *
- *  インターフェースを満たす関数はユーザーが用意し、セットする必要があります。
- *  tagはユーザが好きに使用してかまいません。
+/** @brief 仮想SPIインターフェースのvtableです
+ */
+typedef struct XSpiVTable
+{
+    XSpiConfigureFunc   m_configure_func;
+    XSpiTransferFunc    m_transfer_func;
+    XSpiLockFunc        m_lock_func;
+} XSpiVTable;
+
+
+/** @brief 仮想SPIを表すインターフェース型です
  */
 typedef struct XSpi
 {
-    void*               user_ptr;
-    XTag                tag;
-    XSpiConfigureFunc   configure_func;
-    XSpiTransferFunc    transfer_func;
-    XSpiLockFunc        lock_func;
+    X_DECLEAR_RTTI(XSpiVTable);
 } XSpi;
+X_DECLEAR_RTTI_TAG(XSPI_STREAM_RTTI_TAG);
 
 
 /** @brief 仮想SPIインターフェースを初期値に設定します
@@ -220,7 +224,7 @@ void xspi_init(XSpi* spi);
 
 /** @brief コンフィグオブジェクトを初期値に設定します
  */
-void xspi_config_init(XSpiConfig* config);
+void xspi_init_config(XSpiConfig* config);
 
 
 /** @brief SPIの設定を変更します
