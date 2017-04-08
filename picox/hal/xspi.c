@@ -96,3 +96,23 @@ void xspi_exchange(XSpi* self, const void* tx, void* rx, size_t size)
 
     X__VFUNC(self, exchange)(self->m_driver, tx, rx, size);
 }
+
+
+void xspi_lock_bus(XSpi* self)
+{
+    X_ASSERT(self);
+    if (!X__HAS_VFUNC(self, lock_bus))
+        return;
+
+    X__VFUNC(self, lock_bus)(self->m_driver, true);
+}
+
+
+void xspi_unlock_bus(XSpi* self)
+{
+    X_ASSERT(self);
+    if (!X__HAS_VFUNC(self, lock_bus))
+        return;
+
+    X__VFUNC(self, lock_bus)(self->m_driver, false);
+}

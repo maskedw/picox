@@ -81,7 +81,7 @@ typedef enum XSpiMode
 
 /** @name HAL SPI virtual functions
  *
- *  ユーザはHALが要求するインターフェースを満たす必要があります。
+ *  インターフェースの実装者は、要求されたHALインタフェースを満たす必要がありま
  *  @{
  */
 
@@ -112,7 +112,7 @@ typedef void (*XSpiExchangeFunc)(void* driver, const void* tx, void* rx, size_t 
  *  マルチタスク環境で、SPIバスを共有するオブジェクトが、バスを排他的に操作でき
  *  るようにするためのインターフェースです。
  *
- *  非マルチタスク環境であれば、このインターフェースは未設定でかまいません。
+ *  非マルチタスク環境であれば、このインターフェースは未設定(NULL)でかまいません。
  */
 typedef void (*XSpiLockBusFunc)(void* driver, bool lock);
 
@@ -132,12 +132,21 @@ typedef struct XSpiVTable
 
 
 /** @brief 仮想SPIを表すインターフェース型です
+ *
+ *  XSpiはCS(チップセレクト)について感知しません。XGpio等で直接操作してください
+ *
+ *  @note
+ *  Linuxのspidevのように自動的にCSの操作を行うようにすると、SDカードのようなCS
+ *  のデアサート状態でダミーデータを送信する必要があるような特殊なケースの対応が
+ *  難しくなるため、若干面倒ではありますが、CSピンは別操作にするようにしました。
+ *
+ *  [参考]
+ *  http://lxr.free-electrons.com/source/include/uapi/linux/spi/spidev.h
  */
 typedef struct XSpi
 {
     X_DECLEAR_RTTI(XSpiVTable);
 } XSpi;
-X_DECLEAR_RTTI_TAG(XSPI_STREAM_RTTI_TAG);
 
 
 /** @brief 仮想SPIインターフェースを初期値に設定します
