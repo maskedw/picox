@@ -43,14 +43,14 @@
 #define X__HAS_VFUNC(uart, func)   (X_LIKELY(uart->m_vtable->m_##func##_func))
 #define X__VFUNC(uart, func)  (uart->m_vtable->m_##func##_func)
 
-static XError X__UnsafeWrite(XUart* self, const void* src, size_t size);
-static XError X__UnsafeRead(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout);
+static XError X__WriteStream(XUart* self, const void* src, size_t size);
+static XError X__ReadStream(XUart* self, void* dst, size_t size, size_t* nread);
 
 
 static const XStreamVTable X__uart_stream_vtable = {
     .m_name = "XUartStream",
-    .m_read_func = (XStreamReadFunc)X__UnsafeRead,
-    .m_write_func = (XStreamWriteFunc)X__UnsafeWrite,
+    .m_read_func = (XStreamReadFunc)X__ReadStream,
+    .m_write_func = (XStreamWriteFunc)X__WriteStream,
     .m_flush_func = (XStreamFlushFunc)xuart_flush,
 };
 X_IMPL_RTTI_TAG(XUART_STREAM_RTTI_TAG);
@@ -111,38 +111,31 @@ void xuart_get_config(const XUart* self, XUartConfig* config)
 }
 
 
-XError xuart_write(XUart* self, const void* src, size_t size)
+void xuart_write(XUart* self, const void* src, size_t size)
 {
-    XError err;
     X_ASSERT(self);
     X_ASSERT(src);
+    X_ASSERT(X__VFUNC(self, write));
 
-    if (!X__HAS_VFUNC(self, write))
-        return X_ERR_NOT_SUPPORTED;
-
-    err = X__VFUNC(self, write)(self->m_driver, src, size);
-    return err;
+    X__VFUNC(self, write)(self->m_driver, src, size);
 }
 
 
-XError xuart_read(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout)
+size_t xuart_read(XUart* self, void* dst, size_t size, XTicks timeout)
 {
-    XError err;
+    size_t nread;
     X_ASSERT(self);
     X_ASSERT(dst);
-    X_ASSERT(nread);
+    X_ASSERT(X__VFUNC(self, read));
 
-    if (!X__HAS_VFUNC(self, read))
-        return X_ERR_NOT_SUPPORTED;
-
-    err = X__VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
-    return err;
+    nread = X__VFUNC(self, read)(self->m_driver, dst, size, timeout);
+    return nread;
 }
 
 
-XError xuart_read_poll(XUart* self, void* dst, size_t size, size_t* nread)
+size_t xuart_read_poll(XUart* self, void* dst, size_t size)
 {
-    return xuart_read(self, dst, size, nread, 0);
+    return xuart_read(self, dst, size, 0);
 }
 
 
@@ -182,19 +175,18 @@ void xuart_clear(XUart* self, XUartDirection direction)
 int xuart_putc(XUart* self, int c)
 {
     uint8_t b = c;
-    const XError err = xuart_write(self, &b, sizeof(b));
+    xuart_write(self, &b, sizeof(b));
 
-    return err == X_ERR_NONE ? c : EOF;
+    return (unsigned char)c;
 }
 
 
 int xuart_getc(XUart* self)
 {
     uint8_t b;
-    size_t nread;
-    const XError err = xuart_read_poll(self, &b, sizeof(b), &nread);
+    const size_t nread = xuart_read(self, &b, sizeof(b), 0);
 
-    return ((err == X_ERR_NONE) && (nread == 1)) ? b : EOF;
+    return (nread == 1) ? b : EOF;
 }
 
 
@@ -307,13 +299,21 @@ XUartFlowControl xuart_flow_control(const XUart* self)
 }
 
 
-static XError X__UnsafeWrite(XUart* self, const void* src, size_t size)
+static XError X__WriteStream(XUart* self, const void* src, size_t size)
 {
-    return X__VFUNC(self, write)(self->m_driver, src, size);
+    if (!X__HAS_VFUNC(self, write))
+        return X_ERR_NOT_SUPPORTED;
+
+    X__VFUNC(self, write)(self->m_driver, src, size);
+    return X_ERR_NONE;
 }
 
 
-static XError X__UnsafeRead(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout)
+static XError X__ReadStream(XUart* self, void* dst, size_t size, size_t* nread)
 {
-    return X__VFUNC(self, read)(self->m_driver, dst, size, nread, timeout);
+    if (!X__HAS_VFUNC(self, read))
+        return X_ERR_NOT_SUPPORTED;
+
+    *nread = X__VFUNC(self, read)(self->m_driver, dst, size, 0);
+    return X_ERR_NONE;
 }

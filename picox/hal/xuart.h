@@ -130,30 +130,60 @@ typedef struct XUartConfig
 
 /** @name HAL UART virtual functions
  *
- *  ユーザはHALが要求するインターフェースを満たす必要があります。
+ *  インターフェースの実装者は、要求されたHALインタフェースを満たす必要がありま
+ *  す。
  *  @{
  */
 
 
-/** @brief @see xuart_set_config */
+/** @brief UART設定インターフェースです
+ *
+ *  + *configが示す設定値にUARTをセットアップする
+ */
 typedef XError (*XUartSetConfigFunc)(void* driver, const XUartConfig* config);
 
-/** @brief @see xuart_get_config */
+
+/** @brief UART設定取得インターフェースです
+ *
+ *  + 現在の設定値を*configに返す
+ */
 typedef void (*XUartGetConfigFunc)(void* driver, XUartConfig* config);
 
-/** @brief @see xuart_write */
-typedef XError (*XUartWriteFunc)(void* driver, const void* src, size_t size);
 
-/** @brief @see xuart_read */
-typedef XError (*XUartReadFunc)(void* driver, void* dst, size_t size, size_t* nread, XTicks timeout);
+/** @brief UART送信インターフェースです
+ *
+ *  + srcからsizeバイト送信する
+ */
+typedef void (*XUartWriteFunc)(void* driver, const void* src, size_t size);
 
-/** @brief @see xuart_flush */
+
+/** @brief UART受信インターフェースです
+ *
+ *  + dstにsizeバイト受信する
+ *  + 受信可能なデータがsizeバイト以下だった場合は、timeoutが経過するまで受信を試みる
+ *  + 受信できたバイト数を返す
+ */
+typedef size_t (*XUartReadFunc)(void* driver, void* dst, size_t size, XTicks timeout);
+
+
+/** @brief バッファフラッシュのインターフェースです
+ *
+ *  + 送信データのバッファリングが行われている場合は、フラッシュする
+ */
 typedef void (*XUartFlushFunc)(void* driver);
 
-/** @brief @see xuart_drain*/
+
+/** @brief バッファ送信完了待ちのインターフェースです
+ *
+ *  + バッファリングされた送信データの送信完了まで待つ
+ */
 typedef void (*XUartDrainFunc)(void* driver);
 
-/** @brief @see xuart_clear */
+
+/** @brief 送受信バッファのクリアインターフェースです
+ *
+ *  + directionが指すバッファのクリアを行う
+ */
 typedef void (*XUartClearFunc)(void* driver, XUartDirection direction);
 
 
@@ -209,24 +239,23 @@ XError xuart_set_config(XUart* self, const XUartConfig* config);
 void xuart_get_config(const XUart* self, XUartConfig* config);
 
 
-/** @brief dstに最大でsizeバイトを受信します
+/** @brief timeoutが満了するか、sizeバイトまでdstへの受信を試みます
  *
- *  `*nread`には受信できたバイト数が返されます。
+ *  受信できたバイト数を返します。
  */
-XError xuart_read(XUart* self, void* dst, size_t size, size_t* nread, XTicks timeout);
+size_t xuart_read(XUart* self, void* dst, size_t size, XTicks timeout);
 
 
 /** @brief srcからsizeバイトを送信します
  */
-XError xuart_write(XUart* self, const void* src, size_t size);
+void xuart_write(XUart* self, const void* src, size_t size);
 
 
-/** @brief dstに最大でsizeバイトを受信します
+/** @brief dstに最大でsizeバイトの受信を試み、受信したバイト数を返します
  *
- *  `xuart_read(uart, dst, size, nread, 0);`と同じです。つまり、受信データがない
- *  場合、ただちに処理を返します。
+ *  `xuart_read(uart, dst, size, nread, 0);`と同じです。
  */
-XError xuart_read_poll(XUart* self, void* dst, size_t size, size_t* nread);
+size_t xuart_read_poll(XUart* self, void* dst, size_t size);
 
 
 /** @brief バッファリングされた送信データの出力開始を強制します
