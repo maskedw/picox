@@ -57,87 +57,82 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-/** @brief PWM出力の極性を表します
+/** @def   X_PWM_DUTY_SCALE
+ *  @brief PWMデューティ比に掛ける係数です
  *
- *  LOWアクティブの時にディーティ比が70%であれば、70%がLOW出力で30%が
- *  HIGH出力です。停止時はアイドル状態になるのでHIGHになります。
+ *  デューティ比は0~100で表されることが多いですが、もっと細かい単位
+ *  (例 0 ~ 10000)で扱いたいこともあります。
+ *  この設定値の調整と、呼び出し側で適切に係数を取り扱うことで、デューティ比の範
+ *  囲を自由に設定することができます。
  */
-typedef enum XPwmPolarityTag
-{
-    /** LOWアクティブ */
-    XPWM_POLARITY_ACTIVE_LOW,
+#ifndef X_CONF_PWM_DUTY_SCALE
+    #define XPWM_DUTY_SCALE (1)
+#else
+    #define XPWM_DUTY_SCALE X_CONF_PWM_DUTY_SCALE
+#endif
 
-    /** HIGHアクティブ */
-    XPWM_POLARITY_ACTIVE_HIGH,
-} XPwmPolarity;
-
-
-/** @brief PWMのコンフィグレーション構造体です
- */
-typedef struct XPwmConfigTag
-{
-    uint32_t        frequency;
-    uint16_t        duty_x100; /** ディーティ比(0~100%) x 100 (0 ~ 10000) */
-    XPwmPolarity    polarity;
-} XPwmConfig;
+#define XPWM_DUTY_SCALED(duty)      ((duty) * XPWM_DUTY_SCALE)
+#define XPWM_DUTY_UNSCALED(duty)    ((duty) / XPWM_DUTY_SCALE)
+#define XPWM_DUTY_MAX               (100UL * XPWM_DUTY_SCALE)
 
 
 /** @name HAL PWM virtual functions
  *
- *  ユーザはHALが要求するインターフェースを満たす必要があります。
+ *  インターフェースの実装者は、要求されたHALインタフェースを満たす必要がありま
  *  @{
  */
 
-/** @see xpwm_configure */
-typedef XError(*XPwmConfigureFunc)(void* driver, const XPwmConfig* config);
 
-/** @see xpwm_start */
-typedef void(*XPwmStartFunc)(void* driver);
-
-/** @see xpwm_stop */
-typedef void(*XPwmStopFunc)(void* driver);
+/** @brief PWM出力開始インターフェースです
+ *
+ *  + freq_hz以下の周波数とdutyでPWM出力を行う
+ */
+typedef void (*XPwmWriteFunc)(void* driver, uint32_t freq_hz, uint16_t duty);
 
 
 /** @} end of name HAL PWM virtual functions
  */
 
 
-/** @brief 仮想PWMインターフェース構造体です
- *
- *  インターフェースを満たす関数はユーザーが用意し、セットする必要があります。
+/** @brief 仮想PWMインターフェースのvtableです
+ */
+typedef struct XPwmVTable
+{
+    XPwmWriteFunc       m_write_func;
+} XPwmVTable;
+
+
+/** @brief 仮想PWMを表すインターフェース型です
  */
 typedef struct XPwmTag
 {
-    void*               driver;
-    XPwmConfigureFunc   configure_func;
-    XPwmStartFunc       start_func;
-    XPwmStopFunc        stop_func;
+    X_DECLEAR_RTTI(XPwmVTable);
 } XPwm;
 
 
 /** @brief 仮想PWMインターフェースを初期値に設定します
  */
-void xpwm_init(XPwm* pwm);
+void xpwm_init(XPwm* self);
 
 
-/** @brief コンフィグオブジェクトを初期値に設定します
+/** @brief 指定の周波数、ディーティ比のPWM出力を開始します
  */
-void xpwm_config_init(XPwmConfig* config);
-
-
-/** @brief PWMの設定を変更します
- */
-XError xpwm_configure(XPwm* pwm, const XPwmConfig* config);
-
-
-/** @brief PWM出力を開始します
- */
-void xpwm_start(XPwm* pwm);
+void xpwm_write(XPwm* self, uint32_t freq_hz, uint16_t duty);
 
 
 /** @brief PWM出力を停止します
  */
-void xpwm_stop(XPwm* pwm);
+void xpwm_stop(XPwm* self);
+
+
+/** @brief PWMピンをHIGHレベルに設定します
+ */
+void xpwm_set_high(XPwm* self);
+
+
+/** @brief PWMピンをLOWレベルに設定します
+ */
+void xpwm_set_low(XPwm* self);
 
 
 #ifdef __cplusplus
@@ -148,6 +143,5 @@ void xpwm_stop(XPwm* pwm);
 /** @} end of addtogroup xpwm
  *  @} end of addtogroup hal
  */
-
 
 #endif /* picox_hal_xpwm_h_ */

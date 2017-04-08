@@ -40,52 +40,43 @@
 #include <picox/hal/xpwm.h>
 
 
-static XError X__NotSupportedFunc(void);
-static void X__AbortFunc(void);
+#define X__HAS_VFUNC(pwm, func)   (X_LIKELY(pwm->m_vtable->m_##func##_func))
+#define X__VFUNC(pwm, func)  (pwm->m_vtable->m_##func##_func)
 
 
-void xpwm_init(XPwm* pwm)
+void xpwm_init(XPwm* self)
 {
-    pwm->driver = NULL;
-    pwm->configure_func = (XPwmConfigureFunc)X__NotSupportedFunc;
-    pwm->start_func = (XPwmStartFunc)X__AbortFunc;
-    pwm->stop_func = (XPwmStopFunc)X__AbortFunc;
+    X_ASSERT(self);
+    X_RESET_RTTI(self);
 }
 
 
-void xpwm_config_init(XPwmConfig* config)
+void xpwm_write(XPwm* self, uint32_t freq_hz, uint16_t duty)
 {
-    config->frequency = 0;
-    config->duty_x100 = 0;
-    config->polarity = XPWM_POLARITY_ACTIVE_HIGH;
+    X_ASSERT(self);
+    X_ASSERT(X__VFUNC(self, write));
+
+    X__VFUNC(self, write)(self->m_driver, freq_hz, duty);
 }
 
 
-XError xpwm_configure(XPwm* pwm, const XPwmConfig* config)
+void xpwm_stop(XPwm* self)
 {
-    return pwm->configure_func(pwm->driver, config);
+    X_ASSERT(self);
+    X_ASSERT(X__VFUNC(self, write));
+
+    X__VFUNC(self, write)(self->m_driver, 0, 0);
+
 }
 
 
-void xpwm_start(XPwm* pwm)
+void xpwm_set_high(XPwm* self)
 {
-    pwm->start_func(pwm->driver);
+    xpwm_write(self, 1, XPWM_DUTY_MAX);
 }
 
 
-void xpwm_stop(XPwm* pwm)
+void xpwm_set_low(XPwm* self)
 {
-    pwm->stop_func(pwm->driver);
-}
-
-
-static XError X__NotSupportedFunc(void)
-{
-    return X_ERR_NOT_SUPPORTED;
-}
-
-
-static void X__AbortFunc(void)
-{
-    X_ASSERT(0);
+    xpwm_write(self, 1, 0);
 }
