@@ -61,24 +61,9 @@ extern "C" {
  */
 typedef enum XSpiBitorder
 {
-    /** 最上位ビットから転送 */
-    XSPI_BITORDER_MSB_FIRST,
-
-    /** 最下位ビットから転送 */
-    XSPI_BITORDER_LSB_FIRST,
+    XSPI_BITORDER_MSB_FIRST, /** 最上位ビットから転送 */
+    XSPI_BITORDER_LSB_FIRST, /** 最下位ビットから転送 */
 } XSpiBitorder;
-
-
-/** @brief chip selectの極性を表します
- */
-typedef enum XSpiCsPolarity
-{
-    /** LOWアクティブ */
-    XSPI_CS_POLARITY_ACTIVE_LOW,
-
-    /** HIGHアクティブ */
-    XSPI_CS_POLARITY_ACTIVE_HIGH,
-} XSpiCsPolarity;
 
 
 /** @brief 伝送タイミングを表します
@@ -87,93 +72,11 @@ typedef enum XSpiCsPolarity
  */
 typedef enum XSpiMode
 {
-    /** POL = 0, PHA = 0 */
-    XSPI_MODE_0,
-
-    /** POL = 0, PHA = 1 */
-    XSPI_MODE_1,
-
-    /** POL = 1, PHA = 0 */
-    XSPI_MODE_2,
-
-    /** POL = 1, PHA = 1 */
-    XSPI_MODE_3,
+    XSPI_MODE_0, /** POL = 0, PHA = 0 */
+    XSPI_MODE_1, /** POL = 0, PHA = 1 */
+    XSPI_MODE_2, /** POL = 1, PHA = 0 */
+    XSPI_MODE_3, /** POL = 1, PHA = 1 */
 } XSpiMode;
-
-
-/** @brief SPIのコンフィグレーション構造体です
- */
-typedef struct XSpiConfig
-{
-    uint32_t        frequency;
-    XSpiMode        mode;
-    XSpiBitorder    bitorder;
-    XSpiCsPolarity  cs_polarity;
-    int             bitwidth;
-} XSpiConfig;
-
-
-/** @brief CSをHIGHの状態のまま転送を行います
- *
- *  MMCの初期化時等、CSをHIGHの状態のままダミークロックを送信する必要があるよう
- *  な時に使用します。
- */
-#define XSPI_TRANSACTION_FLAG_KEEP_CS_HIGH  (1U << 1)
-
-
-/** @brief トランザクション間にCSのde-assert, assertを行います
- */
-#define XSPI_TRANSACTION_FLAG_CS_CHANGE     (1U << 0)
-
-
-/** @brief picoxの予約外となるフラグビットのシフト数
- *
- *  bit8~15のフラグビットはpicoxは使用しないので、ユーザーが好きに使用してくださ
- *  い。
- */
-#define XSPI_TRANSACTION_USER_FLAG_SHIFT    (8)
-
-
-/** @brief SPI転送のパラメータを格納する構造体です
- *
- *  SPIでは送信と受信が同時に行われます。この構造体をxspi_transferの引数とする時
- *  、呼び出し側は呼び出し先に対して、以下の振る舞いを要求します。
- *
- *  + tx_bufferからtransfer_sizeバイトのデータを送信し、受信データはrx_bufferに
- *    格納する。
- *
- *  + tx_bufferがNULLの時は、0xFFをダミーとして送信する。
- *
- *  + rx_bufferがNULLの時は、受信データを読み捨てる。
- *
- *  +  XSpiConfigureFuncで指定されたcs_polarityの値に応じて、CSピンの上げ
- *     下げを行う。
- *
- *  + トランザクション間はdelay_usecsで指定されたウエイトを入れる。
- *
- *  + flagsで指定された拡張動作を行う。
- */
-typedef struct XSpiTransaction
-{
-    const void* tx_buffer;
-    void*       rx_buffer;
-    size_t      transfer_size;
-    uint16_t    flags;
-    uint16_t    delay_usecs;
-} XSpiTransaction;
-
-
-/** @brief XSpiTransactionオブジェクトの初期化用マクロです
- *
- *  構造体の初期化が面倒くさい時に補助として使ってください。
- *
- *  @code {.c}
- *  uint8_t tx[10] = "Hello";
- *  uint8_t rx[sizeof(tx)];
- *  XSpiTransaction t = XSPI_TRANSACTION_INITIALIZER(tx, rx, sizeof(tx), 0, 0);
- *  @endcode
- */
-#define XSPI_TRANSACTION_INITIALIZER(tx, rx, size, flags, delay)  {tx, rx, size, flags, delay}
 
 
 /** @name HAL SPI virtual functions
@@ -182,17 +85,37 @@ typedef struct XSpiTransaction
  *  @{
  */
 
-struct XSpi;
-/** @brief @see spi_configure */
-typedef XError (*XSpiConfigureFunc)(struct XSpi* spi, const XSpiConfig* config);
+
+/** @brief SPI設定のインターフェースです
+ *
+ *  freq_hzピッタリに設定できない場合は、freq_hz以下の周波数に設定してください。
+ */
+typedef XError (*XSpiSetFormatFunc)(void* driver, uint32_t freq_hz, XSpiMode mode, XSpiBitorder bitorder);
 
 
-/** @brief @see spi_transfer */
-typedef XError (*XSpiTransferFunc)(struct XSpi* spi, const XSpiTransaction* transactions, int num);
+/** @brief SPI送受信のインターフェースです
+ *
+ *  + txからsizeバイト送信し、rxにsizeバイト受信します
+ *  + tx == NULLの場合は、0xFFのダミーデータを送信してください
+ *  + rx == NULLの場合は受信データは読み捨ててください
+ *
+ *  txとrxは同じアドレスを指している可能性があることに注意してください。
+ */
+typedef void (*XSpiExchangeFunc)(void* driver, const void* tx, void* rx, size_t size);
 
 
-/** @brief @see xspi_aquire_bus */
-typedef XError (*XSpiLockFunc)(struct XSpi* spi, bool lock);
+/** @brief SPIバスのロック・アンロックインターフェースです
+ *
+ *  lock != falseの時はロック、 lock == falseであればアンロックを行ってください
+ *  。 ロックとは、mutex等の排他制御機構のことを指します
+ *
+ *  マルチタスク環境で、SPIバスを共有するオブジェクトが、バスを排他的に操作でき
+ *  るようにするためのインターフェースです。
+ *
+ *  非マルチタスク環境であれば、このインターフェースは未設定でかまいません。
+ */
+typedef void (*XSpiLockBusFunc)(void* driver, bool lock);
+
 
 /** @} end of name HAL SPI virtual functions
  */
@@ -202,9 +125,9 @@ typedef XError (*XSpiLockFunc)(struct XSpi* spi, bool lock);
  */
 typedef struct XSpiVTable
 {
-    XSpiConfigureFunc   m_configure_func;
-    XSpiTransferFunc    m_transfer_func;
-    XSpiLockFunc        m_lock_func;
+    XSpiSetFormatFunc   m_set_format_func;
+    XSpiExchangeFunc    m_exchange_func;
+    XSpiLockBusFunc     m_lock_bus_func;
 } XSpiVTable;
 
 
@@ -219,66 +142,64 @@ X_DECLEAR_RTTI_TAG(XSPI_STREAM_RTTI_TAG);
 
 /** @brief 仮想SPIインターフェースを初期値に設定します
  */
-void xspi_init(XSpi* spi);
+void xspi_init(XSpi* self);
 
 
-/** @brief コンフィグオブジェクトを初期値に設定します
+/** @brief SPI設定を行います
  */
-void xspi_init_config(XSpiConfig* config);
-
-
-/** @brief SPIの設定を変更します
- */
-XError xspi_configure(XSpi* spi, const XSpiConfig* config);
+XError xspi_set_format(XSpi* self, uint32_t freq_hz, XSpiMode mode, XSpiBitorder bitorder);
 
 
 /** @brief SPI転送を行います
  *
- *  num個のXSpiTransactionを順に実行します。
+ *  txからsizeバイトを送信し、rxにsizeバイトを受信します。txとrxは同じアドレスを
+ *  指していてもかまいません。
  */
-XError xspi_transfer(XSpi* spi, const XSpiTransaction* transactions, int num);
+void xspi_exchange(XSpi* self, const void* tx, void* rx, size_t size);
 
 
 /** @brief dstにsizeバイトを受信します
+ *
+ *  送信データにはダミーバイト(0xFF)が使用されます。
  */
-XError xspi_read(XSpi* spi, void* dst, size_t size);
+void xspi_read(XSpi* self, void* dst, size_t size);
 
 
 /** @brief srcからsizeバイトを送信します
+ *
+ *  受信データは読み捨てられます。
  */
-XError xspi_write(XSpi* spi, const void* src, size_t size);
-
-
-/** @brief 1バイトを送信します
- */
-XError xspi_write_byte(XSpi* spi, uint8_t b);
+void xspi_write(XSpi* self, const void* src, size_t size);
 
 
 /** @brief 1バイトを受信します
+ *
+ *  送信データにはダミーバイト(0xFF)が使用されます。
  */
-XError xspi_read_byte(XSpi* spi, uint8_t* b);
+uint8_t xspi_read_byte(XSpi* self);
 
 
-/** @brief sizeバイトを送受信します
+/** @brief 1バイトを送信します
+ *
+ *  受信データは読み捨てられます。
  */
-XError xspi_exchange(XSpi* spi, void* dst, const void* src, size_t size);
+void xspi_write_byte(XSpi* self, uint8_t b);
 
 
 /** @brief SPIバスをロックします
  *
- *  マルチスレッド環境で、1つのSPIを複数のSPIデバイスが共有する場合(マルチスレー
- *  ブ)、デバイスAの処理中にデバイスBがSPIの設定値を変更してしまうと困ります。
+ *  マルチタスク環境で、1つのSPIバスを複数のSPIデバイスが共有する場合(マルチスレ
+ *  ーブ)、あるデバイス(A)の操作中に、別のデバイス(B)Aの操作が行われると困ります。
  *
- *  そこで、XSpiを使用するドライバは、SPIを使用する前にこの関数でバスをロックし
- *  てからxspi_configure()で設定を行い、使用後にxspi_release_bus()でバスの解放を
- *  行うことで、バスロック中の設定値を固定することができます。
+ *  そこで、SPIバスの使用する前にこの関数でバスをロックしておくことで、ロック中
+ *  はバスを専有することができます。
  */
-XError xspi_aquire_bus(XSpi* spi);
+void xspi_lock_bus(XSpi* self);
 
 
 /** @brief SPIバスをアンロックします
  */
-XError xspi_release_bus(XSpi* spi);
+void xspi_unlock_bus(XSpi* self);
 
 
 #ifdef __cplusplus

@@ -44,9 +44,6 @@
 #define X__VFUNC(spi, func)  (spi->m_vtable->m_##func##_func)
 
 
-static XError X__UnsafeTransfer(XSpi* self, const XSpiTransaction* transactions, int num);
-
-
 void xspi_init(XSpi* self)
 {
     X_ASSERT(self);
@@ -54,86 +51,48 @@ void xspi_init(XSpi* self)
 }
 
 
-void xspi_init_config(XSpiConfig* config)
-{
-    config->frequency = 100 * 1024;
-    config->mode = XSPI_MODE_0;
-    config->bitorder = XSPI_BITORDER_MSB_FIRST;
-    config->cs_polarity = XSPI_CS_POLARITY_ACTIVE_LOW;
-    config->bitwidth = 8;
-}
-
-
-XError xspi_configure(XSpi* self, const XSpiConfig* config)
+XError xspi_set_format(XSpi* self, uint32_t freq_hz, XSpiMode mode, XSpiBitorder bitorder)
 {
     XError err;
     X_ASSERT(self);
-    X_ASSERT(config);
+    X_ASSERT(X__VFUNC(self, set_format));
 
-    if (!X__HAS_VFUNC(self, configure))
-        return X_ERR_NOT_SUPPORTED;
-
-    err = X__VFUNC(self, configure)(self->m_driver, config);
+    err = X__VFUNC(self, set_format)(self->m_driver, freq_hz, mode, bitorder);
     return err;
 }
 
 
-XError xspi_transfer(XSpi* self, const XSpiTransaction* transactions, int num)
+void xspi_write(XSpi* self, const void* src, size_t size)
 {
-    XError err;
+    xspi_exchange(self, src, NULL, size);
+}
+
+
+void xspi_read(XSpi* self, void* dst, size_t size)
+{
+    xspi_exchange(self, NULL, dst, size);
+}
+
+
+void xspi_write_byte(XSpi* self, uint8_t b)
+{
+    xspi_exchange(self, &b, NULL, 1);
+}
+
+
+uint8_t xspi_read_byte(XSpi* self)
+{
+    uint8_t b;
+    xspi_exchange(self, NULL, &b, 1);
+
+    return b;
+}
+
+
+void xspi_exchange(XSpi* self, const void* tx, void* rx, size_t size)
+{
     X_ASSERT(self);
-    X_ASSERT(transactions);
-    X_ASSERT(num > 0);
+    X_ASSERT(X__VFUNC(self, exchange));
 
-    if (!X__HAS_VFUNC(self, transfer))
-        return X_ERR_NOT_SUPPORTED;
-
-    err = X__VFUNC(self, transfer)(self->m_driver, transactions, num);
-    return err;
-}
-
-
-XError xspi_write(XSpi* self, const void* src, size_t size)
-{
-    XSpiTransaction transaction = XSPI_TRANSACTION_INITIALIZER(src, NULL, size, 0, 0);
-    return X__UnsafeTransfer(self, &transaction, 1);
-}
-
-
-XError xspi_read(XSpi* self, void* dst, size_t size)
-{
-    XSpiTransaction transaction = XSPI_TRANSACTION_INITIALIZER(NULL, dst, size, 0, 0);
-    return X__UnsafeTransfer(self, &transaction, 1);
-}
-
-
-XError xspi_write_byte(XSpi* self, uint8_t b)
-{
-    XSpiTransaction transaction = XSPI_TRANSACTION_INITIALIZER(&b, NULL, 1, 0, 0);
-    return X__UnsafeTransfer(self, &transaction, 1);
-}
-
-
-XError xspi_read_byte(XSpi* self, uint8_t* b)
-{
-    XSpiTransaction transaction = XSPI_TRANSACTION_INITIALIZER(NULL, b, 1, 0, 0);
-    return X__UnsafeTransfer(self, &transaction, 1);
-}
-
-
-XError xspi_exchange(XSpi* self, void* dst, const void* src, size_t size)
-{
-    XSpiTransaction transaction = XSPI_TRANSACTION_INITIALIZER(src, dst, size, 0, 0);
-    return X__UnsafeTransfer(self, &transaction, 1);
-}
-
-
-static XError X__UnsafeTransfer(XSpi* self, const XSpiTransaction* transactions, int num)
-{
-    XError err;
-    if (!X__HAS_VFUNC(self, transfer))
-        return X_ERR_NOT_SUPPORTED;
-
-    err = X__VFUNC(self, transfer)(self->m_driver, transactions, num);
-    return err;
+    X__VFUNC(self, exchange)(self->m_driver, tx, rx, size);
 }
