@@ -57,72 +57,59 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-/** @brief スレーブアドレス長を表します
- */
-typedef enum XI2cSlaveAddressLengthTag
-{
-    /** 7bitアドレス(左詰め) */
-    XI2C_SLAVE_ADDRESS_LENGTH_7BIT,
-
-    /** 10bitアドレス */
-    XI2C_SLAVE_ADDRESS_LENGTH_10BIT,
-} XI2cSlaveAddressLength;
-
-
-/** @brief I2Cのコンフィグレーション構造体です
- */
-typedef struct XI2cConfigTag
-{
-    uint32_t                frequency;
-    uint16_t                slave_address;
-    XI2cSlaveAddressLength  slave_address_length;
-    XTicks                  timeout;
-} XI2cConfig;
-
-
-/** @brief I2C転送のパラメータを格納する構造体です
- *
- *  + flagsにXI2C_TRANSACTION_FLAG_READがセットされていた場合<br>
- *      rx_bufferにtransfer_sizeバイトを受信します。
- *
- *  + flagsにXI2C_TRANSACTION_FLAG_READがセットされていなかった場合<br>
- *      tx_bufferからtransfer_sizeバイトを送信します。
- */
-typedef struct XI2cTransactionTag
-{
-    const void* tx_buffer;
-    void*       rx_buffer;
-    size_t      transfer_size;
-    uint16_t    flags;
-} XI2cTransaction;
-
-
-/** @brief トランザクションが受信であることを示すフラグです */
-#define XI2C_TRANSACTION_FLAG_READ  (1 << 0)
-
-
-/** @brief XI2cTransactionオブジェクトの初期化用マクロです
- */
-#define XI2C_TRANSACTION_INITIALIZER(tx, rx, size, flags)  {tx, rx, size, flags}
-
-
 /** @name HAL I2C virtual functions
  *
- *  ユーザはHALが要求するインターフェースを満たす必要があります。
+ *  インターフェースの実装者は、要求されたHALインタフェースを満たす必要がありま
  *  @{
  */
 
 
-/** @brief @see i2c_configure */
-typedef XError (*XI2cConfigureFunc)(void* driver, const XI2cConfig* config);
+/** @brief  I2C周波数[Hz]を設定するインターフェースです
+ *
+ *  指定の周波数に設定できない場合は、freq_hz以下で設定可能な周波数に設定してく
+ *  ださい。
+ */
+typedef XError (*XI2cSetFrequencyFunc)(void* driver, uint32_t freq_hz);
 
 
-/** @brief @see i2c_transfer */
-typedef XError (*XI2cTransferFunc)(void* driver, const XI2cTransaction* transactions, int num);
+/** @brief I2C受信を行うインターフェースです
+ *
+ *  スレーブアドレスaddrから、sizeバイトをdstに読みだしてください。
+ */
+typedef XError (*XI2cReadFunc)(void* driver, int addr, void* dst, size_t size);
+
+
+/** @brief I2C送信を行うインターフェースです
+ *
+ *  スレーブアドレスaddrへ、srcからsizeバイトを書き出してください。
+ */
+typedef XError (*XI2cWriteFunc)(void* driver, int addr, const void* src, size_t size);
+
+
+/** @brief I2Cバスのロック・アンロックインターフェースです
+ *
+ *  lock != falseの時はロック、 lock == falseであればアンロックを行ってください
+ *  。 ロックとは、mutex等の排他制御機構のことを指します
+ *
+ *  マルチタスク環境で、I2Cバスを共有するオブジェクトが、バスを排他的に操作でき
+ *  るようにするためのインターフェースです。
+ *
+ *  非マルチタスク環境であれば、このインターフェースは未設定(NULL)でかまいません。
+ */
+typedef void (*XI2cLockBusFunc)(void* driver, bool lock);
 
 
 /** @} end of name HAL I2C virtual functions
  */
+
+
+typedef struct XI2cVTable
+{
+    XI2cSetFrequencyFunc    m_set_frequency_func;
+    XI2cReadFunc            m_read_func;
+    XI2cWriteFunc           m_write_func;
+    XI2cLockBusFunc         m_lock_bus_func;
+} XI2cVTable;
 
 
 /** @brief 仮想I2Cインターフェース構造体です
@@ -131,59 +118,54 @@ typedef XError (*XI2cTransferFunc)(void* driver, const XI2cTransaction* transact
  */
 typedef struct XI2cTag
 {
-    void*               driver;
-    XI2cConfigureFunc   configure_func;
-    XI2cTransferFunc    transfer_func;
+    X_DECLEAR_RTTI(XI2cVTable);
 } XI2c;
 
 
 /** @brief 仮想I2Cインターフェースを初期値に設定します
  */
-void xi2c_init(XI2c* i2c);
+void xi2c_init(XI2c* self);
 
 
-/** @brief コンフィグオブジェクトを初期値に設定します
+/** @brief クロック周波数(Hz)を設定します
  */
-void xi2c_config_init(XI2cConfig* config);
+XError xi2c_set_frequency(XI2c* self, uint32_t freq_hz);
 
 
-/** @brief I2Cの設定を変更します
+/** @brief スレーブアドレスaddrからdstにsizeバイトを受信します
  */
-XError xi2c_configure(XI2c* i2c, const XI2cConfig* config);
+XError xi2c_read(XI2c* self, int addr, void* dst, size_t size);
 
 
-/** @brief I2C転送を行います
- *
- *  num個のXI2cTransactionを順に実行します。
+/** @brief スレードアドレスaddrへsrcからsizeバイトを送信します
  */
-XError xi2c_transfer(XI2c* i2c, const XI2cTransaction* transactions, int num);
-
-
-/** @brief dstにsizeバイトを受信します
- */
-XError xi2c_read(XI2c* i2c, void* dst, size_t size);
-
-
-/** @brief srcからsizeバイトを送信します
- */
-XError xi2c_write(XI2c* i2c, const void* src, size_t size);
-
-
-/** @brief 1バイトを送信します
- */
-XError xi2c_write_byte(XI2c* i2c, uint8_t b);
+XError xi2c_write(XI2c* self, int addr, const void* src, size_t size);
 
 
 /** @brief 1バイトを受信します
  */
-XError xi2c_read_byte(XI2c* i2c, uint8_t* b);
+XError xi2c_read_byte(XI2c* self, int addr, uint8_t* b);
 
 
-#if 0
-[TODO] multithread support
-void xi2c_aquire_bus(XI2c* i2c);
-void xi2c_release_bus(XI2c* i2c);
-#endif
+/** @brief 1バイトを送信します
+ */
+XError xi2c_write_byte(XI2c* self, int addr, uint8_t b);
+
+
+/** @brief I2Cバスをロックします
+ *
+ *  マルチタスク環境で、1つのI2Cバスを複数のI2Cデバイスが共有する場合(マルチスレ
+ *  ーブ)、あるデバイス(A)の操作中に、別のデバイス(B)Aの操作が行われると困ります。
+ *
+ *  そこで、I2Cバスの使用する前にこの関数でバスをロックしておくことで、ロック中
+ *  はバスを専有することができます。
+ */
+void xi2c_lock_bus(XI2c* self);
+
+
+/** @brief I2Cバスをアンロックします
+ */
+void xi2c_unlock_bus(XI2c* self);
 
 
 #ifdef __cplusplus

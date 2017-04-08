@@ -40,67 +40,85 @@
 #include <picox/hal/xi2c.h>
 
 
-static XError X__NotSupportedFunc(void);
+#define X__HAS_VFUNC(i2c, func)   (X_LIKELY(i2c->m_vtable->m_##func##_func))
+#define X__VFUNC(i2c, func)  (i2c->m_vtable->m_##func##_func)
 
 
-void xi2c_init(XI2c* i2c)
+void xi2c_init(XI2c* self)
 {
-    i2c->driver = NULL;
-    i2c->configure_func = (XI2cConfigureFunc)X__NotSupportedFunc;
-    i2c->transfer_func = (XI2cTransferFunc)X__NotSupportedFunc;
+    X_ASSERT(self);
+    X_RESET_RTTI(self);
 }
 
 
-void xi2c_config_init(XI2cConfig* config)
+XError xi2c_set_frequency(XI2c* self, uint32_t freq_hz)
 {
-    config->frequency = 0;
-    config->slave_address = 0;
-    config->slave_address_length = XI2C_SLAVE_ADDRESS_LENGTH_7BIT;
-    config->timeout = X_MSEC_TO_TICKS(1000);
+    XError err;
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, set_frequency))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(self, set_frequency)(self->m_driver, freq_hz);
+    return err;
 }
 
 
-XError xi2c_configure(XI2c* i2c, const XI2cConfig* config)
+XError xi2c_read(XI2c* self, int addr, void* dst, size_t size)
 {
-    return i2c->configure_func(i2c->driver, config);
+    XError err;
+    X_ASSERT(self);
+    X_ASSERT(dst);
+
+    if (!X__HAS_VFUNC(self, read))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(self, read)(self->m_driver, addr, dst, size);
+    return err;
 }
 
 
-XError xi2c_transfer(XI2c* i2c, const XI2cTransaction* transactions, int num)
+XError xi2c_write(XI2c* self, int addr, const void* src, size_t size)
 {
-    return i2c->transfer_func(i2c->driver, transactions, num);
+    XError err;
+    X_ASSERT(self);
+    X_ASSERT(src);
+
+    if (!X__HAS_VFUNC(self, write))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(self, write)(self->m_driver, addr, src, size);
+    return err;
 }
 
 
-XError xi2c_write(XI2c* i2c, const void* src, size_t size)
+XError xi2c_read_byte(XI2c* self, int addr, uint8_t* b)
 {
-    XI2cTransaction transaction = XI2C_TRANSACTION_INITIALIZER(src, NULL, size, 0);
-    return i2c->transfer_func(i2c->driver, &transaction, 1);
+    return xi2c_read(self, addr, b, 1);
 }
 
 
-XError xi2c_read(XI2c* i2c, void* dst, size_t size)
+XError xi2c_write_byte(XI2c* self, int addr, uint8_t b)
 {
-    XI2cTransaction transaction = XI2C_TRANSACTION_INITIALIZER(NULL, dst, size, XI2C_TRANSACTION_FLAG_READ);
-    return i2c->transfer_func(i2c->driver, &transaction, 1);
+    return xi2c_write(self, addr, &b, 1);
 }
 
 
-XError xi2c_write_byte(XI2c* i2c, uint8_t b)
+void xi2c_lock_bus(XI2c* self)
 {
-    XI2cTransaction transaction = XI2C_TRANSACTION_INITIALIZER(&b, NULL, 1, 0);
-    return i2c->transfer_func(i2c->driver, &transaction, 1);
+    X_ASSERT(self);
+    if (!X__HAS_VFUNC(self, lock_bus))
+        return;
+
+    X__VFUNC(self, lock_bus)(self->m_driver, true);
 }
 
 
-XError xi2c_read_byte(XI2c* i2c, uint8_t* b)
+void xi2c_unlock_bus(XI2c* self)
 {
-    XI2cTransaction transaction = XI2C_TRANSACTION_INITIALIZER(NULL, b, 1, XI2C_TRANSACTION_FLAG_READ);
-    return i2c->transfer_func(i2c->driver, &transaction, 1);
-}
+    X_ASSERT(self);
+    if (!X__HAS_VFUNC(self, lock_bus))
+        return;
 
-
-static XError X__NotSupportedFunc(void)
-{
-    return X_ERR_NOT_SUPPORTED;
+    X__VFUNC(self, lock_bus)(self->m_driver, false);
 }
