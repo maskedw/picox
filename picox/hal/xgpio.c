@@ -40,67 +40,95 @@
 #include <picox/hal/xgpio.h>
 
 
-static XError X__NotSupportedFunc(void);
-static void X__AbortFunc(void);
+#define X__HAS_VFUNC(gpio, func)   (X_LIKELY(gpio->m_vtable->m_##func##_func))
+#define X__VFUNC(gpio, func)  (gpio->m_vtable->m_##func##_func)
 
 
-void xgpio_init(XGpio* gpio)
+void xgpio_init(XGpio* self)
 {
-    gpio->driver = NULL;
-    gpio->configure_func = (XGpioConfigureFunc)X__NotSupportedFunc;
-    gpio->read_func = (XGpioReadFunc)X__AbortFunc;
-    gpio->write_func = (XGpioWriteFunc)X__AbortFunc;
-    gpio->attach_edge_handler_func = (XGpioAttachEdgeHandlerFunc)X__NotSupportedFunc;
+    X_ASSERT(self);
+    X_RESET_RTTI(self);
 }
 
 
-void xgpio_config_init(XGpioConfig* config)
+XError xgpio_set_mode(XGpio* self, XGpioMode mode)
 {
-    config->direction = XGPIO_DIRECTION_INPUT;
-    config->mode = XGPIO_MODE_PULLUP;
-    config->initial_level = XGPIO_LEVEL_LOW;
+    XError err;
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, set_mode))
+        return X_ERR_NOT_SUPPORTED;
+
+    err = X__VFUNC(self, set_mode)(self->m_driver, mode);
+    return err;
 }
 
 
-XError xgpio_configure(XGpio* gpio, const XGpioConfig* config)
+void xgpio_write(XGpio* self, bool value)
 {
-    return gpio->configure_func(gpio->driver, config);
+    X_ASSERT(self);
+    X_ASSERT(X__VFUNC(self, write));
+
+    X__VFUNC(self, write)(self->m_driver, value);
 }
 
 
-void xgpio_write(XGpio* gpio, XGpioLevel level)
+bool xgpio_read(const XGpio* self)
 {
-    gpio->write_func(gpio->driver, level);
+    X_ASSERT(self);
+    X_ASSERT(X__VFUNC(self, read));
+
+    return X__VFUNC(self, read)(self->m_driver);
 }
 
 
-XGpioLevel xgpio_read(XGpio* gpio)
+XError xgpio_set_irq_handler(XGpio* self, XGpioEdge edge, XGpioIrqHandler handler, void* handler_arg)
 {
-    return gpio->read_func(gpio->driver);
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, set_irq_handler))
+        return X_ERR_NOT_SUPPORTED;
+
+    return X__VFUNC(self, set_irq_handler)(self->m_driver, edge, handler, handler_arg);
 }
 
 
-void xgpio_toggle(XGpio* gpio)
+XError xgpio_set_irq_enabled(XGpio* self, bool enabled)
 {
-    const int cur_value = (int)gpio->read_func(gpio->driver);
-    gpio->write_func(gpio->driver, cur_value ^ 1);
+    X_ASSERT(self);
+
+    if (!X__HAS_VFUNC(self, set_irq_enabled))
+        return X_ERR_NOT_SUPPORTED;
+
+    return X__VFUNC(self, set_irq_enabled)(self->m_driver, enabled);
 }
 
 
-XError xgpio_attach_edge_handler(XGpio* gpio, XGpioEdge edge, XGpioEdgeHandler handler)
+void xgpio_set_low(XGpio* self)
 {
-    return gpio->attach_edge_handler_func(gpio->driver, edge, handler);
+    xgpio_write(self, XGPIO_LOW);
 }
 
 
-
-static XError X__NotSupportedFunc(void)
+void xgpio_set_high(XGpio* self)
 {
-    return X_ERR_NOT_SUPPORTED;
+    xgpio_write(self, XGPIO_HIGH);
 }
 
 
-static void X__AbortFunc(void)
+void xgpio_toggle(XGpio* self)
 {
-    X_ASSERT(0);
+    xgpio_write(self, xgpio_read(self) ^ XGPIO_LOW);
+}
+
+
+bool xgpio_is_low(const XGpio* self)
+{
+    return xgpio_read(self) == XGPIO_LOW;
+}
+
+
+bool xgpio_is_high(const XGpio* self)
+{
+    return xgpio_read(self) == XGPIO_HIGH;
 }

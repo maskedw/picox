@@ -57,98 +57,97 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-/** @brief GPIOの入出力方向を表します
- */
-typedef enum XGpioDirection
-{
-    /** 入力 */
-    XGPIO_DIRECTION_INPUT,
+/** ピンの信号レベルLOWを表します */
+#define XGPIO_LOW       (false)
 
-    /** 出力 */
-    XGPIO_DIRECTION_OUTPUT,
-} XGpioDirection;
+/** ピンの信号レベルHIGHを表します */
+#define XGPIO_HIGH      (true)
 
 
 /** @brief GPIOのモードを表します
  */
 typedef enum XGpioMode
 {
-    /** プルアップ */
-    XGPIO_MODE_PULLUP,
-
-    /** プルダウン */
-    XGPIO_MODE_PULLDOWN,
-
-    /** プルアップ・ダウンなし */
-    XGPIO_MODE_PULLNONE,
-
-    /** オープンドレイン出力 */
-    XGPIO_MODE_OPENDRAIN,
+    XGPIO_MODE_INPUT_PULLUP,       /** 入力モードプルアップ */
+    XGPIO_MODE_INPUT_PULLDOWN,     /** 入力モードプルダウン */
+    XGPIO_MODE_INPUT_PULLNONE,     /** 入力モードプルアップ・ダウンなし */
+    XGPIO_MODE_OUTPUT_PUSHPULL,    /** 出力モード プッシュプル出力 */
+    XGPIO_MODE_OUTPUT_OPENDRAIN,   /** 出力モード オープンドレイン出力 */
 } XGpioMode;
-
-
-/** @brief GPIOの信号レベルを表します
- */
-typedef enum XGpioLevel
-{
-    /** LOWレベル */
-    XGPIO_LEVEL_LOW = 0,
-
-    /** HIGHレベル */
-    XGPIO_LEVEL_HIGH = 1,
-} XGpioLevel;
 
 
 /** @brief GPIOの信号変化エッジ方向を表します
  */
 typedef enum XGpioEdge
 {
-    /** 立ち下がり */
-    XGPIO_EDGE_FALLING,
-
-    /** 立ち上がり */
-    XGPIO_EDGE_RISING,
-
-    /** 立ち下がり + 立ち上がり */
-    XGPIO_EDGE_BOTH,
+    XGPIO_EDGE_FALLING, /** 立ち下がり */
+    XGPIO_EDGE_RISING,  /** 立ち上がり */
+    XGPIO_EDGE_BOTH,    /** 立ち下がり + 立ち上がり */
 } XGpioEdge;
 
 
-/** @brief GPIOのコンフィグレーション構造体です
- */
-typedef struct XGpioConfig
-{
-    XGpioDirection  direction;
-    XGpioMode       mode;
-    XGpioLevel      initial_level; /** 出力ポート時の初期値 */
-} XGpioConfig;
+
+/** GPIO割り込みハンドラの型です */
+typedef void (*XGpioIrqHandler)(void* arg);
 
 
 /** @name HAL GPIO virtual functions
  *
- *  ユーザはHALが要求するインターフェースを満たす必要があります。
+ *  インターフェースの実装者は、要求されたHALインタフェースを満たす必要がありま
  *  @{
  */
 
 
-/** @brief @see xgpio_configure */
-typedef XError(*XGpioConfigureFunc)(void* driver, const XGpioConfig* config);
+/** @brief GPIO設定のインターフェースです
+ *
+ *  指定の設定を試み、設定できなければX_ERR_NOT_SUPPORTEDを返してください
+ */
+typedef XError(*XGpioSetModeFunc)(void* driver, XGpioMode mode);
 
-/** @brief @see xgpio_write */
-typedef void (*XGpioWriteFunc)(void* driver, XGpioLevel level);
 
-/** @brief @see xgpio_read */
-typedef XGpioLevel (*XGpioReadFunc)(void* driver);
+/** @brief GPIO入力レベルの読み出しインターフェースです
+ *
+ *  入力レベルがLOWならXGPIO_LOWを、HIGHならXGPIO_HIGHを返してください。
+ */
+typedef bool (*XGpioReadFunc)(const void* driver);
 
-/** @brief エッジ変化割込み時に呼び出す割込みハンドラです */
-typedef void (*XGpioEdgeHandler)(void* driver, XGpioEdge edge);
 
-/** @brief @see xgpio_attach_edge_handler */
-typedef XError (*XGpioAttachEdgeHandlerFunc)(void* driver, XGpioEdge edge, XGpioEdgeHandler handler);
+/** @brief GPIO出力レベルの書き出しインターフェースです
+ *
+ *  valueがXGPIO_LOWならLOWを、XGPIO_HIGHならHIGHレベルに設定してください。
+ */
+typedef void (*XGpioWriteFunc)(void* driver, bool value);
+
+
+/** @brief GPIO割り込みハンドラの登録インターフェースです
+ *
+ *  + handlerとhandler_argは立ち下がりと立ち上がりを別々に登録できるようにしてください。
+ *  + 設定処理はIRQセーフに実装してください。
+ */
+typedef XError (*XGpioSetIrqHandler)(void* driver, XGpioEdge edge, XGpioIrqHandler handler, void* handler_arg);
+
+
+/** @brief GPIO割込みの有効無効設定インターフェースです
+ *
+ *  enabled == falseなら無効に、!= falseなら有効に設定してください。
+ */
+typedef XError (*XGpioSetIrqEnabled)(void* driver, bool enabled);
 
 
 /** @} end of name HAL GPIO virtual functions
  */
+
+
+/** @brief 仮想GPIOインターフェースのvtableです
+ */
+typedef struct XGpioVTable
+{
+    XGpioSetModeFunc    m_set_mode_func;
+    XGpioReadFunc       m_read_func;
+    XGpioWriteFunc      m_write_func;
+    XGpioSetIrqHandler  m_set_irq_handler_func;
+    XGpioSetIrqEnabled  m_set_irq_enabled_func;
+} XGpioVTable;
 
 
 /** @brief 仮想GPIOインターフェース構造体です
@@ -157,52 +156,63 @@ typedef XError (*XGpioAttachEdgeHandlerFunc)(void* driver, XGpioEdge edge, XGpio
  */
 typedef struct XGpio
 {
-    void*                       driver;
-    XGpioConfigureFunc          configure_func;
-    XGpioReadFunc               read_func;
-    XGpioWriteFunc              write_func;
-    XGpioAttachEdgeHandlerFunc  attach_edge_handler_func;
+    X_DECLEAR_RTTI(XGpioVTable);
 } XGpio;
 
 
 /** @brief 仮想GPIOインターフェースを初期値に設定します
  */
-void xgpio_init(XGpio* gpio);
-
-
-/** @brief コンフィグオブジェクトを初期値に設定します
- */
-void xgpio_config_init(XGpioConfig* config);
+void xgpio_init(XGpio* self);
 
 
 /** @brief GPIOの設定を変更します
  */
-XError xgpio_configure(XGpio* gpio, const XGpioConfig* config);
+XError xgpio_set_mode(XGpio* self, XGpioMode mode);
 
 
-/** @brief 出力ポートへ値を書き込みます
+/** @brief 出力レベルを書き込みます
  */
-void xgpio_write(XGpio* gpio, XGpioLevel level);
+void xgpio_write(XGpio* self, bool value);
 
 
-/** @brief 入力ポートから値を読み出します
+/** @brief 入力レベルを読み出します
  */
-XGpioLevel xgpio_read(XGpio* gpio);
+bool xgpio_read(const XGpio* self);
 
 
-/** @brief 出力ポートの値を反転します
+/** @brief IRQを設定します
  */
-void xgpio_toggle(XGpio* gpio);
+XError xgpio_set_irq_handler(XGpio* self, XGpioEdge edge, XGpioIrqHandler handler, void* handler_arg);
 
 
-/** @brief エッジ変化割込みをセットします
+/** @brief IRQの有効無効を設定します
  */
-XError xgpio_attach_edge_handler(XGpio* gpio, XGpioEdge edge, XGpioEdgeHandler handler);
+XError xgpio_set_irq_enabled(XGpio* self, bool enabled);
 
 
-#if 0
-XError xgpio_wait_for_level(XGpio* gpio, XGpioLevel level, XTicks min_expected, XTicks max_expected);
-#endif
+/** @brief 出力レベルをLOWに設定します
+ */
+void xgpio_set_low(XGpio* self);
+
+
+/** @brief 出力レベルをHIGHに設定します
+ */
+void xgpio_set_high(XGpio* self);
+
+
+/** @brief 出力レベルを反転します
+ */
+void xgpio_toggle(XGpio* self);
+
+
+/** @brief 入力レベルがLOWかどうかを返します
+ */
+bool xgpio_is_low(const XGpio* self);
+
+
+/** @brief 入力レベルがHIGHかどうかを返します
+ */
+bool xgpio_is_high(const XGpio* self);
 
 
 #ifdef __cplusplus
