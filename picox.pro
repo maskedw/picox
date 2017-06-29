@@ -4,17 +4,17 @@ include (../common.pro)
 TEMPLATE = lib
 CONFIG += staticlib
 
-root_dir            = $$system(git rev-parse --show-toplevel)
+root_dir            = $$_PRO_FILE_PWD_
 picox_dir           = $$root_dir/picox
 external_dir        = $$root_dir/picox_external
 external_config_dir = $$external_dir/config
-unity_dir           = $$external_dir/Unity/port_picox
-fatfs_dir           = $$external_dir/fatfs/port_picox
-spiffs_dir          = $$external_dir/spiffs/port_picox
-sds_dir             = $$external_dir/sds/port_picox
-uthash_dir          = $$external_dir/uthash/port_picox
-minIni_dir          = $$external_dir/minIni/port_picox
-libfixmath_dir      = $$external_dir/libfixmath/port_picox
+unity_dir           = $$external_dir/Unity
+fatfs_dir           = $$external_dir/fatfs
+spiffs_dir          = $$external_dir/spiffs
+sds_dir             = $$external_dir/sds
+uthash_dir          = $$external_dir/uthash
+minIni_dir          = $$external_dir/minIni
+libfixmath_dir      = $$external_dir/libfixmath
 
 INCLUDEPATH += $$root_dir
 INCLUDEPATH += $$external_dir

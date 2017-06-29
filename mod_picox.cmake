@@ -1,19 +1,15 @@
 # CMake module file
 
-execute_process(COMMAND git rev-parse --show-toplevel
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                OUTPUT_VARIABLE root_dir)
-
-file(TO_CMAKE_PATH ${root_dir}/picox                        picox_dir)
-file(TO_CMAKE_PATH ${root_dir}/picox_external               external_dir)
-file(TO_CMAKE_PATH ${external_dir}/Unity                    unity_dir)
-file(TO_CMAKE_PATH ${external_dir}/fatfs                    fatfs_dir)
-file(TO_CMAKE_PATH ${external_dir}/spiffs                   spiffs_dir)
-file(TO_CMAKE_PATH ${external_dir}/sds                      sds_dir)
-file(TO_CMAKE_PATH ${external_dir}/uthash                   uthash_dir)
-file(TO_CMAKE_PATH ${external_dir}/minIni                   minIni_dir)
-file(TO_CMAKE_PATH ${external_dir}/libfixmath               libfixmath_dir)
+set(root_dir        ${CMAKE_CURRENT_LIST_DIR})
+set(picox_dir       "${root_dir}/picox")
+set(external_dir    "${root_dir}/picox_external")
+set(unity_dir       "${external_dir}/Unity")
+set(fatfs_dir       "${external_dir}/fatfs")
+set(spiffs_dir      "${external_dir}/spiffs")
+set(sds_dir         "${external_dir}/sds")
+set(uthash_dir      "${external_dir}/uthash")
+set(minIni_dir      "${external_dir}/minIni")
+set(libfixmath_dir  "${external_dir}/libfixmath")
 
 include_directories(${root_dir})
 include_directories(${unity_dir})
