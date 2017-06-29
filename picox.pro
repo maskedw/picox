@@ -70,7 +70,6 @@ SOURCES += $$spiffs_dir/spiffs_gc.c
 SOURCES += $$spiffs_dir/spiffs_hydrogen.c
 SOURCES += $$spiffs_dir/spiffs_nucleus.c
 SOURCES += $$uthash_dir/libut.c
-SOURCES += $$uthash_dir/ringbuf.c
 SOURCES += $$uthash_dir/utmm.c
 SOURCES += $$uthash_dir/utvector.c
 SOURCES += $$minIni_dir/minIni.c
