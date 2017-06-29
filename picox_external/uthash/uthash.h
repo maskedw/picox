@@ -49,7 +49,7 @@ extern "C" {
 #define NO_DECLTYPE
 #define DECLTYPE(x)
 #elif defined(__GNUC__)
-#define DECLTYPE(x) __typeof(x)
+#define DECLTYPE(x) (__typeof(x))
 #else
 #define NO_DECLTYPE
 #define DECLTYPE(x)
