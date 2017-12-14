@@ -57,7 +57,7 @@ extern "C" {
 
 
 /** @brief アトミックにsize_t変数に代入を行う関数ポインタ */
-typedef void(*XFifoAtomicAssigner)(size_t* dst, size_t value);
+typedef void(*XFifoAtomicAssigner)(volatile size_t* dst, size_t value);
 
 
 /** @brief FIFOバイトバッファ管理構造体
@@ -66,9 +66,9 @@ typedef struct XFifoBuffer
 {
 /// @privatesection
     uint8_t*             data;
-    size_t               first;
-    size_t               last;
-    size_t               capacity;
+    volatile size_t      first;
+    volatile size_t      last;
+    volatile size_t      capacity;
     XFifoAtomicAssigner  assigner;
     bool                 is_heapdata;
 } XFifoBuffer;
@@ -83,7 +83,7 @@ typedef struct XFifoBuffer
 
 
 X_INLINE void
-XFifoDefaultAtomicAssign(size_t* dst, size_t value)
+XFifoDefaultAtomicAssign(volatile size_t* dst, size_t value)
 {
     *dst = value;
 }
@@ -330,7 +330,7 @@ xfifo_pop_front_n(XFifoBuffer* self, void* dst, size_t dsize)
 #else /* ifndef X_COMPILER_NO_INLINE */
 
 
-void XFifoDefaultAtomicAssign(size_t* dst, size_t value);
+void XFifoDefaultAtomicAssign(volatile size_t* dst, size_t value);
 void xfifo_init(XFifoBuffer* self, void* buffer, size_t size, XFifoAtomicAssigner assigner);
 void xfifo_deinit(XFifoBuffer* self)
 void xfifo_clear(XFifoBuffer* self);

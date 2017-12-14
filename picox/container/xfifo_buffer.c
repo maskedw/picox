@@ -47,7 +47,7 @@
 #define XFIFO__ADD_LAST(x)           ((self->last  + x) & self->capacity)
 
 
-void XFifoDefaultAtomicAssign(size_t* dst, size_t value)
+void XFifoDefaultAtomicAssign(volatile size_t* dst, size_t value)
 {
     *dst = value;
 }
