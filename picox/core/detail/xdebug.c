@@ -146,7 +146,7 @@ void x_err_printlog(const char* tag, const char* fmt, ...)
 }
 
 
-void x_verb_hexdump(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
+void x_verb_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...)
 {
     va_list args;
 

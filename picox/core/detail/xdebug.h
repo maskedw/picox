@@ -181,7 +181,7 @@ extern void (*x_post_assertion_failed)(void);
  */
 #if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_VERB)
     #define X_LOG_VERB(args)         x_verb_printlog args
-    #define X_LOG_HEXDUMP_VERB(args) x_verb_hexdump  args
+    #define X_LOG_HEXDUMP_VERB(args) x_verb_hexdumplog  args
 #else
     #define X_LOG_VERB(args)         (void)0
     #define X_LOG_HEXDUMP_VERB(args) (void)0
