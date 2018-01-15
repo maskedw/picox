@@ -26,7 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
+import re
+import sys
 import jinja2
 import itertools
 from more_itertools import chunked
@@ -84,6 +85,11 @@ extern const uint8_t bin2c_{{x.name}}_data;
 '''
 
 
+def normalize(name):
+    name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+    return name
+
+
 class Hex:
     def __init__(self, path):
         self.path = path
@@ -102,7 +108,7 @@ class Bin:
         if not path.exists() or not path.is_file():
             raise RuntimeError('fatal error: "{}" no such file'.format(path))
 
-        self.name = path.stem
+        self.name = normalize(path.name)
         self.size = path.stat().st_size
         self.data = Hex(path)
 
@@ -127,8 +133,20 @@ if args.file:
     files = itertools.chain(lines, files)
 
 render_args = {}
-render_args['filename'] = out.stem
+
+filenames = [Path(x).name for x in files]
+filenames.append(out.name)
+
+try:
+    for x in filenames:
+        x.encode('ascii')
+except UnicodeEncodeError:
+    sys.exit('UnicodeEncodeError::"{}" filename must be "ASCII"'.format(x))
+
+out = out.with_name(normalize(out.name))
+render_args['filename'] = out.name
 render_args['binaries'] = [Bin(x) for x in files]
+
 
 with out.with_suffix('.c').open('w') as f:
     ret = jinja2.Template(CSOURCE_TEMPLATE).render(render_args)
