@@ -13,7 +13,7 @@ static XRomFs* fs;
 
 TEST_SETUP(xromfs)
 {
-    XError err = xromfs_init(fs, &bin2c_romfs_data);
+    XError err = xromfs_init(fs, &bin2c_romfs_img_data);
     X_ASSERT(err == X_ERR_NONE);
 }
 
