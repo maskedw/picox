@@ -303,7 +303,7 @@ int xstream_gets(XStream* self, char* dst, size_t size, char** result, bool* ove
  *  @retval >= 0 書き込んだバイト数
  *  @retval < 0  エラー
  */
-int xstream_printf(XStream* self, const char* fmt, ...);
+int xstream_printf(XStream* self, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 
 
 /** @brief ストリームにvprintf形式の出力を行います

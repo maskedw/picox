@@ -58,6 +58,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <picox/xconfig.h>
 #include <picox/core/detail/xcompiler.h>
 #include <picox/core/detail/xpreprocessor.h>

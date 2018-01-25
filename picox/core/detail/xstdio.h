@@ -179,7 +179,7 @@ int x_puts2(const char* str);
 
 /** @brief fmtに従って、出力をsizeバイトの領域を持つbufに書き込みます
  */
-int x_snprintf(char* buf, size_t size, const char* fmt, ...);
+int x_snprintf(char* buf, size_t size, const char* fmt, ...) X_PRINTF_ATTR(3, 4);
 
 
 /** @brief fmtに従って、出力をbufに書き込みます
@@ -187,7 +187,7 @@ int x_snprintf(char* buf, size_t size, const char* fmt, ...);
  *  バッファオーバフローの危険性があるので、通常はx_snprintfを使用してください。
  *  この関数は既存のsprintfを使用したコードの移植用に用意しています。
  */
-int x_sprintf(char* buf, const char* fmt, ...);
+int x_sprintf(char* buf, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 
 
 /** @brief fmtに従って、出力をsizeバイトの領域を持つbufに書き込みます
@@ -205,7 +205,7 @@ int x_vsprintf(char* buf, const char* fmt, va_list args);
 
 /** @brief fmtに従って出力先に書き込みます
  */
-int x_printf(const char* fmt, ...);
+int x_printf(const char* fmt, ...) X_PRINTF_ATTR(1, 2);
 
 
 /** @brief fmtに従って出力先に書き込みます
@@ -215,7 +215,7 @@ int x_vprintf(const char* fmt, va_list args);
 
 /** @brief fmtに従ってcputterに書き込みます
  */
-int x_printf_to_cputter(XCharPutFunc cputter, const char* fmt, ...);
+int x_printf_to_cputter(XCharPutFunc cputter, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 
 
 /** @brief fmtに従ってcputterに書き込みます
@@ -225,7 +225,7 @@ int x_vprintf_to_cputter(XCharPutFunc cputter, const char* fmt, va_list args);
 
 /** @brief fmtに従ってstreamに書き込みます
  */
-int x_printf_to_stream(XStream* stream, const char* fmt, ...);
+int x_printf_to_stream(XStream* stream, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 
 
 /** @brief fmtに従ってstreamに書き込みます
@@ -237,7 +237,7 @@ int x_vprintf_to_stream(XStream* stream, const char* fmt, va_list args);
 int x_err_putc(int c);
 int x_err_puts(const char* str);
 int x_err_puts2(const char* str);
-int x_err_printf(const char* fmt, ...);
+int x_err_printf(const char* fmt, ...) X_PRINTF_ATTR(1, 2);
 int x_err_vprintf(const char* fmt, va_list args);
 
 

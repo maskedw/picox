@@ -96,4 +96,7 @@
 #endif
 
 
+#define X_PRINTF_ATTR(format_idx, first_param_idx) __attribute__ ((__format__(__printf__, format_idx, first_param_idx)))
+
+
 #endif // picox_core_detail_compiler_xgcc_h_

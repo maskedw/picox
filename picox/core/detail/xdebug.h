@@ -61,7 +61,8 @@ extern "C" {
  *  @param line アサーションを行ったソースファイルの行番号
  *  @param ...  fmtの可変長引数
  */
-typedef void(*XAssertionFailedFunc)(const char* expr, const char* fmt, const char* func, const char* file, int line, ...);
+typedef void(*XAssertionFailedFunc)(
+        const char* expr, const char* fmt, const char* func, const char* file, int line, ...) X_PRINTF_ATTR(2, 6);
 
 
 /** @brief x_assertion_failedの呼び出し前に呼びされる関数のポインタです
@@ -354,16 +355,16 @@ void x_err_hexdump(const void* src, size_t len, size_t cols);
  *  クロを使用してください。
  *  @{
  */
-void x_verb_printlog(const char* tag, const char* fmt, ...);
-void x_info_printlog(const char* tag, const char* fmt, ...);
-void x_noti_printlog(const char* tag, const char* fmt, ...);
-void x_warn_printlog(const char* tag, const char* fmt, ...);
-void x_err_printlog(const char* tag, const char* fmt, ...);
-void x_verb_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_info_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_noti_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_warn_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
-void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...);
+void x_verb_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
+void x_info_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
+void x_noti_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
+void x_warn_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
+void x_err_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
+void x_verb_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...) X_PRINTF_ATTR(5, 6);
+void x_info_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...) X_PRINTF_ATTR(5, 6);
+void x_noti_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...) X_PRINTF_ATTR(5, 6);
+void x_warn_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...) X_PRINTF_ATTR(5, 6);
+void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols, const char* fmt, ...) X_PRINTF_ATTR(5, 6);
 
 
 /** @} end of name log_functions

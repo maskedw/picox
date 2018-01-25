@@ -303,6 +303,26 @@
 #endif
 
 
+/** @def   X_PRINTF_ATTR
+ *  @brief printfスタイルの関数の引数をチェックする関数アトリビュートです
+ *
+ *  下記の例ではフォーマット文字列fmtは第1引数。
+ *  可変引数部分は第2引数なので、X_PRINTF_ATTR(1, 2)を指定します。
+ *  @code {.c}
+ *  int my_printf(const char* fmt, ...) X_PRINTF_ATTR(1, 2);
+ *
+ *  my_printf("%d", "HOGE"); // %dに文字列を渡しているので警告が出る
+ *  my_printf("%d, %d", 10); // 引数の数が足りていないので警告が出る
+ *  @endcode
+ *
+ *  @note
+ *  現在はコンパイラがGCCでない場合はこの機能は無視されます。
+ */
+#ifndef X_PRINTF_ATTR
+    #define X_PRINTF_ATTR(format_idx, first_param_idx)
+#endif
+
+
 /** @} end of addtogroup xcompiler
  *  @} end of addtogroup core
  */

@@ -206,7 +206,7 @@ void x_hexdump(const void* src, size_t len, size_t cols)
         /* print offset */
         if(i % cols == 0)
         {
-            x_printf("0x%06x: ", i);
+            x_err_printf("0x%06"PRIX32": ", (uint32_t)i);
         }
 
         /* print hex data */
@@ -246,7 +246,7 @@ void x_err_hexdump(const void* src, size_t len, size_t cols)
         /* print offset */
         if(i % cols == 0)
         {
-            x_err_printf("0x%06x: ", i);
+            x_err_printf("0x%06"PRIX32": ", (uint32_t)i);
         }
 
         /* print hex data */

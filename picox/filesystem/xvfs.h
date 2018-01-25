@@ -292,7 +292,7 @@ int xvfs_puts(XFile* fp, const char* str);
 
 /** @brief ファイルにprintf形式で文字列を書き込みます
  */
-int xvfs_printf(XFile* fp, const char* fmt, ...);
+int xvfs_printf(XFile* fp, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 
 
 /** @brief ファイルにvprintf形式で文字列を書き込みます
