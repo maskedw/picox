@@ -48,7 +48,7 @@
 #endif
 
 #if X_CONF_GETTIMEOFDAY_IMPL_TYPE == X_GETTIMEOFDAY_IMPL_TYPE_POSIX
-    #include <sys/time.h>
+#include <sys/time.h>
 #endif
 
 
@@ -75,7 +75,7 @@ int x_port_gettimeofday(XTimeVal* tv, void* tz_dammy)
 
 #else
 
-    #error invalid configuration value
+#error invalid configuration value
 
 #endif
 }
@@ -103,7 +103,7 @@ XTicks x_port_ticks_now(void)
 
 #else
 
-    #error invalid configuration value
+#error invalid configuration value
 
 #endif
 }
@@ -129,7 +129,7 @@ void x_port_msleep(XMSeconds msec)
 
 #else
 
-    #error invalid configuration value
+#error invalid configuration value
 
 #endif
 }
@@ -155,7 +155,7 @@ void x_port_usleep(XUSeconds usec)
 
 #else
 
-    #error invalid configuration value
+#error invalid configuration value
 
 #endif
 }
@@ -170,9 +170,11 @@ void x_port_mdelay(XMSeconds msec)
 
     const XTicks start = x_ticks_now();
     const XTicks end = x_msec_to_ticks(msec);
+
     for (;;)
     {
         const XTicks cur = x_ticks_now();
+
         if (cur - start >= end)
             break;
     }
@@ -188,7 +190,7 @@ void x_port_mdelay(XMSeconds msec)
 
 #else
 
-    #error invalid configuration value
+#error invalid configuration value
 
 #endif
 }
@@ -203,9 +205,11 @@ void x_port_udelay(XUSeconds usec)
 
     const XTicks start = x_ticks_now();
     const XTicks end = x_usec_to_ticks(usec);
+
     for (;;)
     {
         const XTicks cur = x_ticks_now();
+
         if (cur - start >= end)
             break;
     }
@@ -221,7 +225,7 @@ void x_port_udelay(XUSeconds usec)
 
 #else
 
-    #error invalid configuration value
+#error invalid configuration value
 
 #endif
 }
@@ -262,4 +266,168 @@ XTimeVal x_gettimeofday2(void)
     XTimeVal tv;
     x_gettimeofday(&tv, NULL);
     return tv;
+}
+
+/* https://android.googlesource.com/platform/bionic/+/master/libc/tzcode/strptime.c */
+/*  $OpenBSD: strptime.c,v 1.11 2005/08/08 08:05:38 espie Exp $ */
+/*  $NetBSD: strptime.c,v 1.12 1998/01/20 21:39:40 mycroft Exp $    */
+/*-
+ * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code was contributed to The NetBSD Foundation by Klaus Klein.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+#define TM_YEAR_BASE (1900)
+static  int _conv_num(const unsigned char**, int*, int, int);
+static  unsigned char* _strptime(const unsigned char*, const char*, struct tm*);
+
+char* x_strptime(const char* buf, const char* fmt, struct tm* tm)
+{
+    return (char*)(_strptime((const unsigned char*)buf, fmt, tm));
+}
+
+static unsigned char* _strptime(const unsigned char* buf, const char* fmt, struct tm* tm)
+{
+    unsigned char c;
+    const unsigned char* bp;
+    int i;
+    bp = (unsigned char*)buf;
+
+    while ((c = *fmt) != '\0')
+    {
+        /* Eat up white-space. */
+        if (isspace(c))
+        {
+            while (isspace(*bp))
+                bp++;
+
+            fmt++;
+            continue;
+        }
+
+        if ((c = *fmt++) != '%')
+            goto literal;
+
+        switch (c = *fmt++)
+        {
+            case '%':   /* "%%" is converted to "%". */
+literal:
+                if (c != *bp++)
+                    return (NULL);
+
+                break;
+
+            case 'd':   /* The day of month. */
+            case 'e':
+                if (!(_conv_num(&bp, &tm->tm_mday, 1, 31)))
+                    return (NULL);
+
+                break;
+
+            case 'H':
+                if (!(_conv_num(&bp, &tm->tm_hour, 0, 23)))
+                    return (NULL);
+
+                break;
+
+            case 'M':   /* The minute. */
+                if (!(_conv_num(&bp, &tm->tm_min, 0, 59)))
+                    return (NULL);
+
+                break;
+
+            case 'm':   /* The month. */
+                if (!(_conv_num(&bp, &tm->tm_mon, 1, 12)))
+                    return (NULL);
+
+                tm->tm_mon--;
+                break;
+
+            case 'S':   /* The seconds. */
+                if (!(_conv_num(&bp, &tm->tm_sec, 0, 61)))
+                    return (NULL);
+
+                break;
+
+            case 'w':   /* The day of week, beginning on sunday. */
+                if (!(_conv_num(&bp, &tm->tm_wday, 0, 6)))
+                    return (NULL);
+
+                break;
+
+            case 'Y':   /* The year. */
+                if (!(_conv_num(&bp, &i, 0, 9999)))
+                    return (NULL);
+
+                tm->tm_year = i - TM_YEAR_BASE;
+                break;
+
+            /*
+             * Miscellaneous conversions.
+             */
+            case 'n':   /* Any kind of white-space. */
+            case 't':
+                while (isspace(*bp))
+                    bp++;
+
+                break;
+
+            default:    /* Unknown/unsupported conversion. */
+                return (NULL);
+        }
+    }
+
+    return (unsigned char*)bp;
+}
+
+static int _conv_num(const unsigned char** buf, int* dest, int llim, int ulim)
+{
+    int result = 0;
+    int rulim = ulim;
+
+    if (**buf < '0' ||** buf > '9')
+        return (0);
+
+    /* we use rulim to break out of the loop when we run out of digits */
+    do
+    {
+        result *= 10;
+        result += *(*buf)++ - '0';
+        rulim /= 10;
+    }
+    while ((result * 10 <= ulim) && rulim &&** buf >= '0' &&** buf <= '9');
+
+    if (result < llim || result > ulim)
+        return (0);
+
+    *dest = result;
+    return (1);
 }

@@ -279,6 +279,23 @@ XUSeconds x_ticks_to_usec(XTicks ticks);
 XTimeVal x_gettimeofday2(void);
 
 
+/** 文字列であらわされている時間を tm 構造体の時間に変換します
+ *
+ *  対応している変換指定子は以下の通り
+ *
+ *  %% 文字としての%
+ *  %m 月(1-12)
+ *  %M 分(0-59)
+ *  %n,t 任意の空白
+ *  %S 秒(0-59)
+ *  %Y 年
+ *  %H 時間(0-23)
+ *  %d,%e 日 (1-31)
+ *  %w 曜日を表す数字(0-6) 日曜日が0
+ */
+char* x_strptime(const char *s, const char *format, struct tm *tm);
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
