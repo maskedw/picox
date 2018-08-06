@@ -331,9 +331,9 @@ static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list ar
         if (level != X_LOG_LEVEL_ERR)
         {
 #if X_CONF_USE_LOG_TIMESTAMP != 0
-            char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
-            x_port_stimestamp(buf, sizeof(tstamp));
-            x_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);
+            char tstamp[X_CONF_LOG_TIMESTAMP_BUF_SIZE];
+            x_port_stimestamp(tstamp, sizeof(tstamp));
+            x_printf("%s%s[%s] ", tstamp, X__GetHeader(level), tag);
 #else
             x_printf("%s[%s] ", X__GetHeader(level), tag);
 #endif
@@ -343,9 +343,9 @@ static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list ar
         else
         {
 #if X_CONF_USE_LOG_TIMESTAMP != 0
-            char tstamp[X_LOG_TIMESTAMP_BUF_SIZE];
-            x_port_stimestamp(buf, sizeof(tstamp));
-            x_err_printf("%s[%s]%s ", X__GetHeader(level), tag, tstamp);
+            char tstamp[X_CONF_LOG_TIMESTAMP_BUF_SIZE];
+            x_port_stimestamp(tstamp, sizeof(tstamp));
+            x_err_printf("%s%s[%s] ", tstamp, X__GetHeader(level), tag);
 #else
             x_err_printf("%s[%s] ", X__GetHeader(level), tag);
 #endif
