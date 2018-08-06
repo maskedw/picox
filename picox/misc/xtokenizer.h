@@ -71,10 +71,18 @@ typedef struct XTokenizer
 } XTokenizer;
 
 
+/** @brief 構造体を初期設定します
+ *
+ *  xtok_xxx()を呼び出す前に、必ずこの関数で初期化を行ってください。
+ */
+void xtok_init(XTokenizer* self);
+
+
 /** @brief 文字列を指定文字で列に分解します。
  *
- *  文字列はオブジェクトにコピーされます。初期化後はxtok_release()で必ずリソース
- *  を解放させてください。
+ *  文字列はヒープにコピーされます。使用後はxtok_release()でリソースを開放してく
+ *  ださい。この関数内では初めにxtok_release()を呼び出しているので、構造体を使い
+ *  まわして複数回xtok_parse()を使っても、xtok_release()は最後の1回でOKです。
  *
  *  @param row          行文字列
  *  @param separater    区切り文字
@@ -87,13 +95,15 @@ typedef struct XTokenizer
  *  + row != NULL
  *  + max_tokens > 0
  */
-bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens);
+bool xtok_parse(XTokenizer* self, const char* row, char separater, int max_tokens);
 
 
 /** @brief オブジェクトが保持するリソースを解放します。
  *
  *  @note
- *  xtok_init()で失敗後の呼び出しでも安全に動作します。
+ *  xtok_parse()を呼び出した後はこの関数を呼び出さないとメモリリークします。
+ *  xtok_parse()を呼び出さず、xtok_init() -> xtok_release()と呼び出しても安全に
+ *  動作します。
  */
 void xtok_release(XTokenizer* self);
 

@@ -39,17 +39,26 @@
 #include <picox/misc/xtokenizer.h>
 
 
-bool xtok_init(XTokenizer* self, const char* row, char separater, int max_tokens)
+void xtok_init(XTokenizer* self)
+{
+    X_ASSERT(self);
+    self->row = NULL;
+    self->tokens = NULL;
+    self->ntokens = 0;
+}
+
+
+bool xtok_parse(XTokenizer* self, const char* row, char separater, int max_tokens)
 {
     X_ASSERT(self);
     X_ASSERT(row);
     X_ASSERT(max_tokens > 0);
 
-    memset(self, 0, sizeof(*self));
     char* tmp_row = NULL;
     char** tmp_tokens = NULL;
     bool ok = false;
 
+    xtok_release(self);
     do
     {
         X_BREAK_IF(!(tmp_row = x_strdup(row)));
