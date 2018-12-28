@@ -254,9 +254,34 @@ extern void (*x_post_assertion_failed)(void);
     /** @brief 追加の文字列メッセージを指定可能なアサートです
      */
     #define X_ASSERT_MSG(expr, msg)     ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_MSG(#expr, msg))
+
+    #define X_ASSERT_FMT1(expr, fmt, a1) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A1(#expr, fmt, a1))
+    #define X_ASSERT_FMT2(expr, fmt, a1, a2) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A2(#expr, fmt, a1, a2))
+    #define X_ASSERT_FMT3(expr, fmt, a1, a2, a3) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A3(#expr, fmt, a1, a2, a3))
+    #define X_ASSERT_FMT4(expr, fmt, a1, a2, a3, a4) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A4(#expr, fmt, a1, a2, a3, a4))
+    #define X_ASSERT_FMT5(expr, fmt, a1, a2, a3, a4, a5) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A5(#expr, fmt, a1, a2, a3, a4, a5))
+    #define X_ASSERT_FMT6(expr, fmt, a1, a2, a3, a4, a5, a6) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A6(#expr, fmt, a1, a2, a3, a4, a5, a6))
+    #define X_ASSERT_FMT7(expr, fmt, a1, a2, a3, a4, a5, a6, a7) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A7(#expr, fmt, a1, a2, a3, a4, a5, a6, a7))
+    #define X_ASSERT_FMT8(expr, fmt, a1, a2, a3, a4, a5, a6, a7, a8) \
+        ((X_LIKELY(expr)) ? (void)0 : X_ASSERTION_FAILED_FMT_A8(#expr, fmt, a1, a2, a3, a4, a5, a6, a7, a8))
 #else
-    #define X_ASSERT(expr)              (void)0
-    #define X_ASSERT_MSG(expr, msg)     (void)0
+    #define X_ASSERT(expr)                                              (void)0
+    #define X_ASSERT_MSG(expr, msg)                                     (void)0
+    #define X_ASSERT_FMT1(expr, fmt, a1)                                (void)0
+    #define X_ASSERT_FMT2(expr, fmt, a1, a2)                            (void)0
+    #define X_ASSERT_FMT3(expr, fmt, a1, a2, a3)                        (void)0
+    #define X_ASSERT_FMT4(expr, fmt, a1, a2, a3, a4)                    (void)0
+    #define X_ASSERT_FMT5(expr, fmt, a1, a2, a3, a4, a5)                (void)0
+    #define X_ASSERT_FMT6(expr, fmt, a1, a2, a3, a4, a5, a6)            (void)0
+    #define X_ASSERT_FMT7(expr, fmt, a1, a2, a3, a4, a5, a6, a7)        (void)0
+    #define X_ASSERT_FMT8(expr, fmt, a1, a2, a3, a4, a5, a6, a7, a8)    (void)0
 #endif
 
 
@@ -462,13 +487,33 @@ void x_err_hexdumplog(const char* tag, const void* src, size_t len, size_t cols,
 #if (X_CONF_NO_STRINGIZE_ASSERT == 0)
     #define X_ASSERTION_FAILED(strexpr)                       x_assertion_failed(strexpr, "", X_FUNC, __FILE__, __LINE__)
     #define X_ASSERTION_FAILED_MSG(strexpr, msg)              x_assertion_failed(strexpr, "%s", X_FUNC, __FILE__, __LINE__, msg)
-    #define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a)        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a)
-    #define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a, b)     x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a, b)
+    #define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a1)       \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1)
+    #define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a1, a2)   \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2)
+    #define X_ASSERTION_FAILED_FMT_A3(strexpr, fmt, a1, a2, a3) \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2, a3)
+    #define X_ASSERTION_FAILED_FMT_A4(strexpr, fmt, a1, a2, a3, a4) \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2, a3, a4)
+    #define X_ASSERTION_FAILED_FMT_A5(strexpr, fmt, a1, a2, a3, a4, a5) \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2, a3, a4, a5)
+    #define X_ASSERTION_FAILED_FMT_A6(strexpr, fmt, a1, a2, a3, a4, a5, a6) \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2, a3, a4, a5, a6)
+    #define X_ASSERTION_FAILED_FMT_A7(strexpr, fmt, a1, a2, a3, a4, a5, a6, a7) \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2, a3, a4, a5, a6, a7)
+    #define X_ASSERTION_FAILED_FMT_A8(strexpr, fmt, a1, a2, a3, a4, a5, a6, a7, a8) \
+        x_assertion_failed(strexpr, fmt, X_FUNC, __FILE__, __LINE__, a1, a2, a3, a4, a5, a6, a7, a8)
 #else
-    #define X_ASSERTION_FAILED(strexpr)                       x_assertion_failed(NULL, NULL, NULL, NULL, 0)
-    #define X_ASSERTION_FAILED_MSG(strexpr, msg)              x_assertion_failed(NULL, NULL, NULL, NULL, 0)
-    #define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a)        x_assertion_failed(NULL, NULL, NULL, NULL, 0)
-    #define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a, b)     x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED(strexpr)                                             x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_MSG(strexpr, msg)                                    x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A1(strexpr, fmt, a1)                             x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A2(strexpr, fmt, a1, a2)                         x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A3(strexpr, fmt, a1, a2, a3)                     x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A4(strexpr, fmt, a1, a2, a3, a4)                 x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A5(strexpr, fmt, a1, a2, a3, a4, a5)             x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A6(strexpr, fmt, a1, a2, a3, a4, a5, a6)         x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A7(strexpr, fmt, a1, a2, a3, a4, a5, a6, a7)     x_assertion_failed(NULL, NULL, NULL, NULL, 0)
+    #define X_ASSERTION_FAILED_FMT_A8(strexpr, fmt, a1, a2, a3, a4, a5, a6, a7, a8) x_assertion_failed(NULL, NULL, NULL, NULL, 0)
 #endif
 
 #define X_SIZE_MODIFIER   "z"
