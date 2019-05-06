@@ -150,13 +150,16 @@ int x_vsnprintf(char* buf, size_t size, const char* fmt, va_list args)
     X__MemPutcContext context;
     context.dst = buf;
     context.pos = 0;
-    context.size = size - 1;
+    context.size = (size == 0) ? 0 : size - 1;
 
     len = X__VPrintf(X__MemPutc, &context, fmt, args);
-    if (len < 0)
-        buf[0] = '\0';
-    else
-        buf[len] = '\0';
+    if (size > 0)
+    {
+        if (len < 0)
+            buf[0] = '\0';
+        else
+            buf[len] = '\0';
+    }
     return len;
 }
 
