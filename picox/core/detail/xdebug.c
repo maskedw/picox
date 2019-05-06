@@ -96,6 +96,11 @@ int x_set_log_level(int level)
 }
 
 
+bool x_log_if(int level)
+{
+    return level <= priv->level;
+}
+
 void x_verb_printlog(const char* tag, const char* fmt, ...)
 {
     va_list args;
@@ -326,46 +331,40 @@ static void X__AssertionFailed(const char* expr, const char* fmt, const char* fu
 
 static void X__VPrintLog(int level, const char* tag, const char* fmt, va_list args)
 {
-    if (level <= priv->level)
+    if (level != X_LOG_LEVEL_ERR)
     {
-        if (level != X_LOG_LEVEL_ERR)
-        {
 #if X_CONF_USE_LOG_TIMESTAMP != 0
-            char tstamp[X_CONF_LOG_TIMESTAMP_BUF_SIZE];
-            x_port_stimestamp(tstamp, sizeof(tstamp));
-            x_printf("%s%s[%s] ", tstamp, X__GetHeader(level), tag);
+        char tstamp[X_CONF_LOG_TIMESTAMP_BUF_SIZE];
+        x_port_stimestamp(tstamp, sizeof(tstamp));
+        x_printf("%s%s[%s] ", tstamp, X__GetHeader(level), tag);
 #else
-            x_printf("%s[%s] ", X__GetHeader(level), tag);
+        x_printf("%s[%s] ", X__GetHeader(level), tag);
 #endif
-            x_vprintf(fmt, args);
-            x_putc('\n');
-        }
-        else
-        {
+        x_vprintf(fmt, args);
+        x_putc('\n');
+    }
+    else
+    {
 #if X_CONF_USE_LOG_TIMESTAMP != 0
-            char tstamp[X_CONF_LOG_TIMESTAMP_BUF_SIZE];
-            x_port_stimestamp(tstamp, sizeof(tstamp));
-            x_err_printf("%s%s[%s] ", tstamp, X__GetHeader(level), tag);
+        char tstamp[X_CONF_LOG_TIMESTAMP_BUF_SIZE];
+        x_port_stimestamp(tstamp, sizeof(tstamp));
+        x_err_printf("%s%s[%s] ", tstamp, X__GetHeader(level), tag);
 #else
-            x_err_printf("%s[%s] ", X__GetHeader(level), tag);
+        x_err_printf("%s[%s] ", X__GetHeader(level), tag);
 #endif
-            x_err_vprintf(fmt, args);
-            x_err_putc('\n');
-        }
+        x_err_vprintf(fmt, args);
+        x_err_putc('\n');
     }
 }
 
 
 static void X__VHexdump(int level, const char* tag, const char* src, size_t len, size_t cols, const char* fmt, va_list args)
 {
-    if (level <= priv->level)
-    {
-        X__VPrintLog(level, tag, fmt, args);
-        if (level == X_LOG_LEVEL_ERR)
-            x_err_hexdump(src, len, cols);
-        else
-            x_hexdump(src, len, cols);
-    }
+    X__VPrintLog(level, tag, fmt, args);
+    if (level == X_LOG_LEVEL_ERR)
+        x_err_hexdump(src, len, cols);
+    else
+        x_hexdump(src, len, cols);
 }
 
 

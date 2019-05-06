@@ -180,7 +180,10 @@ extern void (*x_post_assertion_failed)(void);
  *  すが、規格に厳格なコンパイラでは使用できません。(例 Renesas C++ compiler)
  *  @{
  */
-#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_VERB)
+#if X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0
+    #define X_LOG_VERB(args)         do { if (x_log_if(X_LOG_LEVEL_VERB)) x_verb_printlog args; } while (0)
+    #define X_LOG_HEXDUMP_VERB(args) do { if (x_log_if(X_LOG_LEVEL_VERB)) x_verb_hexdumplog  args; } while (0)
+#elif X_LOG_LEVEL >= X_LOG_LEVEL_VERB
     #define X_LOG_VERB(args)         x_verb_printlog args
     #define X_LOG_HEXDUMP_VERB(args) x_verb_hexdumplog  args
 #else
@@ -188,8 +191,10 @@ extern void (*x_post_assertion_failed)(void);
     #define X_LOG_HEXDUMP_VERB(args) (void)0
 #endif
 
-
-#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_INFO)
+#if X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0
+    #define X_LOG_INFO(args)         do { if (x_log_if(X_LOG_LEVEL_INFO)) x_info_printlog args; } while (0)
+    #define X_LOG_HEXDUMP_INFO(args) do { if (x_log_if(X_LOG_LEVEL_INFO)) x_info_hexdumplog  args; } while (0)
+#elif X_LOG_LEVEL >= X_LOG_LEVEL_INFO
     #define X_LOG_INFO(args)         x_info_printlog args
     #define X_LOG_HEXDUMP_INFO(args) x_info_hexdumplog  args
 #else
@@ -197,8 +202,10 @@ extern void (*x_post_assertion_failed)(void);
     #define X_LOG_HEXDUMP_INFO(args) (void)0
 #endif
 
-
-#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_NOTI)
+#if X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0
+    #define X_LOG_NOTI(args)         do { if (x_log_if(X_LOG_LEVEL_NOTI)) x_noti_printlog args; } while (0)
+    #define X_LOG_HEXDUMP_NOTI(args) do { if (x_log_if(X_LOG_LEVEL_NOTI)) x_noti_hexdumplog  args; } while (0)
+#elif X_LOG_LEVEL >= X_LOG_LEVEL_NOTI
     #define X_LOG_NOTI(args)         x_noti_printlog args
     #define X_LOG_HEXDUMP_NOTI(args) x_noti_hexdumplog  args
 #else
@@ -206,8 +213,10 @@ extern void (*x_post_assertion_failed)(void);
     #define X_LOG_HEXDUMP_NOTI(args) (void)0
 #endif
 
-
-#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_WARN)
+#if X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0
+    #define X_LOG_WARN(args)         do { if (x_log_if(X_LOG_LEVEL_WARN)) x_warn_printlog args; } while (0)
+    #define X_LOG_HEXDUMP_WARN(args) do { if (x_log_if(X_LOG_LEVEL_WARN)) x_warn_hexdumplog  args; } while (0)
+#elif X_LOG_LEVEL >= X_LOG_LEVEL_WARN
     #define X_LOG_WARN(args)         x_warn_printlog args
     #define X_LOG_HEXDUMP_WARN(args) x_warn_hexdumplog  args
 #else
@@ -215,15 +224,16 @@ extern void (*x_post_assertion_failed)(void);
     #define X_LOG_HEXDUMP_WARN(args) (void)0
 #endif
 
-
-#if (X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0) || (X_LOG_LEVEL >= X_LOG_LEVEL_ERR)
+#if X_CONF_USE_DYNAMIC_LOG_SUPPRESS != 0
+    #define X_LOG_ERR(args)         do { if (x_log_if(X_LOG_LEVEL_ERR)) x_err_printlog args; } while (0)
+    #define X_LOG_HEXDUMP_ERR(args) do { if (x_log_if(X_LOG_LEVEL_ERR)) x_err_hexdumplog  args; } while (0)
+#elif X_LOG_LEVEL >= X_LOG_LEVEL_ERR
     #define X_LOG_ERR(args)          x_err_printlog args
     #define X_LOG_HEXDUMP_ERR(args)  x_err_hexdumplog  args
 #else
     #define X_LOG_ERR(args)          (void)0
     #define X_LOG_HEXDUMP_ERR(args)  (void)0
 #endif
-
 
 /** @} end of name log_macros
  */
@@ -380,6 +390,7 @@ void x_err_hexdump(const void* src, size_t len, size_t cols);
  *  クロを使用してください。
  *  @{
  */
+bool x_log_if(int level);
 void x_verb_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 void x_info_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
 void x_noti_printlog(const char* tag, const char* fmt, ...) X_PRINTF_ATTR(2, 3);
