@@ -41,9 +41,10 @@
 #define picox_xcore_h_
 
 
-#define X_VERSION_MAJOR     (0)
-#define X_VERSION_MINOR     (6)
-#define X_VERSION_STRING    "0.6"
+#define X_VERSION_MAJOR      (0)
+#define X_VERSION_MINOR      (7)
+#define X_VERSION_PATCHLEVEL (5)
+#define X_VERSION_STRING     "0.7.5"
 
 
 /* 共通で使用するヘッダをまとめてインクルードする。コンパイラがプリコンパイル機
